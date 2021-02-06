@@ -1,0 +1,8 @@
+0000000000000000000000000000000000000000 375bafe729926141acaa0af226ac61f7349f85a7 James Gentes <j@tend.ai> 1612398875 -0800	clone: from git@github.com:jgentes/airframe-react.git
+375bafe729926141acaa0af226ac61f7349f85a7 2f81aca510c1f7cd3cd178c35f0470a09361d7ae James Gentes <j@tend.ai> 1612575032 -0800	commit: initial page working
+2f81aca510c1f7cd3cd178c35f0470a09361d7ae baaa499b150cf5a137041062e3a11b38048d58a3 James Gentes <j@tend.ai> 1612635448 -0800	commit: logo working
+baaa499b150cf5a137041062e3a11b38048d58a3 baaa499b150cf5a137041062e3a11b38048d58a3 James Gentes <j@tend.ai> 1612635694 -0800	Branch: renamed refs/heads/master to refs/heads/main
+baaa499b150cf5a137041062e3a11b38048d58a3 d115c7aed862bb8a056ddfc90306ca94bf904858 James Gentes <j@tend.ai> 1612635821 -0800	commit: first push
+d115c7aed862bb8a056ddfc90306ca94bf904858 d115c7aed862bb8a056ddfc90306ca94bf904858 James Gentes <j@tend.ai> 1612635892 -0800	Branch: renamed refs/heads/main to refs/heads/main
+d115c7aed862bb8a056ddfc90306ca94bf904858 d115c7aed862bb8a056ddfc90306ca94bf904858 James Gentes <j@tend.ai> 1612636595 -0800	Branch: renamed refs/heads/main to refs/heads/main
+d115c7aed862bb8a056ddfc90306ca94bf904858 1657792edbc489d0f659c2ec4ee2a0549ff12f50 James Gentes <j@tend.ai> 1612636636 -0800	commit: fix name
