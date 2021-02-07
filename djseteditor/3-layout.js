@@ -11,8 +11,8 @@ import '../airframe/styles/plugins/plugins.css';
 import { TopNavbar } from './Layout/TopNavbar';
 
 const favIcons = [
-    { rel: 'icon', type: 'image/jpg', sizes: '32x32', href: require('./images/soundwave-32px.jpg') },
-    { rel: 'icon', type: 'image/jpg', sizes: '16x16', href: require('./images/soundwave-16px.jpg') }
+    { rel: 'icon', type: 'image/jpg', sizes: '32x32', href: require('./public/soundwave-32px.jpg') },
+    { rel: 'icon', type: 'image/jpg', sizes: '16x16', href: require('./public/soundwave-16px.jpg') }
 ];
 
 class AppLayout extends React.Component {

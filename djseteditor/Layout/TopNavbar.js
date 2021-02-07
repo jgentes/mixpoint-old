@@ -10,26 +10,25 @@ import {
 
 export const TopNavbar = () => (
   <Navbar
-    shadow
     expand="sm"
     light
     color={'primary'}
     fluid
-    className="bg-white pt-2"
+    className="bg-white pt-2 initial-loader border-bottom"
   >
     <NavItem className="navbar-brand">
       <Link to="/">
         <img
-          src={require('../images/soundwave-640x450px.jpg')}
+          src={require('../public/soundwave-640x450px.jpg')}
           height='48px'
           className='d-block'
           alt="Logo"
         />
       </Link>
     </NavItem>
-    <h1 className="h5 mb-0 mr-auto ml-2 d-lg-block">
+    <h1 className="h5 mb-0 mr-auto ml-2 d-lg-block" >
       DJ Set Editor
-                    </h1>
+    </h1>
 
     <Nav accent navbar>
       <NavItem>
@@ -57,5 +56,5 @@ export const TopNavbar = () => (
                                 </NavLink>
       </NavItem>
     </Nav>
-  </Navbar>
+  </Navbar >
 )

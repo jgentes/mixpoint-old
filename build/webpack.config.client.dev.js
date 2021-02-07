@@ -1,4 +1,5 @@
 var path = require('path');
+var express = require('express')
 var webpack = require('webpack');
 var HtmlWebpackPlugin = require('html-webpack-plugin');
 var CircularDependencyPlugin = require('circular-dependency-plugin');
@@ -61,7 +62,7 @@ module.exports = {
                 test: /\.css$/,
                 use: [
                     { loader: 'style-loader' },
-                    { 
+                    {
                         loader: 'css-loader',
                         options: {
                             modules: true,
@@ -146,6 +147,10 @@ module.exports = {
             index: BASE_PATH
         },
         host: '0.0.0.0',
-        port: 4100
+        port: 4100,
+        before(app) {
+            app.use('/public',
+                express.static(path.join(__dirname, '/../djseteditor/public')));
+        }
     }
 }
