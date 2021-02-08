@@ -149,8 +149,8 @@ module.exports = {
         host: '0.0.0.0',
         port: 4100,
         before(app) {
-            app.use('/public',
-                express.static(path.join(__dirname, '/../djseteditor/public')));
+            app.use('/assets',
+                express.static(path.join(__dirname, '/../djseteditor/assets')));
         }
     }
 }

@@ -6,7 +6,7 @@ import {
 } from 'react-router';
 
 // ----------- Pages Imports ---------------
-import Canvas from './5-canvas';
+import { Canvas } from './4-canvas';
 
 //------ Route Definitions --------
 // eslint-disable-next-line no-unused-vars
