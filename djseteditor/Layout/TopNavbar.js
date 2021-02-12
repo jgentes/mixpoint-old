@@ -33,26 +33,22 @@ export const TopNavbar = () => (
     <Nav accent navbar>
       <NavItem>
         <NavLink
-          active
           tag={Link}
           to="/layouts/sidebar-with-navbar"
         >
-          Preview
+          Tracks
+                                </NavLink>
+      </NavItem>
+      <NavItem>
+        <NavLink
+          active
+          href="/">
+          Mixes
                                 </NavLink>
       </NavItem>
       <NavItem>
         <NavLink href="/">
-          Docs
-                                </NavLink>
-      </NavItem>
-      <NavItem>
-        <NavLink href="/">
-          Code
-                                </NavLink>
-      </NavItem>
-      <NavItem>
-        <NavLink href="/">
-          Buy
+          Sets
                                 </NavLink>
       </NavItem>
     </Nav>

@@ -37,17 +37,9 @@ import {
 import {
     HeaderDemo
 } from '../airframe/routes/components/HeaderDemo';
-
-import {
-    DraggableTable
-} from './Canvas/DraggableTable';
-
-const LOCALSTORAGE_ACCESS_TOKEN_KEY = 'djseteditor-spotify-token';
-const LOCALSTORAGE_ACCESS_TOKEN_EXPIRY_KEY = 'djseteditor-spotify-token-expires-in';
-
+import TrackForm from './5-trackform.js';
 
 export const Canvas = () => {
-    const draggableTableRef = React.createRef();
 
     const login = () => console.log('login');
 
@@ -90,9 +82,10 @@ export const Canvas = () => {
                             </Form>
                         </div>
                             TEst card
-                        </CardBody>
+
+                        <TrackForm />
+                    </CardBody>
                 </Card>
-                <DraggableTable ref={draggableTableRef} />
             </div>
         </Container>
     );
