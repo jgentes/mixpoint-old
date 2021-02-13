@@ -8,6 +8,8 @@ import {
   NavLink
 } from '../../airframe/components';
 
+const navLinks = ['tracks', 'mixes', 'sets'];
+
 export const TopNavbar = () => (
   <Navbar
     expand='sm'
@@ -31,21 +33,13 @@ export const TopNavbar = () => (
     </h1>
 
     <Nav accent navbar>
-      <NavItem>
-        <NavLink tag={RRNavLink} exact to="/tracks" activeClassName="active">
-          Tracks
-                                </NavLink>
-      </NavItem>
-      <NavItem>
-        <NavLink tag={RRNavLink} exact to="/mixes" activeClassName="active">
-          Mixes
-                                </NavLink>
-      </NavItem>
-      <NavItem>
-        <NavLink tag={RRNavLink} exact to="/sets" activeClassName="active">
-          Sets
-                                </NavLink>
-      </NavItem>
+      {navLinks.map(target => (
+        <NavItem>
+          <NavLink tag={RRNavLink} exact to={`/${target}`} activeClassName="active">
+            {target.charAt(0).toUpperCase() + target.slice(1)}
+          </NavLink>
+        </NavItem>
+      ))}
     </Nav>
   </Navbar >
 )
