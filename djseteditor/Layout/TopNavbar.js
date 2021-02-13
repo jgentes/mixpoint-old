@@ -1,5 +1,5 @@
 import React from 'react';
-import { Link } from 'react-router-dom';
+import { Link, NavLink as RRNavLink } from 'react-router-dom';
 
 import {
   Navbar,
@@ -10,11 +10,11 @@ import {
 
 export const TopNavbar = () => (
   <Navbar
-    expand="sm"
+    expand='sm'
     light
     color={'primary'}
     fluid
-    className="bg-white pt-2 initial-loader border-bottom"
+    className="bg-white pt-2 initial-loader bb-black-03"
   >
     <NavItem className="navbar-brand">
       <Link to="/">
@@ -22,7 +22,7 @@ export const TopNavbar = () => (
           src={require('../assets/soundwave-640x450px.jpg')}
           height='48px'
           className='d-block'
-          alt="Logo"
+          alt="DJ Set Editor Logo"
         />
       </Link>
     </NavItem>
@@ -32,22 +32,17 @@ export const TopNavbar = () => (
 
     <Nav accent navbar>
       <NavItem>
-        <NavLink
-          tag={Link}
-          to="/layouts/sidebar-with-navbar"
-        >
+        <NavLink tag={RRNavLink} exact to="/tracks" activeClassName="active">
           Tracks
                                 </NavLink>
       </NavItem>
       <NavItem>
-        <NavLink
-          active
-          href="/">
+        <NavLink tag={RRNavLink} exact to="/mixes" activeClassName="active">
           Mixes
                                 </NavLink>
       </NavItem>
       <NavItem>
-        <NavLink href="/">
+        <NavLink tag={RRNavLink} exact to="/sets" activeClassName="active">
           Sets
                                 </NavLink>
       </NavItem>

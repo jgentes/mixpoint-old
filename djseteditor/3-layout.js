@@ -1,8 +1,6 @@
 import React from 'react';
 import PropTypes from 'prop-types';
 
-import { Layout } from '../airframe/components';
-
 import '../airframe/styles/bootstrap.scss';
 import '../airframe/styles/main.scss';
 import '../airframe/styles/plugins/plugins.scss';
@@ -24,21 +22,10 @@ class AppLayout extends React.Component {
         const { children } = this.props;
 
         return (
-            <Layout favIcons={favIcons}>
-                { /* --------- Navbar ----------- */}
-                <Layout.Navbar>
-                    <TopNavbar />
-                </Layout.Navbar>
-                { /* -------- Sidebar ------------
-                    <Layout.Sidebar>
-                        <RoutedSidebars />
-                    </Layout.Sidebar>
-                    */ }
-                { /* -------- Content ------------*/}
-                <Layout.Content>
-                    {children}
-                </Layout.Content>
-            </Layout>
+            <>
+                <TopNavbar />
+                {children}
+            </>
         );
     }
 }
