@@ -15,7 +15,7 @@ module.exports = {
     target: 'web',
     mode: 'development',
     entry: {
-        app: [path.join(config.editorDir, '1-index.js')]
+        app: [path.join(config.editorDir, 'index.js')]
     },
     output: {
         filename: '[name].bundle.js',

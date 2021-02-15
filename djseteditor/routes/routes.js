@@ -6,8 +6,8 @@ import {
 } from 'react-router';
 
 // ----------- Pages Imports ---------------
-import { Mixes } from './4-mixes';
-import { Tracks } from './4-tracks';
+import { Mixes } from './mixes/mixes';
+import { Tracks } from './tracks/tracks';
 
 //------ Route Definitions --------
 // eslint-disable-next-line no-unused-vars

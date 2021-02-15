@@ -1,20 +1,17 @@
 import React, { useRef, useState, useEffect } from "react";
 //https://github.com/jrhalchak/BeatsPM/blob/1535622c0ae03a112cbe13c7d6deb1df1d3d0104/app/components/AudioDetection.js
-import { analyze } from './bpm';
+import { analyze } from '../../bpm';
 import Peaks from 'peaks.js';
-import { Button } from '../airframe/components';
+import { Button } from '../../../airframe/components';
 
-const testFile = "/assets/Attom-Shibui.mp3"
+const testFile = "../assets/Attom-Shibui.mp3"
 
 const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
 
 const request = new XMLHttpRequest();
 
-
-import classes from '../airframe/routes/Forms/Sliders';
 let track; // for browser controls;
 
-import Slider, { Range } from 'rc-slider';
 export default function TrackForm() {
     const [sliderControl, setSliderControl] = useState({});
     const [audioSrc, setAudioSrc] = useState();
@@ -61,18 +58,26 @@ export default function TrackForm() {
                         time += beatInterval;
                     }
 
+                    // create initial segment
+                    track.segments.add({
+                        startTime: controlPeaks[0],
+                        endTime: controlPeaks[31],
+                        color: 'rgba(191, 191, 63, 0.5)',
+                        editable: true,
+                    })
+
                     setDetecting(false);
 
                     setSliderControl({
-                        min: minPeak,
-                        marks: controlPeaks,
+                        min: controlPeaks[0],
+                        max: controlPeaks[31],
                         step: beatInterval
                     });
 
                     console.log({ sliderControl })
 
                 })
-                .catch(() => null)
+                .catch(e => console.error(e))
         });
     }
 
@@ -85,7 +90,7 @@ export default function TrackForm() {
 
             audioCtx.decodeAudioData(audioData).then(audioBuffer => {
                 initPeaks(audioBuffer);
-            }).catch(() => null);
+            }).catch(e => console.error(e));
         }
         request.send();
     }, [])
@@ -104,7 +109,7 @@ export default function TrackForm() {
                 .then((result) => {
                     initPeaks(result);
                 })
-                .catch(() => null);
+                .catch(e => console.error(e));
         };
         /* eslint-enable */
 
@@ -126,15 +131,29 @@ export default function TrackForm() {
                                 Load</Button>
 
             </div >
+
             <div id="peaks-container">
                 <div id="zoomview-container"></div>
-                <div id="overview-container"></div>
-                <div className={classes.markedSliderWrap}>
-                    {/* <Slider dots min={sliderControl.min} marks={sliderControl.marks} step={sliderControl.step} / > */}
-                </div>
+                <div id="overview-container" style={{ height: '60px' }}></div>
             </div>
-            <audio src={testFile} />
 
+            <div className="d-flex">
+                <Button color="secondary" outline size="sm" className="mr-2 align-self-center text-center">
+                    <i className="fa fa-fw fa-caret-left"></i>
+                    <div>Prev</div>
+                </Button>
+                <Button color="secondary" size="lg" className="mr-2 align-self-center text-center">
+                    <i className="fa fa-fw fa-check"></i>
+                    <div>Confirm</div>
+                </Button>
+                <Button color="secondary" outline size="sm" className="mr-2 align-self-center">
+                    <i className="fa fa-fw fa-caret-right"></i>
+                    <div>Next</div>
+                </Button>
+            </div>
+
+
+            <audio src={testFile} />
         </>
     )
 }

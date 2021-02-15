@@ -6,7 +6,7 @@ import {
   Nav,
   NavItem,
   NavLink
-} from '../../airframe/components';
+} from '../../../airframe/components';
 
 const navLinks = ['tracks', 'mixes', 'sets'];
 
@@ -16,12 +16,12 @@ export const TopNavbar = () => (
     light
     color={'primary'}
     fluid
-    className="bg-white pt-2 initial-loader bb-black-03"
+    className="bg-white pt-2 initial-loader bb-black-02 shadow-sm"
   >
     <NavItem className="navbar-brand">
       <Link to="/">
         <img
-          src={require('../assets/soundwave-640x450px.jpg')}
+          src={require('../../assets/soundwave-640x450px.jpg')}
           height='48px'
           className='d-block'
           alt="DJ Set Editor Logo"
@@ -34,7 +34,7 @@ export const TopNavbar = () => (
 
     <Nav accent navbar>
       {navLinks.map(target => (
-        <NavItem>
+        <NavItem key={target}>
           <NavLink tag={RRNavLink} exact to={`/${target}`} activeClassName="active">
             {target.charAt(0).toUpperCase() + target.slice(1)}
           </NavLink>

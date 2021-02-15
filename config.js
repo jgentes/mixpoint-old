@@ -19,10 +19,9 @@ var config = {
     srcHtmlLayout: path.join(root, 'djseteditor', 'index.html'),
 
     // Site Config ====================================================
-    siteTitle: 'DJ Set Mixer',
-    siteDescription: 'Default Dashboard ready for Development',
+    siteTitle: 'DJ Set Editor',
+    siteDescription: 'Multi-track audio editor designed for mixing dj sets',
     siteCannonicalUrl: 'http://localhost:4100',
-    siteKeywords: 'react dashboard seed bootstrap',
     scssIncludes: []
 }
 
