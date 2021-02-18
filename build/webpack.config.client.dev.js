@@ -4,6 +4,7 @@ var webpack = require('webpack');
 var HtmlWebpackPlugin = require('html-webpack-plugin');
 var CircularDependencyPlugin = require('circular-dependency-plugin');
 var ExtractCssChunks = require("extract-css-chunks-webpack-plugin");
+const { CleanWebpackPlugin } = require('clean-webpack-plugin');
 
 var config = require('./../config');
 
@@ -11,7 +12,7 @@ var BASE_PATH = process.env.BASE_PATH || '/';
 
 module.exports = {
     name: 'client',
-    devtool: 'cheap-eval-source-map',
+    devtool: 'source-map',
     target: 'web',
     mode: 'development',
     entry: {
@@ -31,6 +32,7 @@ module.exports = {
         ]
     },
     plugins: [
+        new CleanWebpackPlugin(),
         new CircularDependencyPlugin({
             exclude: /a\.js|node_modules/,
             failOnError: true,

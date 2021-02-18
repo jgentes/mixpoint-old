@@ -3,10 +3,10 @@ var rimraf = require('rimraf');
 var fs = require('fs');
 var mkdirp = require('mkdirp');
 
-var config = require('./../config');
+var config = require(`${__dirname}/../config`);
 
 function dirParamToPath(dirParam) {
-    switch(dirParam) {
+    switch (dirParam) {
         case 'dist':
             return config.distDir;
         case 'serve':
@@ -16,20 +16,20 @@ function dirParamToPath(dirParam) {
 }
 
 var commands = {
-    clear: function(value) {
+    clear: function (value) {
         var targetPath = dirParamToPath(value);
 
-        if(targetPath) {
+        if (targetPath) {
             rimraf.sync(targetPath);
 
             console.info('Cleared target directory: %s', targetPath);
         }
     },
 
-    create: function(value) {
+    create: function (value) {
         var targetPath = dirParamToPath(value);
 
-        if(targetPath) {
+        if (targetPath) {
             mkdirp.sync(targetPath);
 
             console.info('Created target directory: %s', targetPath);

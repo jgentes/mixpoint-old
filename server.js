@@ -1,86 +1,62 @@
-var qs = require('querystring');
-var express = require('express');
-var app = express();
+const express = require('express');
+const fileUpload = require('express-fileupload');
+const app = express();
 
-// init Spotify API wrapper
-
-var SpotifyWebApi = require('spotify-web-api-node');
-
-var spotifyApi = new SpotifyWebApi({
-  clientId: process.env.CLIENT_ID,
-  clientSecret: process.env.CLIENT_SECRET,
+// for CORS support
+app.use(function (req, res, next) {
+  res.header("Access-Control-Allow-Origin", "*");
+  res.header("Access-Control-Allow-Headers", "Origin, X-Requested-With, Content-Type, Accept, Cache-Control, Key, Access-Control-Allow-Origin");
+  next();
 });
 
-const jssdkscopes = ["streaming", "user-read-email", "user-read-private", "user-modify-playback-state"];
-const redirectUriParameters = {
-  client_id: process.env.CLIENT_ID,
-  response_type: 'token',
-  scope: jssdkscopes.join(' '),
-  redirect_uri: encodeURI('https://spotify-api-jgentes.glitch.me/'),
-  show_dialog: true,
-}
+app.use(fileUpload({
+  abortOnLimit: true,
+  useTempFiles: true,
+  limits: { fileSize: 3e+7 }, // 30mb
+}));
 
-const redirectUri = `https://accounts.spotify.com/authorize?${qs.stringify(redirectUriParameters)}`;
-
-function authenticate(callback) {
-  spotifyApi.clientCredentialsGrant()
-    .then(function (data) {
-      console.log('The access token expires in ' + data.body['expires_in']);
-      console.log('The access token is ' + data.body['access_token']);
-
-      callback instanceof Function && callback();
-
-      // Save the access token so that it's used in future calls
-      spotifyApi.setAccessToken(data.body['access_token']);
-    }, function (err) {
-      console.log('Something went wrong when retrieving an access token', err.message);
-    });
-}
-authenticate();
+const UPLOADPATH = `${__dirname}/uploads/`;
 
 // http://expressjs.com/en/starter/static-files.html
 app.use(express.static('public'));
 
-app.get("/search", function (request, response) {
-  reAuthenticateOnFailure((failure) => {
-    spotifyApi.searchTracks(request.query.query, { limit: 2 })
-      .then(function (data) {
-        response.send(data.body);
-      }, failure);
-  })
-});
+app.post('/upload', (req, res) => {
+  if (!req.files || Object.keys(req.files).length === 0) {
+    return res.status(400).send('No files were uploaded.');
+  }
 
-const reAuthenticateOnFailure = (action) => {
-  action(() => {
-    authenticate(action);
-  })
-}
+  console.log('files:', req.files);
 
-app.get("/spotifyRedirectUri", function (request, response) {
-  response.send(JSON.stringify({
-    redirectUri
-  }, null, 2))
-});
+  for (let file in req.files) {
+    const track = req.files[file];
+    track.mv(`${UPLOADPATH}/${track.name}`, err => {
+      if (err)
+        return res.status(500).send(err);
+    });
+  }
 
-app.get("/features", function (request, response) {
-  reAuthenticateOnFailure((failure) => {
-    spotifyApi.getAudioFeaturesForTrack(request.query.id)
-      .then(function (data) {
-        response.send(data.body);
-      }, failure);
-  })
-});
+  res.send('File uploaded!');
+})
 
-app.get("/analysis", function (request, response) {
-  reAuthenticateOnFailure((failure) => {
-    spotifyApi.getAudioAnalysisForTrack(request.query.id)
-      .then(function (data) {
-        response.send(data.body);
-      }, failure);
-  });
-});
+app.delete('/upload', (req, res) => {
+  let sampleFile;
+  console.log('DELETE REQ BODY:', req.body);
+
+  /* 
+    // The name of the input field (i.e. "sampleFile") is used to retrieve the uploaded file
+    sampleFile = req.files.sampleFile;
+    uploadPath = __dirname + '/uploads/' + sampleFile.name;
+  
+    // Use the mv() method to place the file somewhere on your server
+    sampleFile.mv(uploadPath, function (err) {
+      if (err)
+        return res.status(500).send(err);
+  
+      res.send('File uploaded!');
+    }); */
+})
 
 // listen for requests :)
-var listener = app.listen(process.env.PORT, function () {
-  console.log('Your app is listening on port ' + listener.address().port);
+var listener = app.listen(process.env.PORT || 3000, function () {
+  console.log('Server is listening on port ' + listener.address().port);
 });

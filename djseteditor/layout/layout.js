@@ -8,6 +8,7 @@ import '../../airframe/styles/plugins/plugins.css';
 
 import { Helmet } from 'react-helmet';
 import { TopNavbar } from './topnav/topnavbar';
+import { ToastContainer } from 'react-toastify';
 
 import config from '../../config';
 
@@ -38,8 +39,18 @@ class AppLayout extends React.Component {
                     }
 
                 </Helmet>
+
                 <TopNavbar />
+
                 {children}
+
+                <ToastContainer
+                    position='bottom-center'
+                    autoClose={10000}
+                    draggable={false}
+                    hideProgressBar={true}
+                    bodyClassName='text-black'
+                />
             </>
         );
     }

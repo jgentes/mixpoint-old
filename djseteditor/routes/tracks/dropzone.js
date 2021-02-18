@@ -1,128 +1,226 @@
-import React from 'react';
+import React, { useState } from 'react';
 import classNames from 'classnames';
 import FileDrop from 'react-dropzone';
+import BootstrapTable from 'react-bootstrap-table-next';
+import ToolkitProvider from 'react-bootstrap-table2-toolkit';
+import moment from 'moment';
 import _ from 'lodash';
+import faker from 'faker/locale/en_US';
+import superagent from 'superagent';
+import { toast } from 'react-toastify';
 
 import {
+    Card,
     Container,
-    Divider,
     Badge,
-    Button,
-    ButtonGroup
+    Row,
+    Col
 } from '../../../airframe/components';
-import {
-    FilesGrid,
-    FilesList
-} from '../../../airframe/routes/Forms/Dropzone/components';
 
-export class Dropzone extends React.Component {
-    state = {
-        isOver: false,
-        files: [],
-        listStyle: 'grid'
+import { CustomSearch } from '../../../airframe/routes/Tables/ExtendedTable/components/CustomSearch';
+import { randomArray } from '../../../airframe/utilities';
+
+const generateRow = (id) => ({
+    id,
+    name: faker.name.firstName(),
+    bpm: randomArray([90, 98, 83, 94, 122, 101, 110, 113, 109, 114, 98, 102, 115]),
+    duration: faker.random.number(8),
+    mixes: faker.random.number(8),
+    sets: faker.random.number(8),
+    uploaded: faker.date.past()
+});
+
+const sortCaret = (order) => {
+    if (!order)
+        return <i className="fa fa-fw fa-sort text-muted"></i>;
+    if (order)
+        return <i className={`fa fa-fw text-muted fa-sort-${order}`}></i>
+};
+
+
+export const Dropzone = () => {
+    const [isOver, setIsOver] = useState(false);
+    const [files, setFiles] = useState([]);
+    const [tracks, setTracks] = useState(_.times(10, generateRow));
+
+    const createColumnDefinitions = () => {
+        return [
+            {
+                dataField: 'name',
+                text: 'Track Name',
+                sort: true,
+                sortCaret
+            }, {
+                dataField: 'bpm',
+                text: 'BPM',
+                sort: true,
+                sortCaret
+            }, {
+                dataField: 'duration',
+                text: 'Duration',
+                sort: true,
+                sortCaret
+            },
+            {
+                dataField: 'mixes',
+                text: 'Mixes',
+                sort: true,
+                sortCaret,
+            }, {
+                dataField: 'sets',
+                text: 'Sets',
+                sort: true,
+                sortCaret
+            },
+            {
+                dataField: 'uploaded',
+                text: 'Uploaded',
+                sort: true,
+                sortCaret,
+                formatter: (cell, row) => (
+                    <span>
+                        {new Date(cell).toDateString()}
+                    </span>
+                )
+            },
+        ];
     }
 
-    render() {
-        const { isOver, files, listStyle } = this.state;
-        const dropzoneClass = classNames({
-            'dropzone--active': isOver
-        }, 'dropzone');
+    const dropzoneClass = classNames({
+        'dropzone--active': isOver
+    }, 'dropzone');
 
-        return (
-            <Container>
-                { /*    DropZone    */}
-                <div className="mb-4">
-                    <p className="mb-3">
-                        Simple HTML5-compliant drag&apos;n&apos;drop zone for files built with React.js.
-                    </p>
-                    <FileDrop
-                        multiple
-                        onDragEnter={() => { this.setState({ isOver: true }) }}
-                        onDragLeave={() => { this.setState({ isOver: false }) }}
-                        onDrop={this._filesDropped}
-                    >
-                        {
-                            ({ getRootProps, getInputProps }) => (
-                                <div {...getRootProps()} className={dropzoneClass}>
-                                    <i className="fa fa-cloud-upload fa-fw fa-3x mb-3"></i>
-                                    <h5 className='mt-0'>
-                                        Upload Your files
+    const columnDefs = createColumnDefinitions();
+
+    const expandRow = {
+        renderer: row => (
+            <Row>
+                <Col md={6}>
+                    <dl className="row">
+                        <dt className="col-sm-6 text-right">Last Login</dt>
+                        <dd className="col-sm-6">{moment(row.lastLoginDate).format('DD-MMM-YYYY')}</dd>
+
+                        <dt className="col-sm-6 text-right">IP Address</dt>
+                        <dd className="col-sm-6">{row.ipAddress}</dd>
+
+                        <dt className="col-sm-6 text-right">Browser</dt>
+                        <dd className="col-sm-6">{row.browser}</dd>
+                    </dl>
+                </Col>
+                <Col md={6}>
+                    <dl className="row">
+                        <dt className="col-sm-6 text-right">Operating System</dt>
+                        <dd className="col-sm-6">{row.os}</dd>
+
+                        <dt className="col-sm-6 text-right">Selected Plan</dt>
+                        <dd className="col-sm-6">{row.planSelected}</dd>
+
+                        <dt className="col-sm-6 text-right">Plan Expiriation</dt>
+                        <dd className="col-sm-6">{moment(row.planEnd).format('DD-MMM-YYYY')}</dd>
+                    </dl>
+                </Col>
+            </Row>
+        ),
+        showExpandColumn: true,
+        expandHeaderColumnRenderer: ({ isAnyExpands }) => isAnyExpands ? (
+            <i className="fa fa-angle-down fa-fw fa-lg text-muted"></i>
+        ) : (
+                <i className="fa fa-angle-right fa-fw fa-lg text-muted"></i>
+            ),
+        expandColumnRenderer: ({ expanded }) =>
+            expanded ? (
+                <i className="fa fa-angle-down fa-fw fa-lg text-muted"></i>
+            ) : (
+                    <i className="fa fa-angle-right fa-fw fa-lg text-muted"></i>
+                )
+    }
+
+    const _filesDropped = files => {
+        const req = superagent.post('http://localhost:3000/upload')
+
+        files.forEach(file => {
+            req.attach(file.name, file)
+        })
+
+        req.end((err, res) => {
+            if (!err) return setFiles(files);
+
+            toast.error(err.message)
+        })
+
+        setIsOver(false)
+    }
+
+    const _removeFile = (file) => setFiles[_.reject(files, file)];
+
+    return (
+        <Container>
+            <div className="mt-4 mb-4">
+                <FileDrop
+                    multiple
+                    onDragEnter={() => setIsOver(true)}
+                    onDragLeave={() => setIsOver(false)}
+                    onDrop={_filesDropped}
+                >
+                    {
+                        ({ getRootProps, getInputProps }) => (
+                            <div {...getRootProps()} className={dropzoneClass}>
+                                <i className="fa fa-cloud-upload fa-fw fa-3x"></i>
+                                <h5 className='mt-0'>
+                                    Upload Tracks
                                     </h5>
-                                    <p>
-                                        Drag a file here or <span className='text-primary'>browse</span> for a file to upload.
-                                    </p>
-                                    <p className="small">
-                                        JPG, GIF, PNG, MOV, and AVI. Please choose files under 2GB for upload. File sizes are 400x300px.
-                                    </p>
-                                    <input {...getInputProps()} />
-                                </div>
-                            )
-                        }
-
-                    </FileDrop>
-                </div>
-                { /*    Files List    */}
-                {
-                    files.length > 0 && (
-                        <div className="mt-2">
-                            <div className="d-flex">
-                                <Divider
-                                    position="left"
-                                    className="flex-shrink-1 flex-grow-1"
-                                >
-                                    <div className="px-2">
-                                        Attachments
-
-                                        <Badge
-                                            className="ml-1 text-white"
-                                            pill
-                                            color="secondary"
-                                        >
-                                            {files.length}
-                                        </Badge>
+                                <div>
+                                    Drag a file here or <span className='text-primary'>browse</span> for a file to upload.
                                     </div>
-                                </Divider>
-                                <ButtonGroup className="flex-grow-0 flex-shrink-0 pl-2">
-                                    <Button
-                                        active={listStyle === 'list'}
-                                        onClick={() => { this.setState({ listStyle: 'list' }) }}
-                                        size="sm"
-                                        outline
-                                    >
-                                        <i className='fa fa-bars fa-fw'></i>
-                                    </Button>
-                                    <Button
-                                        active={listStyle === 'grid'}
-                                        onClick={() => { this.setState({ listStyle: 'grid' }) }}
-                                        size="sm"
-                                        outline
-                                    >
-                                        <i className='fa fa-th-large fa-fw'></i>
-                                    </Button>
-                                </ButtonGroup>
+                                <input {...getInputProps()} />
                             </div>
-                            {
-                                listStyle === 'grid' ?
-                                    <FilesGrid files={files} onFileRemove={this._removeFile} /> :
-                                    <FilesList files={files} onFileRemove={this._removeFile} />
-                            }
-                        </div>
+                        )
+                    }
+
+                </FileDrop>
+            </div>
+
+            <ToolkitProvider
+                keyField="id"
+                data={tracks}
+                columns={columnDefs}
+                search
+            >
+                {
+                    props => (
+                        <React.Fragment>
+                            <div className="d-flex mb-2">
+                                <div className="px-2">
+                                    <Badge
+                                        className="mr-2 text-white"
+                                        pill
+                                        color="secondary"
+                                    >
+                                        {files.length}
+                                    </Badge>
+                                    {`Track${files.length == 1 ? '' : 's'}`}
+                                </div>
+                                <div className="d-flex ml-auto">
+                                    <CustomSearch
+                                        {...props.searchProps}
+                                    />
+                                </div>
+                            </div>
+                            <Card className="mb-3 p-0 bt-0">
+                                <BootstrapTable
+                                    classes="table-responsive-lg"
+                                    bordered={false}
+                                    expandRow={expandRow}
+                                    responsive
+                                    hover
+                                    {...props.baseProps}
+                                />
+                            </Card>
+
+                        </React.Fragment>
                     )
                 }
-            </Container>
-        );
-    }
-
-    _filesDropped = (files) => {
-        this.setState({
-            files: [...this.state.files, ...files],
-            isOver: false
-        })
-    }
-
-    _removeFile = (file) => {
-        this.setState({
-            files: _.reject(this.state.files, file)
-        })
-    }
+            </ToolkitProvider>
+        </Container>
+    );
 }

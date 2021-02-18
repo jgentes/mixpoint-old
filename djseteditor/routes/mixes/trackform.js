@@ -43,6 +43,7 @@ export default function TrackForm() {
 
             analyze(audioBuffer)
                 .then(data => {
+                    console.log({ data })
                     const controlPeaks = [];
                     const { sampleRate, duration, peaks, bpm } = data;
                     const beatInterval = (60 / bpm) * 4; // assuming 4/4 timing for most music
