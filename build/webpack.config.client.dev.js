@@ -148,11 +148,10 @@ module.exports = {
         historyApiFallback: {
             index: BASE_PATH
         },
+        proxy: {
+            "/api/**": "http://localhost:3000"
+        },
         host: '0.0.0.0',
-        port: 4100,
-        before(app) {
-            app.use('/assets',
-                express.static(path.join(__dirname, '/../djseteditor/assets')));
-        }
+        port: 4100
     }
 }

@@ -4,7 +4,7 @@ import { analyze } from '../../bpm';
 import Peaks from 'peaks.js';
 import { Button } from '../../../airframe/components';
 
-const testFile = "../assets/Attom-Shibui.mp3"
+const testFile = "/api/assets/DELETEME-Attom-Shibui.mp3"
 
 const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
 

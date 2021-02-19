@@ -7,6 +7,7 @@ const fs = require('fs');
 app.use(function (req, res, next) {
   res.header("Access-Control-Allow-Origin", "*");
   res.header("Access-Control-Allow-Headers", "Origin, X-Requested-With, Content-Type, Accept, Cache-Control, Key, Access-Control-Allow-Origin");
+  res.header("Access-Control-Allow-Methods", "GET, POST, OPTIONS, PUT, DELETE");
   next();
 });
 
@@ -14,13 +15,13 @@ app.use(fileUpload({
   useTempFiles: true
 }));
 
-const UPLOADPATH = `${__dirname}/uploads/`;
+const API_PATH = `${__dirname}/api`;
+const ASSET_PATH = `${API_PATH}/assets/`;
+const UPLOAD_PATH = `${API_PATH}/uploads/`;
 
-// http://expressjs.com/en/starter/static-files.html
-app.use(express.static('public'));
-app.use(express.static('uploads'));
+app.use('/api/assets', express.static(ASSET_PATH));
 
-app.post('/upload', (req, res) => {
+app.post('/api/upload', (req, res) => {
   console.log('REQ:', req.files);
   if (!req.files || Object.keys(req.files).length === 0) {
     return res.status(400).send('No files were uploaded.');
@@ -32,7 +33,7 @@ app.post('/upload', (req, res) => {
     const track = req.files[file];
     if (track.size > 3e+7) return res.status(413).send('Track exceeds 30mb limit.');
 
-    track.mv(`${UPLOADPATH}/${track.name}`, err => {
+    track.mv(`${UPLOAD_PATH}/${track.name}`, err => {
       if (err)
         return res.status(500).send(err);
     });
@@ -41,13 +42,13 @@ app.post('/upload', (req, res) => {
   res.send('Track uploaded!');
 })
 
-app.delete('/upload', (req, res) => {
+app.delete('/api/track', (req, res) => {
 
   console.log('DELETE REQ BODY:', req.body);
-
+  return res.status(500)
 })
 
-app.get('/tracks', (req, res) => fs.readdir(UPLOADPATH, (err, files) => res.send(files)));
+app.get('/api/tracks', (req, res) => fs.readdir(UPLOAD_PATH, (err, files) => res.send(files)));
 
 // listen for requests :)
 var listener = app.listen(process.env.PORT || 3000, function () {

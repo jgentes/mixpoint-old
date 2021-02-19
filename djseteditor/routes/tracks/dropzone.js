@@ -22,7 +22,7 @@ import { CustomSearch } from '../../../airframe/routes/Tables/ExtendedTable/comp
 import { randomArray } from '../../../airframe/utilities';
 
 const actions = (cell, row, rowIndex) => <>
-    <div onClick={e => _removeFile(e, row, rowIndex)} id="UncontrolledTooltipDelete">
+    <div onClick={e => _removeFile(e, row, rowIndex)} className='text-center' id="UncontrolledTooltipDelete" style={{ cursor: 'pointer' }}>
         <i className="fa fa-fw fa-close text-danger"></i>
     </div>
     <UncontrolledTooltip placement="left" target="UncontrolledTooltipDelete">
@@ -33,6 +33,20 @@ const actions = (cell, row, rowIndex) => <>
 const _removeFile = (e, row, rowIndex) => {
     e.preventDefault();
     console.log('row, rowIndex:', row, rowIndex)
+    superagent.delete('/api/track/')
+        .send({ name: row.name })
+        .end((err, res) => {
+            if (res) {
+                if (!err) {
+                    toast.success(res.text);
+                    return setFiles(files.splice(rowIndex, 1));
+                }
+
+                return toast.error(res.text)
+            }
+
+            toast.error('Sorry, something went wrong')
+        });
 }
 
 const sortCaret = (order) => {
@@ -59,7 +73,7 @@ export const Dropzone = () => {
 
     useEffect(() => {
         // pull list of tracks from the server
-        superagent.get('http://localhost:3000/tracks').then(res => setFiles(formatTracks(res.body)));
+        superagent.get('/api/tracks').then(res => setFiles(formatTracks(res.body)));
     }, []);
 
     const createColumnDefinitions = () => {
@@ -118,7 +132,7 @@ export const Dropzone = () => {
     const columnDefs = createColumnDefinitions();
 
     const _filesDropped = files => {
-        const req = superagent.post('http://localhost:3000/upload')
+        const req = superagent.post('/api/upload')
         console.log('files:', files)
         files.forEach(file => {
             req.attach(file.name, file)

@@ -13,8 +13,8 @@ import { ToastContainer } from 'react-toastify';
 import config from '../../config';
 
 const favIcons = [
-    { rel: 'icon', type: 'image/jpg', sizes: '32x32', href: require('../assets/soundwave-32px.jpg') },
-    { rel: 'icon', type: 'image/jpg', sizes: '16x16', href: require('../assets/soundwave-16px.jpg') }
+    { rel: 'icon', type: 'image/jpg', sizes: '32x32', href: '/api/assets/soundwave-32px.jpg' },
+    { rel: 'icon', type: 'image/jpg', sizes: '16x16', href: '/api/assets/soundwave-16px.jpg' }
 ];
 
 class AppLayout extends React.Component {
