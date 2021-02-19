@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import classNames from 'classnames';
 import FileDrop from 'react-dropzone';
 import BootstrapTable from 'react-bootstrap-table-next';
@@ -14,21 +14,26 @@ import {
     Container,
     Badge,
     Row,
-    Col
+    Col,
+    UncontrolledTooltip,
 } from '../../../airframe/components';
 
 import { CustomSearch } from '../../../airframe/routes/Tables/ExtendedTable/components/CustomSearch';
 import { randomArray } from '../../../airframe/utilities';
 
-const generateRow = (id) => ({
-    id,
-    name: faker.name.firstName(),
-    bpm: randomArray([90, 98, 83, 94, 122, 101, 110, 113, 109, 114, 98, 102, 115]),
-    duration: faker.random.number(8),
-    mixes: faker.random.number(8),
-    sets: faker.random.number(8),
-    uploaded: faker.date.past()
-});
+const actions = (cell, row, rowIndex) => <>
+    <div onClick={e => _removeFile(e, row, rowIndex)} id="UncontrolledTooltipDelete">
+        <i className="fa fa-fw fa-close text-danger"></i>
+    </div>
+    <UncontrolledTooltip placement="left" target="UncontrolledTooltipDelete">
+        Delete Track
+    </UncontrolledTooltip>
+</>
+
+const _removeFile = (e, row, rowIndex) => {
+    e.preventDefault();
+    console.log('row, rowIndex:', row, rowIndex)
+}
 
 const sortCaret = (order) => {
     if (!order)
@@ -37,11 +42,25 @@ const sortCaret = (order) => {
         return <i className={`fa fa-fw text-muted fa-sort-${order}`}></i>
 };
 
+const formatTracks = tracks => tracks.map((name, id) => ({
+    id,
+    name,
+    bpm: randomArray([90, 98, 83, 94, 122, 101, 110, 113, 109, 114, 98, 102, 115]),
+    duration: faker.random.number(8),
+    mixes: faker.random.number(8),
+    sets: faker.random.number(8),
+    uploaded: faker.date.past()
+}))
+
 
 export const Dropzone = () => {
     const [isOver, setIsOver] = useState(false);
     const [files, setFiles] = useState([]);
-    const [tracks, setTracks] = useState(_.times(10, generateRow));
+
+    useEffect(() => {
+        // pull list of tracks from the server
+        superagent.get('http://localhost:3000/tracks').then(res => setFiles(formatTracks(res.body)));
+    }, []);
 
     const createColumnDefinitions = () => {
         return [
@@ -83,6 +102,12 @@ export const Dropzone = () => {
                     </span>
                 )
             },
+            {
+                dataField: 'actions',
+                text: 'Actions',
+                sort: false,
+                formatter: actions
+            }
         ];
     }
 
@@ -92,66 +117,24 @@ export const Dropzone = () => {
 
     const columnDefs = createColumnDefinitions();
 
-    const expandRow = {
-        renderer: row => (
-            <Row>
-                <Col md={6}>
-                    <dl className="row">
-                        <dt className="col-sm-6 text-right">Last Login</dt>
-                        <dd className="col-sm-6">{moment(row.lastLoginDate).format('DD-MMM-YYYY')}</dd>
-
-                        <dt className="col-sm-6 text-right">IP Address</dt>
-                        <dd className="col-sm-6">{row.ipAddress}</dd>
-
-                        <dt className="col-sm-6 text-right">Browser</dt>
-                        <dd className="col-sm-6">{row.browser}</dd>
-                    </dl>
-                </Col>
-                <Col md={6}>
-                    <dl className="row">
-                        <dt className="col-sm-6 text-right">Operating System</dt>
-                        <dd className="col-sm-6">{row.os}</dd>
-
-                        <dt className="col-sm-6 text-right">Selected Plan</dt>
-                        <dd className="col-sm-6">{row.planSelected}</dd>
-
-                        <dt className="col-sm-6 text-right">Plan Expiriation</dt>
-                        <dd className="col-sm-6">{moment(row.planEnd).format('DD-MMM-YYYY')}</dd>
-                    </dl>
-                </Col>
-            </Row>
-        ),
-        showExpandColumn: true,
-        expandHeaderColumnRenderer: ({ isAnyExpands }) => isAnyExpands ? (
-            <i className="fa fa-angle-down fa-fw fa-lg text-muted"></i>
-        ) : (
-                <i className="fa fa-angle-right fa-fw fa-lg text-muted"></i>
-            ),
-        expandColumnRenderer: ({ expanded }) =>
-            expanded ? (
-                <i className="fa fa-angle-down fa-fw fa-lg text-muted"></i>
-            ) : (
-                    <i className="fa fa-angle-right fa-fw fa-lg text-muted"></i>
-                )
-    }
-
     const _filesDropped = files => {
         const req = superagent.post('http://localhost:3000/upload')
-
+        console.log('files:', files)
         files.forEach(file => {
             req.attach(file.name, file)
         })
 
         req.end((err, res) => {
-            if (!err) return setFiles(files);
+            if (!err) {
+                toast.success(res.text);
+                return setFiles(files);
+            }
 
-            toast.error(err.message)
+            toast.error(res.text)
         })
 
         setIsOver(false)
     }
-
-    const _removeFile = (file) => setFiles[_.reject(files, file)];
 
     return (
         <Container>
@@ -182,7 +165,7 @@ export const Dropzone = () => {
 
             <ToolkitProvider
                 keyField="id"
-                data={tracks}
+                data={files}
                 columns={columnDefs}
                 search
             >
@@ -210,7 +193,6 @@ export const Dropzone = () => {
                                 <BootstrapTable
                                     classes="table-responsive-lg"
                                     bordered={false}
-                                    expandRow={expandRow}
                                     responsive
                                     hover
                                     {...props.baseProps}
