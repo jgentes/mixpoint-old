@@ -3,8 +3,6 @@ import classNames from 'classnames';
 import FileDrop from 'react-dropzone';
 import BootstrapTable from 'react-bootstrap-table-next';
 import ToolkitProvider from 'react-bootstrap-table2-toolkit';
-import moment from 'moment';
-import _ from 'lodash';
 import faker from 'faker/locale/en_US';
 import superagent from 'superagent';
 import { toast } from 'react-toastify';
@@ -21,34 +19,6 @@ import {
 import { CustomSearch } from '../../../airframe/routes/Tables/ExtendedTable/components/CustomSearch';
 import { randomArray } from '../../../airframe/utilities';
 
-const actions = (cell, row, rowIndex) => <>
-    <div onClick={e => _removeFile(e, row, rowIndex)} className='text-center' id="UncontrolledTooltipDelete" style={{ cursor: 'pointer' }}>
-        <i className="fa fa-fw fa-close text-danger"></i>
-    </div>
-    <UncontrolledTooltip placement="left" target="UncontrolledTooltipDelete">
-        Delete Track
-    </UncontrolledTooltip>
-</>
-
-const _removeFile = (e, row, rowIndex) => {
-    e.preventDefault();
-    console.log('row, rowIndex:', row, rowIndex)
-    superagent.delete('/api/track/')
-        .send({ name: row.name })
-        .end((err, res) => {
-            if (res) {
-                if (!err) {
-                    toast.success(res.text);
-                    return setFiles(files.splice(rowIndex, 1));
-                }
-
-                return toast.error(res.text)
-            }
-
-            toast.error('Sorry, something went wrong')
-        });
-}
-
 const sortCaret = (order) => {
     if (!order)
         return <i className="fa fa-fw fa-sort text-muted"></i>;
@@ -58,7 +28,7 @@ const sortCaret = (order) => {
 
 const formatTracks = tracks => tracks.map((name, id) => ({
     id,
-    name,
+    name: name.name ?? name,
     bpm: randomArray([90, 98, 83, 94, 122, 101, 110, 113, 109, 114, 98, 102, 115]),
     duration: faker.random.number(8),
     mixes: faker.random.number(8),
@@ -66,15 +36,23 @@ const formatTracks = tracks => tracks.map((name, id) => ({
     uploaded: faker.date.past()
 }))
 
-
 export const Dropzone = () => {
     const [isOver, setIsOver] = useState(false);
-    const [files, setFiles] = useState([]);
+    const [tracks, setTracks] = useState([]);
 
     useEffect(() => {
         // pull list of tracks from the server
-        superagent.get('/api/tracks').then(res => setFiles(formatTracks(res.body)));
+        superagent.get('/api/tracks').then(res => setTracks(formatTracks(res.body)));
     }, []);
+
+    const actions = (cell, row) => <>
+        <div onClick={e => _removeFile(e, row)} className='text-center' id="UncontrolledTooltipDelete" style={{ cursor: 'pointer' }}>
+            <i className="fa fa-fw fa-close text-danger"></i>
+        </div>
+        <UncontrolledTooltip placement="left" target="UncontrolledTooltipDelete">
+            Delete Track
+    </UncontrolledTooltip>
+    </>
 
     const createColumnDefinitions = () => {
         return [
@@ -131,9 +109,28 @@ export const Dropzone = () => {
 
     const columnDefs = createColumnDefinitions();
 
+    const _removeFile = (e, row) => {
+        e.preventDefault();
+
+        superagent.delete('/api/track/')
+            .send({ name: row.name })
+            .end((err, res) => {
+                if (res) {
+                    if (!err) {
+                        toast.success(res.text);
+                        return setTracks(tracks.filter(t => t.name !== row.name));
+                    }
+
+                    return toast.error(res.text)
+                }
+
+                toast.error('Sorry, something went wrong')
+            });
+    }
+
     const _filesDropped = files => {
         const req = superagent.post('/api/upload')
-        console.log('files:', files)
+
         files.forEach(file => {
             req.attach(file.name, file)
         })
@@ -141,7 +138,10 @@ export const Dropzone = () => {
         req.end((err, res) => {
             if (!err) {
                 toast.success(res.text);
-                return setFiles(files);
+                console.log('files:', files);
+                console.log('tracks:', tracks);
+                console.log(formatTracks([...files, ...tracks]))
+                return setTracks(formatTracks([...files, ...tracks]));
             }
 
             toast.error(res.text)
@@ -179,7 +179,7 @@ export const Dropzone = () => {
 
             <ToolkitProvider
                 keyField="id"
-                data={files}
+                data={tracks}
                 columns={columnDefs}
                 search
             >
@@ -193,9 +193,9 @@ export const Dropzone = () => {
                                         pill
                                         color="secondary"
                                     >
-                                        {files.length}
+                                        {tracks.length}
                                     </Badge>
-                                    {`Track${files.length == 1 ? '' : 's'}`}
+                                    {`Track${tracks.length == 1 ? '' : 's'}`}
                                 </div>
                                 <div className="d-flex ml-auto">
                                     <CustomSearch
@@ -205,7 +205,7 @@ export const Dropzone = () => {
                             </div>
                             <Card className="mb-3 p-0 bt-0">
                                 <BootstrapTable
-                                    classes="table-responsive-lg"
+                                    classes="table-responsive-lg mb-0"
                                     bordered={false}
                                     responsive
                                     hover

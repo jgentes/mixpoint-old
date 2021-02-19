@@ -3,6 +3,8 @@ const fileUpload = require('express-fileupload');
 const app = express();
 const fs = require('fs');
 
+app.use(express.json()) // for parsing req.body
+
 // for CORS support
 app.use(function (req, res, next) {
   res.header("Access-Control-Allow-Origin", "*");
@@ -43,9 +45,12 @@ app.post('/api/upload', (req, res) => {
 })
 
 app.delete('/api/track', (req, res) => {
+  if (!req.body || !req.body.name) return res.status(500).send('You must provide a track name to delete');
 
-  console.log('DELETE REQ BODY:', req.body);
-  return res.status(500)
+  fs.unlink(`${UPLOAD_PATH}/${req.body.name}`, err => {
+    if (err) return res.status(500).send(err);
+    return res.status(200).send('Track deleted!');
+  })
 })
 
 app.get('/api/tracks', (req, res) => fs.readdir(UPLOAD_PATH, (err, files) => res.send(files)));
