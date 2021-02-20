@@ -2,6 +2,14 @@ const express = require('express');
 const fileUpload = require('express-fileupload');
 const app = express();
 const fs = require('fs');
+const { MongoClient } = require("mongodb");
+const client = new MongoClient('mongodb+srv://admin:SAIF3laud@kren4aird@cluster0.2vpkb.mongodb.net/myFirstDatabase?retryWrites=true&w=majority', { useNewUrlParser: true, useUnifiedTopology: true });
+
+client.connect(err => {
+  const collection = client.db("test").collection("devices");
+  // perform actions on the collection object
+  client.close();
+});
 
 app.use(express.json()) // for parsing req.body
 
