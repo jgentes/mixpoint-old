@@ -2,16 +2,15 @@ const express = require('express');
 const fileUpload = require('express-fileupload');
 const app = express();
 const fs = require('fs');
-const { MongoClient } = require("mongodb");
-const client = new MongoClient('mongodb+srv://admin:SAIF3laud@kren4aird@cluster0.2vpkb.mongodb.net/myFirstDatabase?retryWrites=true&w=majority', { useNewUrlParser: true, useUnifiedTopology: true });
+const db = require('./db');
+const { analyze } = require('./bpm');
+var AudioContext = require('web-audio-api').AudioContext
+  , audioCtx = new AudioContext
 
-client.connect(err => {
-  const collection = client.db("test").collection("devices");
-  // perform actions on the collection object
-  client.close();
-});
+db.init(); // async
 
 app.use(express.json()) // for parsing req.body
+app.use(fileUpload()); // for simplified processing of
 
 // for CORS support
 app.use(function (req, res, next) {
@@ -21,35 +20,59 @@ app.use(function (req, res, next) {
   next();
 });
 
-app.use(fileUpload({
-  useTempFiles: true
-}));
-
+// setup our API routes that will be used by the client (browser)
 const API_PATH = `${__dirname}/api`;
 const ASSET_PATH = `${API_PATH}/assets/`;
 const UPLOAD_PATH = `${API_PATH}/uploads/`;
 
+// assets are things like favicon, images, etc, not bundled by webpack
 app.use('/api/assets', express.static(ASSET_PATH));
 
+// upload dir for incoming tracks
 app.post('/api/upload', (req, res) => {
-  console.log('REQ:', req.files);
+  console.log('FILES:', req.files)
   if (!req.files || Object.keys(req.files).length === 0) {
     return res.status(400).send('No files were uploaded.');
   }
 
-  console.log('files:', req.files);
-
   for (let file in req.files) {
-    const track = req.files[file];
-    if (track.size > 3e+7) return res.status(413).send('Track exceeds 30mb limit.');
+    const track = req.files[file]
+    if (track.size > 3e+7) return res.status(413).send('Track exceeds 30mb limit.')
 
-    track.mv(`${UPLOAD_PATH}/${track.name}`, err => {
+    const filename = `${UPLOAD_PATH}/${track.name}`
+
+    track.mv(filename, err => {
       if (err)
-        return res.status(500).send(err);
-    });
+        return res.status(500).send(err)
+    })
+    /*
+    const trackb = track.data
+    const audioBuffer = trackb.buffer.slice(trackb.byteOffset, trackb.byteOffset + trackb.byteLength)
+    */
+
+    audioCtx.decodeAudioData(track.data).then(audioBuffer => {
+      analyze(audioBuffer)
+        .then(data => {
+          console.log({ data })
+
+          const { sampleRate, duration, peaks, bpm } = data;
+
+        })
+        .catch(e => console.error(`Error during audio analysis: ${e}`))
+    }).catch(e => console.error(e));
+
+
+
+    console.log(`${track.name} uploaded!`)
+
+
   }
 
-  res.send('Track uploaded!');
+
+
+  res.send('Upload successful!')
+
+
 })
 
 app.delete('/api/track', (req, res) => {

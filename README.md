@@ -12,4 +12,4 @@ Thanks go to [**Tomasz Owczarczyk**](https://github.com/0wczar) for the wonderfu
 
 Thanks also the great [**BBC**](https://github.com/bbc) who created the [peaks.js](https://github.com/bbc/peaks.js) library for waveform analysis and navigation.
 
-It is because of these, and many other dependent, openly sourced and freely labored efforts that I humbly give back to the community that has given so much to me.
+It is because of these, and many other dependent, openly sourced and freely labored efforts that this work has been made possible.

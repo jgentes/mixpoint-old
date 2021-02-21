@@ -1,8 +1,12 @@
+const { AudioContext, OfflineAudioContext } = require('standardized-audio-context');
+
 const INITIAL_THRESHOLD = 0.9;
 const MINUMUM_NUMBER_OF_PEAKS = 30;
 const MINIMUM_THRESHOLD = 0.3;
 
-export const analyze = (audioBuffer) => {
+const analyze = (audioBuffer) => {
+
+
   const offlineAudioContext = new OfflineAudioContext(
     audioBuffer.numberOfChannels,
     audioBuffer.length,
@@ -138,4 +142,4 @@ const groupNeighborsByTempo = (intervals, sampleRate) => {
   return tempoCounts;
 };
 
-export default analyze;
+module.exports = { analyze };

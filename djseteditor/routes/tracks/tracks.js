@@ -195,46 +195,47 @@ export const Tracks = () => {
 
                 </FileDrop>
             </div>
-
-            <ToolkitProvider
-                keyField="id"
-                data={tracks}
-                columns={columnDefs}
-                search
-            >
-                {
-                    props => (
-                        <React.Fragment>
-                            <div className="d-flex mb-2">
-                                <div>
-                                    <CustomSearch
-                                        {...props.searchProps}
+            {!tracks.length ? null :
+                <ToolkitProvider
+                    keyField="id"
+                    data={tracks}
+                    columns={columnDefs}
+                    search
+                >
+                    {
+                        props => (
+                            <React.Fragment>
+                                <div className="d-flex mb-2">
+                                    <div>
+                                        <CustomSearch
+                                            {...props.searchProps}
+                                        />
+                                    </div>
+                                    <div className="ml-auto px-2">
+                                        <Badge
+                                            className="mr-2 text-white"
+                                            color="blue"
+                                        >
+                                            {tracks.length}
+                                        </Badge>
+                                        {`Track${tracks.length == 1 ? '' : 's'}`}
+                                    </div>
+                                </div>
+                                <Card className="mb-3 p-0 bt-0">
+                                    <BootstrapTable
+                                        classes="table-responsive-lg mb-0"
+                                        bordered={false}
+                                        responsive
+                                        hover
+                                        {...props.baseProps}
                                     />
-                                </div>
-                                <div className="ml-auto px-2">
-                                    <Badge
-                                        className="mr-2 text-white"
-                                        color="blue"
-                                    >
-                                        {tracks.length}
-                                    </Badge>
-                                    {`Track${tracks.length == 1 ? '' : 's'}`}
-                                </div>
-                            </div>
-                            <Card className="mb-3 p-0 bt-0">
-                                <BootstrapTable
-                                    classes="table-responsive-lg mb-0"
-                                    bordered={false}
-                                    responsive
-                                    hover
-                                    {...props.baseProps}
-                                />
-                            </Card>
+                                </Card>
 
-                        </React.Fragment>
-                    )
-                }
-            </ToolkitProvider>
+                            </React.Fragment>
+                        )
+                    }
+                </ToolkitProvider>
+            }
         </Container>
     );
 }

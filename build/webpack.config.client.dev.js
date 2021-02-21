@@ -1,5 +1,4 @@
 var path = require('path');
-var express = require('express')
 var webpack = require('webpack');
 var HtmlWebpackPlugin = require('html-webpack-plugin');
 var CircularDependencyPlugin = require('circular-dependency-plugin');
@@ -48,7 +47,6 @@ module.exports = {
             'process.env.NODE_ENV': JSON.stringify('development'),
             'process.env.BASE_PATH': JSON.stringify(BASE_PATH),
         }),
-        new webpack.NamedModulesPlugin(),
         new webpack.HotModuleReplacementPlugin(),
         new ExtractCssChunks(),
     ],
@@ -57,7 +55,7 @@ module.exports = {
             {
                 test: /\.js$/,
                 exclude: /node_modules/,
-                use: 'babel-loader'
+                use: 'babel-loader',
             },
             // Modular Styles
             {

@@ -1,8 +1,8 @@
 import React, { useRef, useState, useEffect } from "react";
 //https://github.com/jrhalchak/BeatsPM/blob/1535622c0ae03a112cbe13c7d6deb1df1d3d0104/app/components/AudioDetection.js
-import { analyze } from '../../bpm';
 import Peaks from 'peaks.js';
 import { Button } from '../../../airframe/components';
+const { analyze } = require('../../../bpm')
 
 const testFile = "/api/assets/DELETEME-Attom-Shibui.mp3"
 
