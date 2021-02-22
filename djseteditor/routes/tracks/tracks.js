@@ -6,6 +6,8 @@ import ToolkitProvider from 'react-bootstrap-table2-toolkit';
 import faker from 'faker/locale/en_US';
 import superagent from 'superagent';
 import { toast } from 'react-toastify';
+import db from '../../db';
+const { analyze } = require('../../../bpm');
 
 import {
     Card,
@@ -134,38 +136,50 @@ export const Tracks = () => {
     const _removeFile = (e, row) => {
         e.preventDefault();
 
-        superagent.delete('/api/track/')
-            .send({ name: row.name })
-            .end((err, res) => {
-                if (res) {
-                    if (!err) {
-                        toast.success(res.text);
-                        return setTracks(tracks.filter(t => t.name !== row.name));
-                    }
-
-                    return toast.error(res.text)
-                }
-
-                toast.error('Sorry, something went wrong')
-            });
     }
 
     const _filesDropped = files => {
-        const req = superagent.post('/api/upload')
+        const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
 
-        files.forEach(file => {
-            req.attach(file.name, file)
-        })
+        var reader = new FileReader();
+        reader.onloadend = function (e) {
+            audioCtx.decodeAudioData(e.target.result).then(audioBuffer => {
+                analyze(audioBuffer)
+                    .then(data => {
+                        console.log({ data })
+                    })
+            }).catch(e => console.error(e));
 
-        req.end((err, res) => {
-            if (!err) {
-                toast.success(res.text);
-                return setTracks(formatTracks([...files, ...tracks]));
-            }
+            //resolve(e.target.result);
+        };
+        reader.onerror = function (e) {
+            reject(e.target.error);
+        };
 
-            toast.error(res.text)
-        })
+        reader.readAsArrayBuffer(files[0]);
 
+
+
+
+        /*
+                const todo = {
+                    title,
+                    done: false,
+                };
+                db.table('todos')
+                    .add(todo)
+                    .then((id) => {
+                        const newList = [...this.state.todos, Object.assign({}, todo, { id })];
+                        this.setState({ todos: newList });
+                    });
+                
+                if (!err) {
+                    toast.success(res.text);
+                    return setTracks(formatTracks([...files, ...tracks]));
+                }
+        
+                toast.error(res.text)
+        */
         setIsOver(false)
     }
 

@@ -4,7 +4,7 @@ import Peaks from 'peaks.js';
 import { Button } from '../../../airframe/components';
 const { analyze } = require('../../../bpm')
 
-const testFile = "/api/assets/DELETEME-Attom-Shibui.mp3"
+const testFile = '/assets/DELETEME-Attom-Shibui.mp3'
 
 const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
 

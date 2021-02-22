@@ -1,5 +1,3 @@
-const { AudioContext, OfflineAudioContext } = require('standardized-audio-context');
-
 const INITIAL_THRESHOLD = 0.9;
 const MINUMUM_NUMBER_OF_PEAKS = 30;
 const MINIMUM_THRESHOLD = 0.3;

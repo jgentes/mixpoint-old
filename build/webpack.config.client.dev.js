@@ -1,4 +1,5 @@
 var path = require('path');
+var express = require('express');
 var webpack = require('webpack');
 var HtmlWebpackPlugin = require('html-webpack-plugin');
 var CircularDependencyPlugin = require('circular-dependency-plugin');
@@ -146,8 +147,9 @@ module.exports = {
         historyApiFallback: {
             index: BASE_PATH
         },
-        proxy: {
-            "/api/**": "http://localhost:3000"
+        before(app) {
+            app.use('/assets',
+                express.static(path.join(__dirname, '/../djseteditor/assets')));
         },
         host: '0.0.0.0',
         port: 4100

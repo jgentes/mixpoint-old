@@ -21,7 +21,7 @@ export const TopNavbar = () => (
     <NavItem className="navbar-brand">
       <Link to="/">
         <img
-          src='/api/assets/soundwave-640x450px.jpg'
+          src='/assets/soundwave-640x450px.jpg'
           height='48px'
           className='d-block'
           alt="DJ Set Editor Logo"
