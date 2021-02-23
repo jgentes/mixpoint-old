@@ -3,7 +3,7 @@ import React, { useState, useEffect } from 'react';
 import { hot } from 'react-hot-loader'
 import { BrowserRouter as Router } from 'react-router-dom';
 
-import db from './db';
+import { db } from './db';
 
 import AppLayout from './layout/layout';
 import { RoutedContent } from './routes/routes';
@@ -21,7 +21,6 @@ const AppClient = () => {
             });
     }, [])
 
-    console.log('TRACKS:', tracks);
     return (
         <Router basename={basePath}>
             <AppLayout>

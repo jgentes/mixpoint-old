@@ -4,7 +4,6 @@ const MINIMUM_THRESHOLD = 0.3;
 
 const analyze = (audioBuffer) => {
 
-
   const offlineAudioContext = new OfflineAudioContext(
     audioBuffer.numberOfChannels,
     audioBuffer.length,
@@ -140,4 +139,4 @@ const groupNeighborsByTempo = (intervals, sampleRate) => {
   return tempoCounts;
 };
 
-module.exports = { analyze };
+export default analyze;
