@@ -32,19 +32,19 @@ export class Dropzone extends React.Component {
 
         return (
             <Container>
-                <HeaderMain 
+                <HeaderMain
                     title="Dropzone"
                     className="mb-5 mt-4"
                 />
-                { /*    DropZone    */ }
+                { /*    DropZone    */}
                 <div className="mb-4">
                     <p className="mb-3">
                         Simple HTML5-compliant drag&apos;n&apos;drop zone for files built with React.js.
                     </p>
                     <FileDrop
                         multiple
-                        onDragEnter={() => { this.setState({isOver: true}) }}
-                        onDragLeave={() => { this.setState({isOver: false}) }}
+                        onDragEnter={() => { this.setState({ isOver: true }) }}
+                        onDragLeave={() => { this.setState({ isOver: false }) }}
                         onDrop={this._filesDropped}
                     >
                         {
@@ -60,11 +60,11 @@ export class Dropzone extends React.Component {
                                     <p className="small">
                                         JPG, GIF, PNG, MOV, and AVI. Please choose files under 2GB for upload. File sizes are 400x300px.
                                     </p>
-                                    <input { ...getInputProps() } />
+                                    <input {...getInputProps()} />
                                 </div>
                             )
                         }
-                        
+
                     </FileDrop>
                 </div>
                 { /*    Files List    */}
@@ -84,22 +84,22 @@ export class Dropzone extends React.Component {
                                             pill
                                             color="secondary"
                                         >
-                                            { files.length }
+                                            {files.length}
                                         </Badge>
                                     </div>
                                 </Divider>
                                 <ButtonGroup className="flex-grow-0 flex-shrink-0 pl-2">
                                     <Button
-                                        active={ listStyle === 'list' }
-                                        onClick={() => {this.setState({listStyle: 'list'})}}
+                                        active={listStyle === 'list'}
+                                        onClick={() => { this.setState({ listStyle: 'list' }) }}
                                         size="sm"
                                         outline
                                     >
                                         <i className='fa fa-bars fa-fw'></i>
                                     </Button>
                                     <Button
-                                        active={ listStyle === 'grid' }
-                                        onClick={() => {this.setState({listStyle: 'grid'})}}
+                                        active={listStyle === 'grid'}
+                                        onClick={() => { this.setState({ listStyle: 'grid' }) }}
                                         size="sm"
                                         outline
                                     >
@@ -109,8 +109,8 @@ export class Dropzone extends React.Component {
                             </div>
                             {
                                 listStyle === 'grid' ?
-                                    <FilesGrid files={ files } onFileRemove={this._removeFile} /> :
-                                    <FilesList files={ files } onFileRemove={this._removeFile} />
+                                    <FilesGrid files={files} onFileRemove={this._removeFile} /> :
+                                    <FilesList files={files} onFileRemove={this._removeFile} />
                             }
                         </div>
                     )

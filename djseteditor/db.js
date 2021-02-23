@@ -1,7 +1,7 @@
 
 import Dexie from 'dexie';
 
-export { db, addTrack }
+export { db, putTrack, deleteTrack }
 
 const db = new Dexie('DJSetEditor');
 db.version(1).stores({
@@ -10,11 +10,12 @@ db.version(1).stores({
   sets: '++id'
 });
 
-const addTrack = (name, size, lastModified, type, duration, bpm, sampleRate, peaks, fileHandle) => {
-  db.tracks.add({
+const putTrack = (name, size, type, duration, bpm, sampleRate, peaks, fileHandle) => {
+  // Note this will overwrite an existing db entry with the same track name!
+  db.tracks.put({
     name,
     size,
-    lastModified,
+    lastModified: Date.now(),
     type,
     duration,
     bpm,
@@ -26,3 +27,5 @@ const addTrack = (name, size, lastModified, type, duration, bpm, sampleRate, pea
   })
     .catch(e => console.error(`Oops, there was a problem: ${e.message}`));
 }
+
+const deleteTrack = name => db.tracks.delete(name).catch(e => console.error(`Oops, there was a problem: ${e.message}`));

@@ -72,8 +72,8 @@ module.exports = {
                     },
                     { loader: 'postcss-loader' }
                 ],
-                exclude: [path.resolve(config.srcDir, 'styles'), path.resolve(config.editorDir, 'styles')],
-                include: [config.srcDir, config.editorDir]
+                exclude: [path.resolve(config.srcDir, 'styles')],
+                include: [config.srcDir]
             },
             {
                 test: /\.scss$/,
@@ -94,8 +94,8 @@ module.exports = {
                         }
                     }
                 ],
-                exclude: [path.resolve(config.srcDir, 'styles'), path.resolve(config.editorDir, 'styles')],
-                include: [config.srcDir, config.editorDir]
+                exclude: [path.resolve(config.srcDir, 'styles')],
+                include: [config.srcDir]
             },
             // Global Styles
             {
@@ -105,7 +105,7 @@ module.exports = {
                     'css-loader',
                     'postcss-loader'
                 ],
-                include: [path.resolve(config.srcDir, 'styles'), path.resolve(config.editorDir, 'styles')]
+                include: [path.resolve(config.srcDir, 'styles')]
             },
             {
                 test: /\.scss$/,
@@ -120,7 +120,7 @@ module.exports = {
                         }
                     }
                 ],
-                include: [path.resolve(config.srcDir, 'styles'), path.resolve(config.editorDir, 'styles')],
+                include: [path.resolve(config.srcDir, 'styles')],
             },
             // Fonts
             {

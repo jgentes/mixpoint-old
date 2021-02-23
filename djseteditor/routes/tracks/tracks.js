@@ -1,25 +1,21 @@
 import React, { useState, useEffect } from 'react';
 import classNames from 'classnames';
-import FileDrop from 'react-dropzone';
 import BootstrapTable from 'react-bootstrap-table-next';
 import ToolkitProvider from 'react-bootstrap-table2-toolkit';
-import faker from 'faker/locale/en_US';
-import superagent from 'superagent';
 import { toast } from 'react-toastify';
-import db from '../../db';
-const { analyze } = require('../../../bpm');
+import moment from 'moment';
+import { db, deleteTrack } from '../../db';
+const { processTrack } = require('../../audio');
 
 import {
     Card,
     Container,
     Badge,
-    Row,
-    Col,
+    Progress,
     UncontrolledTooltip,
 } from '../../../airframe/components';
 
 import { CustomSearch } from '../../../airframe/routes/Tables/ExtendedTable/components/CustomSearch';
-import { randomArray } from '../../../airframe/utilities';
 
 const sortCaret = (order) => {
     if (!order)
@@ -28,23 +24,16 @@ const sortCaret = (order) => {
         return <i className={`fa fa-fw text-muted fa-sort-${order}`}></i>
 };
 
-const formatTracks = tracks => tracks.map((name, id) => ({
-    id,
-    name: name.name ?? name,
-    bpm: randomArray([90, 98, 83, 94, 122, 101, 110, 113, 109, 114, 98, 102, 115]),
-    duration: faker.random.number(8),
-    mixes: faker.random.number(8),
-    sets: faker.random.number(8),
-    uploaded: faker.date.past()
-}))
-
 export const Tracks = () => {
     const [isOver, setIsOver] = useState(false);
     const [tracks, setTracks] = useState([]);
+    const [analyzing, setAnalyzing] = useState(0);
 
     useEffect(() => {
-        // pull list of tracks from the server
-        superagent.get('/api/tracks').then(res => setTracks(formatTracks(res.body)));
+        const getTracks = async () => {
+            db.tracks.toArray().then(tracks => setTracks(tracks));
+        };
+        getTracks();
     }, []);
 
     const actions = (cell, row) => <>
@@ -79,14 +68,16 @@ export const Tracks = () => {
                 sort: true,
                 headerStyle,
                 classes,
-                sortCaret
+                sortCaret,
+                formatter: cell => cell.toFixed(0)
             }, {
                 dataField: 'duration',
                 text: 'Duration',
                 sort: true,
                 headerStyle,
                 classes,
-                sortCaret
+                sortCaret,
+                formatter: cell => `${(cell / 60).toFixed(1)}m`
             },
             {
                 dataField: 'mixes',
@@ -94,7 +85,7 @@ export const Tracks = () => {
                 sort: true,
                 headerStyle,
                 classes,
-                sortCaret,
+                sortCaret
             }, {
                 dataField: 'sets',
                 text: 'Sets',
@@ -104,17 +95,14 @@ export const Tracks = () => {
                 sortCaret
             },
             {
-                dataField: 'uploaded',
+                dataField: 'lastModified',
                 text: 'Uploaded',
                 sort: true,
                 headerStyle,
                 classes,
                 sortCaret,
-                formatter: (cell, row) => (
-                    <span>
-                        {new Date(cell).toDateString()}
-                    </span>
-                )
+                style: { minWidth: '130px' },
+                formatter: cell => moment(cell).fromNow()
             },
             {
                 dataField: 'actions',
@@ -133,85 +121,67 @@ export const Tracks = () => {
 
     const columnDefs = createColumnDefinitions();
 
-    const _removeFile = (e, row) => {
+    const _removeFile = async (e, row) => {
         e.preventDefault();
-
+        await deleteTrack(row.name);
+        toast.success(<>Deleted <strong>{row.name}</strong></>)
+        setTracks(tracks.filter(t => t.name !== row.name));
     }
 
-    const _filesDropped = files => {
-        const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-
-        var reader = new FileReader();
-        reader.onloadend = function (e) {
-            audioCtx.decodeAudioData(e.target.result).then(audioBuffer => {
-                analyze(audioBuffer)
-                    .then(data => {
-                        console.log({ data })
-                    })
-            }).catch(e => console.error(e));
-
-            //resolve(e.target.result);
-        };
-        reader.onerror = function (e) {
-            reject(e.target.error);
-        };
-
-        reader.readAsArrayBuffer(files[0]);
-
-
-
-
-        /*
-                const todo = {
-                    title,
-                    done: false,
-                };
-                db.table('todos')
-                    .add(todo)
-                    .then((id) => {
-                        const newList = [...this.state.todos, Object.assign({}, todo, { id })];
-                        this.setState({ todos: newList });
-                    });
-                
-                if (!err) {
-                    toast.success(res.text);
-                    return setTracks(formatTracks([...files, ...tracks]));
-                }
-        
-                toast.error(res.text)
-        */
+    const _filesDropped = event => {
+        event.preventDefault();
+        for (const item of event.dataTransfer.items) {
+            if (item.kind === 'file') {
+                setAnalyzing(100)
+                // do not await here!
+                item.getAsFileSystemHandle().then(async fileHandle => {
+                    if (fileHandle.kind === 'directory') {
+                        toast.error('Sorry, folder upload is not ready yet. For now, you can select multiple files to upload.')
+                    } else {
+                        await processTrack(fileHandle);
+                        setAnalyzing(0)
+                    }
+                })
+            }
+        }
         setIsOver(false)
+    }
+
+    const browseFile = async () => {
+        const files = await window.showOpenFilePicker({ multiple: true });
+        files.forEach(async fileHandle => {
+            setAnalyzing(100)
+            await processTrack(fileHandle);
+            setAnalyzing(0)
+        })
     }
 
     return (
         <Container>
             <div className="mt-4 mb-4">
-                <FileDrop
-                    multiple
+                <div
+                    onClick={browseFile}
+                    className={dropzoneClass}
+                    onDrop={e => _filesDropped(e)}
+                    onDragOver={e => e.preventDefault()}
                     onDragEnter={() => setIsOver(true)}
                     onDragLeave={() => setIsOver(false)}
-                    onDrop={_filesDropped}
                 >
-                    {
-                        ({ getRootProps, getInputProps }) => (
-                            <div {...getRootProps()} className={dropzoneClass}>
-                                <i className="fa fa-cloud-upload fa-fw fa-3x"></i>
-                                <h5 className='mt-0'>
-                                    Upload Tracks
-                                    </h5>
-                                <div>
-                                    Drag a file here or <span className='text-primary'>browse</span> for a file to upload.
-                                    </div>
-                                <input {...getInputProps()} />
-                            </div>
-                        )
-                    }
-
-                </FileDrop>
+                    <i className="fa fa-cloud-upload fa-fw fa-3x drop"></i>
+                    <h5 className='mt-0 drop'>
+                        Upload Tracks
+                    </h5>
+                    <div className='drop'>
+                        Drag a file here or <span className='text-primary'>browse</span> for a file to upload.
+                    </div>
+                </div>
             </div>
+
+            <Progress value={analyzing} className='m-xl-5' style={{ height: "5px" }} hidden={!analyzing} animated striped />
+
             {!tracks.length ? null :
                 <ToolkitProvider
-                    keyField="id"
+                    keyField="name"
                     data={tracks}
                     columns={columnDefs}
                     search
