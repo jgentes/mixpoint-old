@@ -10,16 +10,17 @@ export { analyze, getAudioBuffer, processTrack };
 
 const getAudioBuffer = async file => {
   const arrayBuffer = await file.arrayBuffer();
-  return await new AudioContext().decodeAudioData(arrayBuffer);
+  const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+  const audioBuffer = await audioCtx.decodeAudioData(arrayBuffer);
+  return { audioBuffer, audioCtx };
 }
 
 const processTrack = async (fileHandle, options) => {
-  let audioBuffer;
   const file = await fileHandle.getFile();
 
   const { name, size, type } = file;
 
-  audioBuffer = await getAudioBuffer(file);
+  const { audioBuffer, audioCtx } = await getAudioBuffer(file);
   const { duration, bpm, sampleRate, peaks } = await analyze(audioBuffer, options);
 
   putTrack(name, size, type, duration, bpm, sampleRate, peaks, fileHandle);
@@ -27,7 +28,7 @@ const processTrack = async (fileHandle, options) => {
   toast.success(<>Loaded <strong>{name}</strong></>)
 
   const track = await db.tracks.get(name);
-  return { track, audioBuffer };
+  return { track, audioBuffer, audioCtx };
 };
 
 /**
@@ -35,7 +36,6 @@ const processTrack = async (fileHandle, options) => {
  * @param {object} options - has props of initialThreshold, numPeaks, and minThreshold
  */
 const analyze = (audioBuffer, options = {}) => {
-  console.log('options:', options)
   const offlineAudioContext = new OfflineAudioContext(
     audioBuffer.numberOfChannels,
     audioBuffer.length,

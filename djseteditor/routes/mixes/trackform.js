@@ -5,6 +5,7 @@ import { Button, Row, Col, Card, CardBody, Form, FormGroup, InputGroup, InputGro
 import { processTrack, getAudioBuffer, analyze } from '../../audio';
 import { toast } from 'react-toastify';
 import Loader from '../../layout/loader';
+import { PitchShifter } from 'soundtouchjs';
 
 let control; // for waveform play / pause controls;
 
@@ -15,7 +16,7 @@ export default function TrackForm() {
     const [primaryTrack, setPrimary] = useState({});
     const [bpmOptions, setOptions] = useState({});
 
-    const initPeaks = async (track, audioBuffer) => {
+    const initPeaks = async (track, audioBuffer, audioCtx) => {
         if (control) control.destroy();
 
         const file = await track.fileHandle.getFile();
@@ -23,7 +24,79 @@ export default function TrackForm() {
         if (!audioBuffer) audioBuffer = await getAudioBuffer(file);
 
         const url = window.URL.createObjectURL(file);
+        // begin soundtouchjs
+        let shifter;
+        if (shifter) {
+            shifter.off(); // remove any current listeners
+        }
+        shifter = new PitchShifter(audioCtx, audioBuffer, 1024);
 
+        shifter.tempo = 1;
+        shifter.pitch = 1;
+
+        let isPlaying, timePlayed;
+
+        const player = {
+            externalPlayer: shifter,
+            eventEmitter: null,
+
+            init: function (eventEmitter) {
+                this.eventEmitter = eventEmitter;
+
+                eventEmitter.emit('player.canplay');
+
+                shifter.on('play', detail => {
+                    isPlaying = true;
+                    timePlayed = detail.timePlayed;
+                    eventEmitter.emit('player.timeupdate', timePlayed);
+                    // do something with detail.timePlayed;
+                    // do something with detail.formattedTimePlayed;
+                    // do something with detail.percentagePlayed
+                });
+
+            },
+
+            destroy: function () {
+                this.externalPlayer = null;
+                this.eventEmitter = null;
+                isPlaying = false;
+            },
+
+            play: function () {
+                shifter.connect(audioCtx.destination);
+
+                this.eventEmitter.emit('player.play', timePlayed);
+            },
+
+            isPlaying: function () {
+                return isPlaying == true;
+            },
+
+            isSeeking: function () {
+                return false;
+            },
+
+            getCurrentTime: function () {
+                return timePlayed;
+            },
+
+            seek: function () {
+                return false;
+            },
+
+            pause: function () {
+                shifter.disconnect(audioCtx.destination);
+                isPlaying = false;
+                this.eventEmitter.emit('player.pause', timePlayed);
+            },
+
+            getDuration: function () {
+                return this.externalPlayer.buffer.duration;
+            }
+        };
+
+
+        // emd soundtouchjs
         setAudioSrc(url);
         setAnalyzing(true)
 
@@ -32,6 +105,7 @@ export default function TrackForm() {
                 overview: document.getElementById('overview-container'),
                 zoomview: document.getElementById('zoomview-container')
             },
+            player,
             mediaElement: document.querySelector('audio'),
             webAudio: {
                 audioBuffer
@@ -82,6 +156,10 @@ export default function TrackForm() {
                             step: beatInterval
                         });
              */
+
+
+
+
             control = waveform;
             setAnalyzing(false)
         })
@@ -90,9 +168,9 @@ export default function TrackForm() {
     const audioChange = async () => {
         const [fileHandle] = await window.showOpenFilePicker();
         setAnalyzing(true)
-        const { track, arrayBuffer } = await processTrack(fileHandle);
+        const { track, audioBuffer, audioCtx } = await processTrack(fileHandle);
         setPrimary(track);
-        initPeaks(track, arrayBuffer);
+        initPeaks(track, audioBuffer, audioCtx);
     }
 
     const bpmTest = async form => {
@@ -100,9 +178,9 @@ export default function TrackForm() {
         const formData = new FormData(form.target),
             newOptions = Object.fromEntries(formData.entries())
         setOptions(newOptions);
-        const { track, audioBuffer } = await processTrack(primaryTrack.fileHandle, newOptions)
+        const { track, audioBuffer, audioCtx } = await processTrack(primaryTrack.fileHandle, newOptions)
         console.log('BPM:', track.bpm);
-        initPeaks(track, audioBuffer);
+        initPeaks(track, audioBuffer, audioCtx);
     }
 
     return (

@@ -98,6 +98,7 @@
     "react-universal-component": "^4.0.0",
     "reactstrap": "^8.0.0",
     "recharts": "^1.6.2",
+    "soundtouchjs": "^0.1.26",
     "spotify-web-api-node": "5.0.2",
     "text-mask-addons": "^3.8.0",
     "uuid": "^3.3.2"
