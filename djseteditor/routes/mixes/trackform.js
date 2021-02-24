@@ -1,8 +1,8 @@
 import React, { useRef, useState, useEffect } from "react";
 import Peaks from 'peaks.js';
 import { db } from '../../db';
-import { Button } from '../../../airframe/components';
-import { processTrack, getAudioBuffer } from '../../audio';
+import { Button, Row, Col, Card, CardBody, Form, FormGroup, InputGroup, InputGroupAddon, Input } from '../../../airframe/components';
+import { processTrack, getAudioBuffer, analyze } from '../../audio';
 import { toast } from 'react-toastify';
 import Loader from '../../layout/loader';
 
@@ -12,10 +12,11 @@ export default function TrackForm() {
     const [sliderControl, setSliderControl] = useState({});
     const [audioSrc, setAudioSrc] = useState('');
     const [analyzing, setAnalyzing] = useState(0);
+    const [primaryTrack, setPrimary] = useState({});
+    const [bpmOptions, setOptions] = useState({});
 
-    const initPeaks = async (trackName, audioBuffer) => {
-        const track = await db.tracks.get(trackName);
-        if (!track) return toast.error(<>Sorry, <strong>{trackName}</strong> doesn't appear to be in your collection.</>);
+    const initPeaks = async (track, audioBuffer) => {
+        if (control) control.destroy();
 
         const file = await track.fileHandle.getFile();
 
@@ -24,7 +25,7 @@ export default function TrackForm() {
         const url = window.URL.createObjectURL(file);
 
         setAudioSrc(url);
-        setAnalyzing(60);
+        setAnalyzing(true)
 
         const options = {
             containers: {
@@ -44,9 +45,7 @@ export default function TrackForm() {
         Peaks.init(options, function (err, waveform) {
             if (err) return toast.error(err.message);
 
-            // reset options
-            waveform.points.removeAll();
-            waveform.segments.removeAll();
+            // set options
             waveform.zoom.setZoom(3); // 512
             options.containers.zoomview.onwheel = e => {
                 e.preventDefault();
@@ -61,7 +60,6 @@ export default function TrackForm() {
             // work backward from initialPeak to peak out start of track (zerotime) based on bpm
             while (time - beatInterval > 0) time -= beatInterval;
 
-            setAnalyzing(80)
             // now that we have zerotime, move forward with peaks based on the bpm (hope the bpm is accurate!)
             while (time < duration) {
                 waveform.points.add({ time });
@@ -85,15 +83,26 @@ export default function TrackForm() {
                         });
              */
             control = waveform;
-            setAnalyzing(0)
+            setAnalyzing(false)
         })
     }
 
     const audioChange = async () => {
         const [fileHandle] = await window.showOpenFilePicker();
-        setAnalyzing(40)
-        const { name, arrayBuffer } = await processTrack(fileHandle);
-        initPeaks(name, arrayBuffer);
+        setAnalyzing(true)
+        const { track, arrayBuffer } = await processTrack(fileHandle);
+        setPrimary(track);
+        initPeaks(track, arrayBuffer);
+    }
+
+    const bpmTest = async form => {
+        form.preventDefault();
+        const formData = new FormData(form.target),
+            newOptions = Object.fromEntries(formData.entries())
+        setOptions(newOptions);
+        const { track, audioBuffer } = await processTrack(primaryTrack.fileHandle, newOptions)
+        console.log('BPM:', track.bpm);
+        initPeaks(track, audioBuffer);
     }
 
     return (
@@ -110,12 +119,58 @@ export default function TrackForm() {
                                 Load</Button>
             </div >
 
+            {!primaryTrack.name ? null : <div className='m-lg'>{primaryTrack.name}</div>}
+
             <Loader hidden={!analyzing} />
 
             <div id="peaks-container">
                 <div id="zoomview-container"></div>
                 <div id="overview-container" style={{ height: '60px' }}></div>
             </div>
+
+            <Row>
+                <Col lg={12}>
+                    <Card className="mb-3">
+                        <CardBody>
+                            <Form inline onSubmit={bpmTest}>
+                                <FormGroup className="mb-2 mr-sm-2 mb-sm-0">
+                                    <InputGroupAddon addonType="prepend">
+                                        Initial Threshold
+                                        </InputGroupAddon>
+                                    <Input type="number" step=".1" name="initThreshold" id="initThreshold" placeholder={bpmOptions.initThreshold || .9} />
+                                </FormGroup>
+                                <FormGroup className="mb-2 mr-sm-2 mb-sm-0">
+                                    <InputGroup>
+                                        <InputGroupAddon addonType="prepend">
+                                            Minimum Peaks
+                                        </InputGroupAddon>
+                                        <Input type="number" step="1" name="minPeaks" placeholder={bpmOptions.minPeaks || 30} />
+                                    </InputGroup>
+                                </FormGroup>
+                                <FormGroup className="mb-2 mr-sm-2 mb-sm-0">
+                                    <InputGroup>
+                                        <InputGroupAddon addonType="prepend">
+                                            Minimum Threshold
+                                        </InputGroupAddon>
+                                        <Input type="number" step=".1" name="minThreshold" placeholder={bpmOptions.minThreshold || .3} />
+                                    </InputGroup>
+                                </FormGroup>
+                                <FormGroup className="mb-2 mr-sm-2 mb-sm-0">
+                                    <InputGroup>
+                                        <InputGroupAddon addonType="prepend">
+                                            Lowpass Freq
+                                        </InputGroupAddon>
+                                        <Input type="number" step="50" name="lowpass" placeholder={bpmOptions.lowpass || 200} />
+                                    </InputGroup>
+                                </FormGroup>
+                                <Button color="primary" type='submit'>
+                                    Submit
+                                </Button>
+                            </Form>
+                        </CardBody>
+                    </Card>
+                </Col>
+            </Row>
 
             <div className="d-flex">
                 <Button color="secondary" outline size="sm" className="mr-2 align-self-center text-center">
@@ -131,7 +186,6 @@ export default function TrackForm() {
                     <div>Next</div>
                 </Button>
             </div>
-
 
             <audio src={audioSrc} />
         </>

@@ -1,5 +1,5 @@
 import React from 'react';
-import { putTrack } from './db';
+import { db, putTrack } from './db';
 import { toast } from 'react-toastify';
 
 const INITIAL_THRESHOLD = 0.9;
@@ -13,26 +13,29 @@ const getAudioBuffer = async file => {
   return await new AudioContext().decodeAudioData(arrayBuffer);
 }
 
-const processTrack = async fileHandle => {
+const processTrack = async (fileHandle, options) => {
   let audioBuffer;
   const file = await fileHandle.getFile();
 
   const { name, size, type } = file;
 
   audioBuffer = await getAudioBuffer(file);
-  const analysis = await analyze(audioBuffer);
-
-  const { duration, bpm, sampleRate, peaks } = analysis;
+  const { duration, bpm, sampleRate, peaks } = await analyze(audioBuffer, options);
 
   putTrack(name, size, type, duration, bpm, sampleRate, peaks, fileHandle);
 
-  toast.success(<>Added <strong>{name}</strong> to your collection.</>)
+  toast.success(<>Loaded <strong>{name}</strong></>)
 
-  return { name, audioBuffer };
+  const track = await db.tracks.get(name);
+  return { track, audioBuffer };
 };
 
-const analyze = (audioBuffer) => {
-
+/**
+ * provides bpm analysis for an audiobuffer
+ * @param {object} options - has props of initialThreshold, numPeaks, and minThreshold
+ */
+const analyze = (audioBuffer, options = {}) => {
+  console.log('options:', options)
   const offlineAudioContext = new OfflineAudioContext(
     audioBuffer.numberOfChannels,
     audioBuffer.length,
@@ -42,7 +45,7 @@ const analyze = (audioBuffer) => {
   const biquadFilter = offlineAudioContext.createBiquadFilter();
   const bufferSourceNode = offlineAudioContext.createBufferSource();
 
-  biquadFilter.frequency.value = 200;
+  biquadFilter.frequency.value = options.lowpass || 100;
   biquadFilter.type = 'lowpass';
 
   bufferSourceNode.buffer = audioBuffer;
@@ -55,13 +58,13 @@ const analyze = (audioBuffer) => {
 
   return offlineAudioContext
     .startRendering()
-    .then((renderedBuffer) => {
+    .then(renderedBuffer => {
       let groups = null;
       let intervals = null;
       let peaks = [];
-      let threshold = INITIAL_THRESHOLD;
+      let threshold = options.initialThreshold || INITIAL_THRESHOLD;
 
-      while (peaks.length < MINUMUM_NUMBER_OF_PEAKS && threshold >= MINIMUM_THRESHOLD) {
+      while (peaks.length < (options.minPeaks || MINUMUM_NUMBER_OF_PEAKS) && threshold >= (options.minThreshold || MINIMUM_THRESHOLD)) {
         peaks = getPeaksAtThreshold(
           renderedBuffer.getChannelData(0),
           threshold,

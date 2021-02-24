@@ -27,7 +27,7 @@ const sortCaret = (order) => {
 export const Tracks = () => {
     const [isOver, setIsOver] = useState(false);
     const [tracks, setTracks] = useState([]);
-    const [analyzing, setAnalyzing] = useState(0);
+    const [analyzing, setAnalyzing] = useState(false);
 
     useEffect(() => {
         const getTracks = async () => {
@@ -101,7 +101,7 @@ export const Tracks = () => {
                 headerStyle,
                 classes,
                 sortCaret,
-                style: { minWidth: '130px' },
+                style: { minWidth: '140px' },
                 formatter: cell => moment(cell).fromNow()
             },
             {
@@ -132,14 +132,14 @@ export const Tracks = () => {
         event.preventDefault();
         for (const item of event.dataTransfer.items) {
             if (item.kind === 'file') {
-                setAnalyzing(100)
+                setAnalyzing(true)
                 // do not await here!
                 item.getAsFileSystemHandle().then(async fileHandle => {
                     if (fileHandle.kind === 'directory') {
                         toast.error('Sorry, folder support is not ready yet. For now, you can select multiple files to add.')
                     } else {
                         await processTrack(fileHandle);
-                        setAnalyzing(0)
+                        setAnalyzing(false)
                     }
                 })
             }
@@ -150,9 +150,9 @@ export const Tracks = () => {
     const browseFile = async () => {
         const files = await window.showOpenFilePicker({ multiple: true });
         files.forEach(async fileHandle => {
-            setAnalyzing(100)
+            setAnalyzing(true)
             await processTrack(fileHandle);
-            setAnalyzing(0)
+            setAnalyzing(false)
         })
     }
 
