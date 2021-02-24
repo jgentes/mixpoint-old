@@ -2,7 +2,8 @@
 import '@babel/polyfill';
 import React from 'react';
 import ReactDOM from 'react-dom';
-import 'style-loader!css-loader!./custom.css';
+import 'style-loader!css-loader!sass-loader!./custom.scss';
+import 'style-loader!css-loader!sass-loader!./layout/loader.scss';
 
 import App from './appclient';
 

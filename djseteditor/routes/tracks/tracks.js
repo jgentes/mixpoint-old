@@ -5,13 +5,13 @@ import ToolkitProvider from 'react-bootstrap-table2-toolkit';
 import { toast } from 'react-toastify';
 import moment from 'moment';
 import { db, deleteTrack } from '../../db';
-const { processTrack } = require('../../audio');
+import { processTrack } from '../../audio';
+import Loader from '../../layout/loader';
 
 import {
     Card,
     Container,
     Badge,
-    Progress,
     UncontrolledTooltip,
 } from '../../../airframe/components';
 
@@ -136,7 +136,7 @@ export const Tracks = () => {
                 // do not await here!
                 item.getAsFileSystemHandle().then(async fileHandle => {
                     if (fileHandle.kind === 'directory') {
-                        toast.error('Sorry, folder upload is not ready yet. For now, you can select multiple files to upload.')
+                        toast.error('Sorry, folder support is not ready yet. For now, you can select multiple files to add.')
                     } else {
                         await processTrack(fileHandle);
                         setAnalyzing(0)
@@ -169,15 +169,15 @@ export const Tracks = () => {
                 >
                     <i className="fa fa-cloud-upload fa-fw fa-3x drop"></i>
                     <h5 className='mt-0 drop'>
-                        Upload Tracks
+                        Add Tracks
                     </h5>
                     <div className='drop'>
-                        Drag a file here or <span className='text-primary'>browse</span> for a file to upload.
+                        Drag a file here or <span className='text-primary'>browse</span> for a file to add.
                     </div>
                 </div>
             </div>
 
-            <Progress value={analyzing} className='m-xl-5' style={{ height: "5px" }} hidden={!analyzing} animated striped />
+            <Loader hidden={!analyzing} />
 
             {!tracks.length ? null :
                 <ToolkitProvider

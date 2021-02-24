@@ -1,9 +1,10 @@
 import React, { useRef, useState, useEffect } from "react";
 import Peaks from 'peaks.js';
 import { db } from '../../db';
-import { Button, Progress } from '../../../airframe/components';
+import { Button } from '../../../airframe/components';
 import { processTrack, getAudioBuffer } from '../../audio';
 import { toast } from 'react-toastify';
+import Loader from '../../layout/loader';
 
 let control; // for waveform play / pause controls;
 
@@ -109,7 +110,7 @@ export default function TrackForm() {
                                 Load</Button>
             </div >
 
-            <Progress value={analyzing} className='m-xl-5' style={{ height: "3px" }} hidden={!analyzing} animated striped />
+            <Loader hidden={!analyzing} />
 
             <div id="peaks-container">
                 <div id="zoomview-container"></div>
