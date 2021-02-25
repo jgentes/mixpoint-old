@@ -12,7 +12,7 @@ db.version(1).stores({
 
 const errHandler = err => toast.error(`Oops, there was a problem: ${err.message}`);
 
-const putTrack = (name, size, type, duration, bpm, sampleRate, peaks, fileHandle) => {
+const putTrack = ({ name, size, type, duration, bpm, sampleRate, peaks, fileHandle }) => {
   // Note this will overwrite an existing db entry with the same track name!
   db.tracks.put({
     name,

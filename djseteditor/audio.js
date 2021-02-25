@@ -1,6 +1,7 @@
 import React from 'react';
 import { db, putTrack } from './db';
 import { toast } from 'react-toastify';
+import { analyze as anal, guess } from 'web-audio-beat-detector';
 
 const INITIAL_THRESHOLD = 0.9;
 const MINUMUM_NUMBER_OF_PEAKS = 30;
@@ -21,19 +22,21 @@ const processTrack = async (fileHandle, options) => {
   const { name, size, type } = file;
 
   const { audioBuffer, audioCtx } = await getAudioBuffer(file);
-  const { duration, bpm, sampleRate, peaks } = await analyze(audioBuffer, options);
 
-  putTrack(name, size, type, duration, bpm, sampleRate, peaks, fileHandle);
+  const { offset, tempo } = await guess(audioBuffer)
+  const { duration, sampleRate, bpm, peaks, renderedBuffer } = await analyze(audioBuffer, options);
+
+  putTrack({ name, size, type, duration, bpm, sampleRate, peaks, fileHandle });
 
   toast.success(<>Loaded <strong>{name}</strong></>)
 
   const track = await db.tracks.get(name);
-  return { track, audioBuffer, audioCtx };
+  return { track, audioBuffer, audioCtx, renderedBuffer, bpm, offset, tempo };
 };
 
 /**
  * provides bpm analysis for an audiobuffer
- * @param {object} options - has props of initialThreshold, numPeaks, and minThreshold
+ * @param {object} options - has props of initialThreshold, numPeaks, minThreshold
  */
 const analyze = (audioBuffer, options = {}) => {
   const offlineAudioContext = new OfflineAudioContext(
@@ -45,7 +48,7 @@ const analyze = (audioBuffer, options = {}) => {
   const biquadFilter = offlineAudioContext.createBiquadFilter();
   const bufferSourceNode = offlineAudioContext.createBufferSource();
 
-  biquadFilter.frequency.value = options.lowpass || 100;
+  biquadFilter.frequency.value = options.lowpass || 150;
   biquadFilter.type = 'lowpass';
 
   bufferSourceNode.buffer = audioBuffer;
@@ -72,14 +75,13 @@ const analyze = (audioBuffer, options = {}) => {
         );
         threshold -= 0.05;
       }
-
+      //console.log({ peaks })
       intervals = countIntervalsBetweenNearbyPeaks(peaks);
-
+      // console.log({ intervals })
       groups = groupNeighborsByTempo(intervals, renderedBuffer.sampleRate);
-
       groups.sort((a, b) => b.count - a.count);
-
-      return { bpm: groups[0].tempo, peaks, duration: audioBuffer.duration, sampleRate: audioBuffer.sampleRate };
+      //   console.log({ groups })
+      return { bpm: groups[0].tempo, peaks: groups[0].peaks, duration: audioBuffer.duration, sampleRate: audioBuffer.sampleRate, renderedBuffer };
     });
 };
 
@@ -91,12 +93,12 @@ const countIntervalsBetweenNearbyPeaks = (peaks) => {
       let foundInterval = null;
       let interval = null;
 
-      interval = peaks[index + i] - peak;
+      interval = Math.round((peaks[index + i] - peak) / 100) * 100;
 
       foundInterval = intervalCounts.some((intervalCount) => {
         if (intervalCount.interval === interval) {
           intervalCount.count += 1;
-
+          intervalCount.peaks.push(peak);
           return true;
         }
 
@@ -107,6 +109,7 @@ const countIntervalsBetweenNearbyPeaks = (peaks) => {
         intervalCounts.push({
           count: 1,
           interval,
+          peaks: [peak]
         });
       }
     }
@@ -116,10 +119,16 @@ const countIntervalsBetweenNearbyPeaks = (peaks) => {
 };
 
 const getPeaksAtThreshold = (data, threshold, sampleRate) => {
+  // todo: auto adjust threshold by lowering it if nothing found?
   const peaks = [];
-
+  console.log({ sampleRate, threshold })
   for (let i = 0, length = data.length; i < length; i += 1) {
+    if (!(i % 1000) && i < 250000) {
+      //console.log('data: ', (i / sampleRate).toFixed(2), data[i].toFixed(2), data[i] > threshold);
+    }
+
     if (data[i] > threshold) {
+      // console.log('pushed peak', (i / sampleRate).toFixed(2), data[i].toFixed(2))
       peaks.push(i);
 
       // Skip forward 1/4s to get past this peak.
@@ -134,23 +143,23 @@ const groupNeighborsByTempo = (intervals, sampleRate) => {
   const tempoCounts = [];
 
   intervals
-    .filter((intervalCount) => (intervalCount.interval !== 0))
-    .forEach((intervalCount) => {
+    .filter(intervalCount => intervalCount.interval !== 0)
+    .forEach(intervalCount => {
       let foundTempo = null;
       let theoreticalTempo = null;
 
       // Convert an interval to tempo
-      theoreticalTempo = 60 / (intervalCount.interval / sampleRate);
+      theoreticalTempo = Number((60 / (intervalCount.interval / sampleRate)).toFixed(2));
 
-      // Adjust the tempo to fit within the 90-180 BPM range
-      while (theoreticalTempo < 90) {
+      // Adjust the tempo to fit within the 80-160 BPM range
+      while (theoreticalTempo < 80) {
         theoreticalTempo *= 2;
       }
-      while (theoreticalTempo > 180) {
+      while (theoreticalTempo > 160) {
         theoreticalTempo /= 2;
       }
 
-      foundTempo = tempoCounts.some((tempoCount) => {
+      foundTempo = tempoCounts.some(tempoCount => {
         if (tempoCount.tempo === theoreticalTempo) {
           tempoCount.count += intervalCount.count;
 
@@ -164,6 +173,7 @@ const groupNeighborsByTempo = (intervals, sampleRate) => {
         tempoCounts.push({
           count: intervalCount.count,
           tempo: theoreticalTempo,
+          peaks: intervalCount.peaks
         });
       }
     });

@@ -5,98 +5,30 @@ import { Button, Row, Col, Card, CardBody, Form, FormGroup, InputGroup, InputGro
 import { processTrack, getAudioBuffer, analyze } from '../../audio';
 import { toast } from 'react-toastify';
 import Loader from '../../layout/loader';
-import { PitchShifter } from 'soundtouchjs';
 
 let control; // for waveform play / pause controls;
 
 export default function TrackForm() {
+    const audioElement = useRef();
+
     const [sliderControl, setSliderControl] = useState({});
     const [audioSrc, setAudioSrc] = useState('');
     const [analyzing, setAnalyzing] = useState(0);
-    const [primaryTrack, setPrimary] = useState({});
+    const [primaryTrack, setTrack] = useState({});
+    const [primaryBuffer, setBuffer] = useState();
     const [bpmOptions, setOptions] = useState({});
+    const [adjustedBpm, setBpm] = useState();
 
-    const initPeaks = async (track, audioBuffer, audioCtx) => {
-        if (control) control.destroy();
-
+    const initPeaks = async ({ track = primaryTrack, audioBuffer = primaryBuffer, audioCtx, offset, tempo }) => {
         const file = await track.fileHandle.getFile();
 
-        if (!audioBuffer) audioBuffer = await getAudioBuffer(file);
+        if (!audioBuffer) {
+            audioBuffer = await getAudioBuffer(file);
+            setBuffer(audioBuffer);
+        }
 
         const url = window.URL.createObjectURL(file);
-        // begin soundtouchjs
-        let shifter;
-        if (shifter) {
-            shifter.off(); // remove any current listeners
-        }
-        shifter = new PitchShifter(audioCtx, audioBuffer, 1024);
 
-        shifter.tempo = 1;
-        shifter.pitch = 1;
-
-        let isPlaying, timePlayed;
-
-        const player = {
-            externalPlayer: shifter,
-            eventEmitter: null,
-
-            init: function (eventEmitter) {
-                this.eventEmitter = eventEmitter;
-
-                eventEmitter.emit('player.canplay');
-
-                shifter.on('play', detail => {
-                    isPlaying = true;
-                    timePlayed = detail.timePlayed;
-                    eventEmitter.emit('player.timeupdate', timePlayed);
-                    // do something with detail.timePlayed;
-                    // do something with detail.formattedTimePlayed;
-                    // do something with detail.percentagePlayed
-                });
-
-            },
-
-            destroy: function () {
-                this.externalPlayer = null;
-                this.eventEmitter = null;
-                isPlaying = false;
-            },
-
-            play: function () {
-                shifter.connect(audioCtx.destination);
-
-                this.eventEmitter.emit('player.play', timePlayed);
-            },
-
-            isPlaying: function () {
-                return isPlaying == true;
-            },
-
-            isSeeking: function () {
-                return false;
-            },
-
-            getCurrentTime: function () {
-                return timePlayed;
-            },
-
-            seek: function () {
-                return false;
-            },
-
-            pause: function () {
-                shifter.disconnect(audioCtx.destination);
-                isPlaying = false;
-                this.eventEmitter.emit('player.pause', timePlayed);
-            },
-
-            getDuration: function () {
-                return this.externalPlayer.buffer.duration;
-            }
-        };
-
-
-        // emd soundtouchjs
         setAudioSrc(url);
         setAnalyzing(true)
 
@@ -105,7 +37,6 @@ export default function TrackForm() {
                 overview: document.getElementById('overview-container'),
                 zoomview: document.getElementById('zoomview-container')
             },
-            player,
             mediaElement: document.querySelector('audio'),
             webAudio: {
                 audioBuffer
@@ -128,13 +59,19 @@ export default function TrackForm() {
 
             const controlPeaks = [];
             const { duration, bpm, analysis: { peaks, sampleRate } } = track;
-            const beatInterval = (60 / bpm) * 4; // assuming 4/4 timing for most music
-            let time = peaks[0] / sampleRate;
+            const beatInterval = (60 / tempo || bpm); // assuming 4/4 timing for most music
+            console.log('tempo:', tempo, 'beatinterval:', beatInterval, 'adjusted:', adjustedBpm, 'offset:', offset)
+            // if bpm has been adjusted, update audio element
+            if (adjustedBpm) audioElement.current.playbackRate = adjustedBpm / bpm;
+
+            //  let time = peaks[0] / sampleRate;
+            let time = offset;
 
             // work backward from initialPeak to peak out start of track (zerotime) based on bpm
             while (time - beatInterval > 0) time -= beatInterval;
 
             // now that we have zerotime, move forward with peaks based on the bpm (hope the bpm is accurate!)
+
             while (time < duration) {
                 waveform.points.add({ time });
                 controlPeaks.push(time);
@@ -157,9 +94,6 @@ export default function TrackForm() {
                         });
              */
 
-
-
-
             control = waveform;
             setAnalyzing(false)
         })
@@ -168,9 +102,10 @@ export default function TrackForm() {
     const audioChange = async () => {
         const [fileHandle] = await window.showOpenFilePicker();
         setAnalyzing(true)
-        const { track, audioBuffer, audioCtx } = await processTrack(fileHandle);
-        setPrimary(track);
-        initPeaks(track, audioBuffer, audioCtx);
+        const { track, audioBuffer, audioCtx, offset, tempo } = await processTrack(fileHandle);
+        setBuffer(audioBuffer);
+        setTrack(track);
+        initPeaks({ track, audioBuffer, audioCtx, offset, tempo });
     }
 
     const bpmTest = async form => {
@@ -178,10 +113,17 @@ export default function TrackForm() {
         const formData = new FormData(form.target),
             newOptions = Object.fromEntries(formData.entries())
         setOptions(newOptions);
-        const { track, audioBuffer, audioCtx } = await processTrack(primaryTrack.fileHandle, newOptions)
-        console.log('BPM:', track.bpm);
-        initPeaks(track, audioBuffer, audioCtx);
+        const { track, audioBuffer, audioCtx, renderedBuffer } = await processTrack(primaryTrack.fileHandle, newOptions)
+        initPeaks(track, renderedBuffer, audioCtx);
     }
+
+    const adjustBPM = form => {
+        form.preventDefault();
+        const formData = new FormData(form.target),
+            { newBpm } = Object.fromEntries(formData.entries())
+        setBpm(newBpm);
+        initPeaks();
+    };
 
     return (
         <>
@@ -199,6 +141,19 @@ export default function TrackForm() {
 
             {!primaryTrack.name ? null : <div className='m-lg'>{primaryTrack.name}</div>}
 
+            <Form inline className="ml-auto" onSubmit={adjustBPM}>
+                <FormGroup>
+                    <InputGroup size="sm">
+                        <Input type="text" name="newBpm" className="ml-auto" placeholder={primaryTrack?.bpm || 0} />
+                        <InputGroupAddon addonType="append">
+                            <Button color="primary">
+                                Adjust BPM
+                                                </Button>
+                        </InputGroupAddon>
+                    </InputGroup>
+                </FormGroup>
+            </Form>
+
             <Loader hidden={!analyzing} />
 
             <div id="peaks-container">
@@ -211,13 +166,13 @@ export default function TrackForm() {
                     <Card className="mb-3">
                         <CardBody>
                             <Form inline onSubmit={bpmTest}>
-                                <FormGroup className="mb-2 mr-sm-2 mb-sm-0">
+                                <FormGroup className="mb-2 mr-sm-2">
                                     <InputGroupAddon addonType="prepend">
                                         Initial Threshold
                                         </InputGroupAddon>
                                     <Input type="number" step=".1" name="initThreshold" id="initThreshold" placeholder={bpmOptions.initThreshold || .9} />
                                 </FormGroup>
-                                <FormGroup className="mb-2 mr-sm-2 mb-sm-0">
+                                <FormGroup className="mb-2 mr-sm-2">
                                     <InputGroup>
                                         <InputGroupAddon addonType="prepend">
                                             Minimum Peaks
@@ -225,7 +180,7 @@ export default function TrackForm() {
                                         <Input type="number" step="1" name="minPeaks" placeholder={bpmOptions.minPeaks || 30} />
                                     </InputGroup>
                                 </FormGroup>
-                                <FormGroup className="mb-2 mr-sm-2 mb-sm-0">
+                                <FormGroup className="mb-2 mr-sm-2">
                                     <InputGroup>
                                         <InputGroupAddon addonType="prepend">
                                             Minimum Threshold
@@ -233,12 +188,12 @@ export default function TrackForm() {
                                         <Input type="number" step=".1" name="minThreshold" placeholder={bpmOptions.minThreshold || .3} />
                                     </InputGroup>
                                 </FormGroup>
-                                <FormGroup className="mb-2 mr-sm-2 mb-sm-0">
+                                <FormGroup className="mb-2 mr-sm-2">
                                     <InputGroup>
                                         <InputGroupAddon addonType="prepend">
                                             Lowpass Freq
                                         </InputGroupAddon>
-                                        <Input type="number" step="50" name="lowpass" placeholder={bpmOptions.lowpass || 200} />
+                                        <Input type="number" step="50" name="lowpass" placeholder={bpmOptions.lowpass || 150} />
                                     </InputGroup>
                                 </FormGroup>
                                 <Button color="primary" type='submit'>
@@ -265,7 +220,7 @@ export default function TrackForm() {
                 </Button>
             </div>
 
-            <audio src={audioSrc} />
+            <audio src={audioSrc} ref={audioElement} />
         </>
     )
 }
