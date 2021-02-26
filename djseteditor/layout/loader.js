@@ -1,11 +1,11 @@
-import React from 'react';
-import classNames from 'classnames';
+import React from 'react'
+import classNames from 'classnames'
 
 const Loader = props => {
   const loaderClass = classNames(
     'loader',
     props.className
-  );
+  )
 
   return (
     <div className={loaderClass} hidden={props.hidden}>
@@ -16,7 +16,12 @@ const Loader = props => {
       <div className="bar5"></div>
       <div className="bar6"></div>
     </div>
-  );
+  )
 }
 
-export default Loader;
+Loader.propTypes = {
+  className: String,
+  hidden: Boolean
+}
+
+export default Loader

@@ -1,14 +1,14 @@
-import React from 'react';
-import { Link, NavLink as RRNavLink } from 'react-router-dom';
+import React from 'react'
+import { Link, NavLink as RRNavLink } from 'react-router-dom'
 
 import {
   Navbar,
   Nav,
   NavItem,
   NavLink
-} from '../../../airframe/components';
+} from '../../../airframe/components'
 
-const navLinks = ['tracks', 'mixes', 'sets'];
+const navLinks = ['tracks', 'mixes', 'sets']
 
 export const TopNavbar = () => (
   <Navbar

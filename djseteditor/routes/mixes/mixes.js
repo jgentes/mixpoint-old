@@ -1,27 +1,26 @@
-import React from 'react';
+import React from 'react'
 import {
-    Container,
-    Card,
-    Button,
-    Input,
-    Form,
-    InputGroup,
-    InputGroupAddon,
-    FormGroup,
-    CardBody,
-    CardTitle
-} from '../../../airframe/components';
+  Container,
+  Card,
+  Button,
+  Input,
+  Form,
+  InputGroup,
+  InputGroupAddon,
+  FormGroup,
+  CardBody,
+  CardTitle
+} from '../../../airframe/components'
 
 import {
-    HeaderMain
-} from '../../../airframe/routes/components/HeaderMain';
-import TrackForm from './trackform.js';
+  HeaderMain
+} from '../../../airframe/routes/components/HeaderMain'
+import TrackForm from './trackform.js'
 
 export const Mixes = () => {
+  const login = () => console.log('login')
 
-    const login = () => console.log('login');
-
-    return (
+  return (
         <Container>
             <div className="d-flex">
                 <div>
@@ -61,5 +60,5 @@ export const Mixes = () => {
                 </Card>
             </div>
         </Container>
-    );
+  )
 }

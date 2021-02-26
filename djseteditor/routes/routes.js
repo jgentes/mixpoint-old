@@ -1,18 +1,18 @@
-import React from 'react';
+import React from 'react'
 import {
-    Route,
-    Switch,
-    Redirect
-} from 'react-router';
+  Route,
+  Switch,
+  Redirect
+} from 'react-router'
 
 // ----------- Pages Imports ---------------
-import { Mixes } from './mixes/mixes';
-import { Tracks } from './tracks/tracks';
+import { Mixes } from './mixes/mixes'
+import { Tracks } from './tracks/tracks'
 
-//------ Route Definitions --------
+// ------ Route Definitions --------
 // eslint-disable-next-line no-unused-vars
 export const RoutedContent = () => {
-    return (
+  return (
         <Switch>
             <Redirect from="/" to="/mixes" exact />
 
@@ -22,6 +22,5 @@ export const RoutedContent = () => {
             { /*    404    */}
             <Redirect to="/pages/error-404" />
         </Switch>
-    );
-};
-
+  )
+}

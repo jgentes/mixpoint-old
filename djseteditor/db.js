@@ -1,16 +1,16 @@
-import Dexie from 'dexie';
-import { toast } from 'react-toastify';
+import Dexie from 'dexie'
+import { toast } from 'react-toastify'
 
 export { db, putTrack, deleteTrack }
 
-const db = new Dexie('DJSetEditor');
+const db = new Dexie('DJSetEditor')
 db.version(1).stores({
   tracks: '&name, bpm',
   mixes: '++id',
   sets: '++id'
-});
+})
 
-const errHandler = err => toast.error(`Oops, there was a problem: ${err.message}`);
+const errHandler = err => toast.error(`Oops, there was a problem: ${err.message}`)
 
 const putTrack = ({ name, size, type, duration, bpm, sampleRate, peaks, fileHandle }) => {
   // Note this will overwrite an existing db entry with the same track name!
@@ -27,7 +27,7 @@ const putTrack = ({ name, size, type, duration, bpm, sampleRate, peaks, fileHand
     },
     fileHandle
   })
-    .catch(errHandler);
+    .catch(errHandler)
 }
 
-const deleteTrack = name => db.tracks.delete(name).catch(errHandler);
+const deleteTrack = name => db.tracks.delete(name).catch(errHandler)

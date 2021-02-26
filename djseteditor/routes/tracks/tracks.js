@@ -1,42 +1,66 @@
-import React, { useState, useEffect } from 'react';
-import classNames from 'classnames';
-import BootstrapTable from 'react-bootstrap-table-next';
-import ToolkitProvider from 'react-bootstrap-table2-toolkit';
-import { toast } from 'react-toastify';
-import moment from 'moment';
-import { db, deleteTrack } from '../../db';
-import { processTrack } from '../../audio';
-import Loader from '../../layout/loader';
+import React, { useState, useEffect } from 'react'
+import classNames from 'classnames'
+import BootstrapTable from 'react-bootstrap-table-next'
+import ToolkitProvider from 'react-bootstrap-table2-toolkit'
+import { toast } from 'react-toastify'
+import moment from 'moment'
+import { db, deleteTrack } from '../../db'
+import { processTrack } from '../../audio'
+import Loader from '../../layout/loader'
 
 import {
-    Card,
-    Container,
-    Badge,
-    UncontrolledTooltip,
-} from '../../../airframe/components';
+  Card,
+  Container,
+  Badge,
+  UncontrolledTooltip
+} from '../../../airframe/components'
 
-import { CustomSearch } from '../../../airframe/routes/Tables/ExtendedTable/components/CustomSearch';
+import { CustomSearch } from '../../../airframe/routes/Tables/ExtendedTable/components/CustomSearch'
 
 const sortCaret = (order) => {
-    if (!order)
-        return <i className="fa fa-fw fa-sort text-muted"></i>;
-    if (order)
-        return <i className={`fa fa-fw text-muted fa-sort-${order}`}></i>
-};
+  if (!order) { return <i className="fa fa-fw fa-sort text-muted"></i> }
+  if (order) { return <i className={`fa fa-fw text-muted fa-sort-${order}`}></i> }
+}
 
 export const Tracks = () => {
-    const [isOver, setIsOver] = useState(false);
-    const [tracks, setTracks] = useState([]);
-    const [analyzing, setAnalyzing] = useState(false);
+  const [isOver, setIsOver] = useState(false)
+  const [tracks, setTracks] = useState([])
+  const [analyzing, setAnalyzing] = useState(false)
 
-    useEffect(() => {
-        const getTracks = async () => {
-            db.tracks.toArray().then(tracks => setTracks(tracks));
-        };
-        getTracks();
-    }, []);
+  useEffect(() => {
+    const getTracks = async () => {
+      db.tracks.toArray().then(tracks => setTracks(tracks))
+    }
+    getTracks()
+  }, [])
 
-    const actions = (cell, row) => <>
+  const _removeFile = async (e, row) => {
+    e.preventDefault()
+    await deleteTrack(row.name)
+    toast.success(<>Deleted <strong>{row.name}</strong></>)
+    setTracks(tracks.filter(t => t.name !== row.name))
+  }
+
+  const _filesDropped = event => {
+    event.preventDefault()
+    for (const item of event.dataTransfer.items) {
+      if (item.kind === 'file') {
+        setAnalyzing(true)
+        // do not await here!
+        item.getAsFileSystemHandle().then(async fileHandle => {
+          if (fileHandle.kind === 'directory') {
+            toast.error('Sorry, folder support is not ready yet. For now, you can select multiple files to add.')
+          } else {
+            await processTrack(fileHandle)
+            setAnalyzing(false)
+          }
+        })
+      }
+    }
+    setIsOver(false)
+  }
+
+  const actions = (cell, row) => <>
         <div onClick={e => _removeFile(e, row)} id="UncontrolledTooltipDelete" style={{ cursor: 'pointer' }}>
             <i className="fa fa-fw fa-close text-danger"></i>
         </div>
@@ -45,118 +69,92 @@ export const Tracks = () => {
     </UncontrolledTooltip>
     </>
 
-    const createColumnDefinitions = () => {
-        const classes = 'text-center';
-        const headerStyle = {
-            color: '#333',
-            textAlign: 'center'
-        }
-
-        return [
-            {
-                dataField: 'name',
-                text: 'Track Name',
-                sort: true,
-                headerStyle: {
-                    color: '#333',
-                    textAlign: 'left'
-                },
-                sortCaret
-            }, {
-                dataField: 'bpm',
-                text: 'BPM',
-                sort: true,
-                headerStyle,
-                classes,
-                sortCaret,
-                formatter: cell => cell.toFixed(0)
-            }, {
-                dataField: 'duration',
-                text: 'Duration',
-                sort: true,
-                headerStyle,
-                classes,
-                sortCaret,
-                formatter: cell => `${(cell / 60).toFixed(1)}m`
-            },
-            {
-                dataField: 'mixes',
-                text: 'Mixes',
-                sort: true,
-                headerStyle,
-                classes,
-                sortCaret
-            }, {
-                dataField: 'sets',
-                text: 'Sets',
-                sort: true,
-                headerStyle,
-                classes,
-                sortCaret
-            },
-            {
-                dataField: 'lastModified',
-                text: 'Uploaded',
-                sort: true,
-                headerStyle,
-                classes,
-                sortCaret,
-                style: { minWidth: '140px' },
-                formatter: cell => moment(cell).fromNow()
-            },
-            {
-                dataField: 'actions',
-                text: 'Actions',
-                sort: false,
-                headerStyle,
-                classes,
-                formatter: actions
-            }
-        ];
+  const createColumnDefinitions = () => {
+    const classes = 'text-center'
+    const headerStyle = {
+      color: '#333',
+      textAlign: 'center'
     }
 
-    const dropzoneClass = classNames({
-        'dropzone--active': isOver
-    }, 'dropzone');
+    return [
+      {
+        dataField: 'name',
+        text: 'Track Name',
+        sort: true,
+        headerStyle: {
+          color: '#333',
+          textAlign: 'left'
+        },
+        sortCaret
+      }, {
+        dataField: 'bpm',
+        text: 'BPM',
+        sort: true,
+        headerStyle,
+        classes,
+        sortCaret,
+        formatter: cell => cell.toFixed(0)
+      }, {
+        dataField: 'duration',
+        text: 'Duration',
+        sort: true,
+        headerStyle,
+        classes,
+        sortCaret,
+        formatter: cell => `${(cell / 60).toFixed(1)}m`
+      },
+      {
+        dataField: 'mixes',
+        text: 'Mixes',
+        sort: true,
+        headerStyle,
+        classes,
+        sortCaret
+      }, {
+        dataField: 'sets',
+        text: 'Sets',
+        sort: true,
+        headerStyle,
+        classes,
+        sortCaret
+      },
+      {
+        dataField: 'lastModified',
+        text: 'Uploaded',
+        sort: true,
+        headerStyle,
+        classes,
+        sortCaret,
+        style: { minWidth: '140px' },
+        formatter: cell => moment(cell).fromNow()
+      },
+      {
+        dataField: 'actions',
+        text: 'Actions',
+        sort: false,
+        headerStyle,
+        classes,
+        formatter: actions
+      }
+    ]
+  }
 
-    const columnDefs = createColumnDefinitions();
+  const dropzoneClass = classNames({
+    'dropzone--active': isOver
+  }, 'dropzone')
 
-    const _removeFile = async (e, row) => {
-        e.preventDefault();
-        await deleteTrack(row.name);
-        toast.success(<>Deleted <strong>{row.name}</strong></>)
-        setTracks(tracks.filter(t => t.name !== row.name));
-    }
+  const columnDefs = createColumnDefinitions()
 
-    const _filesDropped = event => {
-        event.preventDefault();
-        for (const item of event.dataTransfer.items) {
-            if (item.kind === 'file') {
-                setAnalyzing(true)
-                // do not await here!
-                item.getAsFileSystemHandle().then(async fileHandle => {
-                    if (fileHandle.kind === 'directory') {
-                        toast.error('Sorry, folder support is not ready yet. For now, you can select multiple files to add.')
-                    } else {
-                        await processTrack(fileHandle);
-                        setAnalyzing(false)
-                    }
-                })
-            }
-        }
-        setIsOver(false)
-    }
+  const browseFile = async () => {
+    const files = await window.showOpenFilePicker({ multiple: true })
+    files.forEach(async fileHandle => {
+      setAnalyzing(true)
+      await processTrack(fileHandle)
+      setAnalyzing(false)
+    })
+  }
 
-    const browseFile = async () => {
-        const files = await window.showOpenFilePicker({ multiple: true });
-        files.forEach(async fileHandle => {
-            setAnalyzing(true)
-            await processTrack(fileHandle);
-            setAnalyzing(false)
-        })
-    }
-
-    return (
+  return (
         <Container>
             <div className="mt-4 mb-4">
                 <div
@@ -179,8 +177,9 @@ export const Tracks = () => {
 
             <Loader hidden={!analyzing} />
 
-            {!tracks.length ? null :
-                <ToolkitProvider
+            {!tracks.length
+              ? null
+              : <ToolkitProvider
                     keyField="name"
                     data={tracks}
                     columns={columnDefs}
@@ -202,7 +201,7 @@ export const Tracks = () => {
                                         >
                                             {tracks.length}
                                         </Badge>
-                                        {`Track${tracks.length == 1 ? '' : 's'}`}
+                                        {`Track${tracks.length === 1 ? '' : 's'}`}
                                     </div>
                                 </div>
                                 <Card className="mb-3 p-0 bt-0">
@@ -221,5 +220,10 @@ export const Tracks = () => {
                 </ToolkitProvider>
             }
         </Container>
-    );
+  )
+}
+
+Tracks.propTypes = {
+  baseProps: Object,
+  searchProps: Object
 }

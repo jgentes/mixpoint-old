@@ -1,0 +1,21 @@
+{
+  "extends": "@tsconfig/node12/tsconfig.json",
+  "compilerOptions": {
+    "lib": [
+      "es5",
+      "es6",
+      "dom"
+    ],
+    "jsx": "react",
+    "sourceMap": true,
+    "preserveConstEnums": true
+  },
+  "strict": false,
+  "include": [
+    "djseteditor/**/*"
+  ],
+  "exclude": [
+    "node_modules",
+    "**/*.spec.ts"
+  ]
+}
