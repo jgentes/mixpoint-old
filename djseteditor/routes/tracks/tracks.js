@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react'
+import PropTypes from 'prop-types'
 import classNames from 'classnames'
 import BootstrapTable from 'react-bootstrap-table-next'
 import ToolkitProvider from 'react-bootstrap-table2-toolkit'
@@ -224,6 +225,6 @@ export const Tracks = () => {
 }
 
 Tracks.propTypes = {
-  baseProps: Object,
-  searchProps: Object
+  baseProps: PropTypes.object,
+  searchProps: PropTypes.object
 }

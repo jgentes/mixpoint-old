@@ -3,10 +3,7 @@ module.exports = {
     browser: true,
     es2021: true
   },
-  extends: [
-    'plugin:react/recommended',
-    'standard'
-  ],
+  extends: ['plugin:react/recommended', 'prettier-standard', 'prettier/react'],
   settings: {
     react: { version: 'detect' }
   },
@@ -18,15 +15,16 @@ module.exports = {
     ecmaVersion: 12,
     sourceType: 'module'
   },
-  plugins: [
-    'react',
-    '@typescript-eslint'
-  ],
+  plugins: ['react', 'html', '@typescript-eslint'],
   ignorePatterns: ['/airframe'],
   rules: {
     'no-use-before-define': 'off',
     '@typescript-eslint/no-use-before-define': ['error'],
     'import/no-webpack-loader-syntax': 'off',
-    'no-unused-vars': 'warn'
+    'no-unused-vars': 'warn',
+    "prettier/prettier": ["error", {
+      "endOfLine": "auto"
+    }]
+  }],
   }
 }

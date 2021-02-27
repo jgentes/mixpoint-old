@@ -34,30 +34,7 @@ export const Mixes = () => {
             </div>
 
             <div className="mb-5">
-                <Card className="mb-3">
-                    <CardBody>
-                        <div className="d-flex mb-3">
-                            <CardTitle tag="h6" className="mb-0 align-self-center">
-                                Right Input Button
-                                </CardTitle>
-                            <Form inline className="ml-auto">
-                                <FormGroup>
-                                    <InputGroup size="sm">
-                                        <Input type="text" name="text" id="text" className="ml-auto" placeholder="Enter..." />
-                                        <InputGroupAddon addonType="append">
-                                            <Button color="primary">
-                                                Search
-                                                </Button>
-                                        </InputGroupAddon>
-                                    </InputGroup>
-                                </FormGroup>
-                            </Form>
-                        </div>
-                            TEst card
-
-                        <TrackForm />
-                    </CardBody>
-                </Card>
+                <TrackForm />
             </div>
         </Container>
   )

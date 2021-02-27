@@ -1,4 +1,5 @@
 import React from 'react'
+import PropTypes from 'prop-types'
 import classNames from 'classnames'
 
 const Loader = props => {
@@ -20,8 +21,8 @@ const Loader = props => {
 }
 
 Loader.propTypes = {
-  className: String,
-  hidden: Boolean
+  className: PropTypes.string,
+  hidden: PropTypes.bool
 }
 
 export default Loader

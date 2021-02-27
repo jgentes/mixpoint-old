@@ -12,19 +12,17 @@ db.version(1).stores({
 
 const errHandler = err => toast.error(`Oops, there was a problem: ${err.message}`)
 
-const putTrack = ({ name, size, type, duration, bpm, sampleRate, peaks, fileHandle }) => {
+const putTrack = async ({ name, size, type, duration, bpm, sampleRate, offset, peaks, fileHandle }) => {
   // Note this will overwrite an existing db entry with the same track name!
-  db.tracks.put({
+  await db.tracks.put({
     name,
     size,
     lastModified: Date.now(),
     type,
     duration,
     bpm,
-    analysis: {
-      sampleRate,
-      peaks
-    },
+    offset,
+    sampleRate,
     fileHandle
   })
     .catch(errHandler)
