@@ -3,7 +3,7 @@ module.exports = {
     browser: true,
     es2021: true
   },
-  extends: ['plugin:react/recommended', 'prettier-standard', 'prettier/react'],
+  extends: ['plugin:react/recommended'],
   settings: {
     react: { version: 'detect' }
   },
@@ -21,10 +21,7 @@ module.exports = {
     'no-use-before-define': 'off',
     '@typescript-eslint/no-use-before-define': ['error'],
     'import/no-webpack-loader-syntax': 'off',
-    'no-unused-vars': 'warn',
-    "prettier/prettier": ["error", {
-      "endOfLine": "auto"
-    }]
-  }],
+    'no-unused-vars': 'warn'
+  },
   }
 }

@@ -51,7 +51,7 @@ const TrackForm = () => {
       overviewWaveformColor: 'rgba(89, 165, 89, 0.7)'
     }
 
-    Peaks.init(options, function(err, waveform) {
+    Peaks.init(options, function (err, waveform) {
       if (err) return toast.error(err.message)
 
       setCanvas(waveform)
@@ -61,7 +61,7 @@ const TrackForm = () => {
 
       // set options
       waveform.zoom.setZoom(3) // 512
-      options.containers.zoomview.onwheel = (e) => {
+      options.containers.zoomview.onwheel = e => {
         e.preventDefault()
         e.deltaY === 100 ? waveform?.zoom.zoomOut() : waveform.zoom.zoomIn()
       }
@@ -116,7 +116,7 @@ const TrackForm = () => {
     initPeaks(await processTrack(fileHandle))
   }
 
-  const adjustBPM = (form) => {
+  const adjustBPM = form => {
     form.preventDefault()
     const formData = new FormData(form.target)
     const { newBpm } = Object.fromEntries(formData.entries())
@@ -124,43 +124,43 @@ const TrackForm = () => {
   }
 
   return (
-    <Card className="mb-3">
+    <Card className='mb-3'>
       <CardBody>
-        <div className="d-flex mb-3">
-          <CardTitle tag="h6" className="mb-0 align-self-center">
+        <div className='d-flex mb-3'>
+          <CardTitle tag='h6' className='mb-0 align-self-center'>
             Right Input Button
           </CardTitle>
         </div>
         <div>
-          <Button color="success" onClick={() => canvas.player.play()}>
-            <i className="fa fa-play mr-2"> </i>
+          <Button color='success' onClick={() => canvas.player.play()}>
+            <i className='fa fa-play mr-2'> </i>
             Play
           </Button>
-          <Button color="danger" onClick={() => canvas.player.pause()}>
-            <i className="fa fa-pause mr-2"> </i>
+          <Button color='danger' onClick={() => canvas.player.pause()}>
+            <i className='fa fa-pause mr-2'> </i>
             Pause
           </Button>
-          <Button color="warning" onClick={audioChange}>
-            <i className="fa fa-eject mr-2"> </i>
+          <Button color='warning' onClick={audioChange}>
+            <i className='fa fa-eject mr-2'> </i>
             Load
           </Button>
         </div>
 
         {!primaryTrack.name ? null : (
-          <div className="m-lg"> {primaryTrack.name} </div>
+          <div className='m-lg'> {primaryTrack.name} </div>
         )}
 
-        <Form inline className="ml-auto" onSubmit={adjustBPM}>
+        <Form inline className='ml-auto' onSubmit={adjustBPM}>
           <FormGroup>
-            <InputGroup size="sm">
+            <InputGroup size='sm'>
               <Input
-                type="text"
-                name="newBpm"
-                className="ml-auto"
+                type='text'
+                name='newBpm'
+                className='ml-auto'
                 placeholder={primaryTrack.bpm || 0}
               />
-              <InputGroupAddon addonType="append">
-                <Button color="primary">Adjust BPM</Button>
+              <InputGroupAddon addonType='append'>
+                <Button color='primary'>Adjust BPM</Button>
               </InputGroupAddon>
             </InputGroup>
           </FormGroup>
@@ -168,33 +168,36 @@ const TrackForm = () => {
 
         <Loader hidden={!analyzing} />
 
-        <div id="peaks-container">
-          <div id="zoomview-container" />
-          <div id="overview-container" style={{ height: '60px' }} />
+        <div id='peaks-container'>
+          <div id='zoomview-container' />
+          <div id='overview-container' style={{ height: '60px' }} />
         </div>
 
-        <div className="d-flex">
+        <div className='d-flex'>
           <Button
-            color="secondary"
+            color='secondary'
             outline
-            size="sm"
-            className="mr-2 align-self-center text-center">
-            <i className="fa fa-fw fa-caret-left"> </i>
+            size='sm'
+            className='mr-2 align-self-center text-center'
+          >
+            <i className='fa fa-fw fa-caret-left'> </i>
             <div> Prev </div>
           </Button>
           <Button
-            color="secondary"
-            size="lg"
-            className="mr-2 align-self-center text-center">
-            <i className="fa fa-fw fa-check"> </i>
+            color='secondary'
+            size='lg'
+            className='mr-2 align-self-center text-center'
+          >
+            <i className='fa fa-fw fa-check'> </i>
             <div> Confirm </div>
           </Button>
           <Button
-            color="secondary"
+            color='secondary'
             outline
-            size="sm"
-            className="mr-2 align-self-center">
-            <i className="fa fa-fw fa-caret-right"> </i>
+            size='sm'
+            className='mr-2 align-self-center'
+          >
+            <i className='fa fa-fw fa-caret-right'> </i>
             <div> Next </div>
           </Button>
         </div>
