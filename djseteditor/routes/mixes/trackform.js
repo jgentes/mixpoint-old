@@ -2,6 +2,9 @@ import React, { useRef, useState } from 'react'
 import Peaks from 'peaks.js'
 import {
   Button,
+  Card,
+  CardBody,
+  CardTitle,
   Form,
   FormGroup,
   InputGroup,
@@ -103,6 +106,12 @@ const TrackForm = () => {
     */
 
       setAnalyzing(false)
+
+      toast.success(
+        <>
+          Loaded <strong>{name}</strong>
+        </>
+      )
     })
   }
 

@@ -1,6 +1,4 @@
-import React from 'react'
 import { db, putTrack } from './db'
-import { toast } from 'react-toastify'
 import { guess } from 'web-audio-beat-detector'
 
 export { getAudioBuffer, processTrack }
@@ -12,7 +10,7 @@ const getAudioBuffer = async file => {
   return { audioBuffer, audioCtx }
 }
 
-const processTrack = async (fileHandle, options) => {
+const processTrack = async fileHandle => {
   const file = await fileHandle.getFile()
   const { name, size, type } = file
 
@@ -20,9 +18,16 @@ const processTrack = async (fileHandle, options) => {
   const { duration, sampleRate } = audioBuffer
   const { offset, tempo } = await guess(audioBuffer)
 
-  await putTrack({ name, size, type, duration, bpm: tempo, offset, sampleRate, fileHandle })
-
-  toast.success(<>Loaded <strong>{name}</strong></>)
+  await putTrack({
+    name,
+    size,
+    type,
+    duration,
+    bpm: tempo,
+    offset,
+    sampleRate,
+    fileHandle
+  })
 
   const track = await db.tracks.get(name)
   return { track, audioBuffer, audioCtx, bpm: tempo, offset }

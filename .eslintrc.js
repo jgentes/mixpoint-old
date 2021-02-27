@@ -7,7 +7,7 @@ module.exports = {
   settings: {
     react: { version: 'detect' }
   },
-  parser: '@typescript-eslint/parser',
+  parser: 'babel-eslint',
   parserOptions: {
     ecmaFeatures: {
       jsx: true
@@ -15,13 +15,12 @@ module.exports = {
     ecmaVersion: 12,
     sourceType: 'module'
   },
-  plugins: ['react', 'html', '@typescript-eslint'],
+  plugins: ['react', '@typescript-eslint'],
   ignorePatterns: ['/airframe'],
   rules: {
     'no-use-before-define': 'off',
     '@typescript-eslint/no-use-before-define': ['error'],
     'import/no-webpack-loader-syntax': 'off',
     'no-unused-vars': 'warn'
-  },
   }
 }
