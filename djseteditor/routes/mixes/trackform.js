@@ -10,7 +10,7 @@ import {
   InputGroup,
   InputGroupAddon,
   Input
-} from '../../../airframe/components'
+} from 'reactstrap'
 import { processTrack, getAudioBuffer } from '../../audio'
 import { toast } from 'react-toastify'
 import Loader from '../../layout/loader'
@@ -24,6 +24,7 @@ const TrackForm = () => {
   const [primaryTrack, setTrack] = useState({})
   const [primaryBuffer, setBuffer] = useState()
   const [canvas, setCanvas] = useState()
+  const [primaryBpm, setBpm] = useState()
 
   const initPeaks = async ({ track, audioBuffer = primaryBuffer }) => {
     if (track) setTrack(track)
@@ -71,8 +72,9 @@ const TrackForm = () => {
 
       const controlPeaks = []
       const { duration, bpm, offset } = track
-      const beatInterval = 60 / bpm
+      setBpm(bpm)
 
+      const beatInterval = 60 / bpm
       let time = offset
 
       // work backward from initialPeak to peak out start of track (zerotime) based on bpm
@@ -109,7 +111,7 @@ const TrackForm = () => {
 
       toast.success(
         <>
-          Loaded <strong>{name}</strong>
+          Loaded <strong>{track.name}</strong>
         </>
       )
     })
@@ -125,20 +127,40 @@ const TrackForm = () => {
     initPeaks(await processTrack(fileHandle))
   }
 
-  const adjustBPM = form => {
-    form.preventDefault()
-    const formData = new FormData(form.target)
-    const { newBpm } = Object.fromEntries(formData.entries())
+  const adjustBPM = newBpm => {
+    setBpm(Number(newBpm))
     audioElement.current.playbackRate = newBpm / primaryTrack.bpm
   }
 
   return (
     <Card className='mb-3'>
       <CardBody>
-        <div className='d-flex mb-3'>
-          <CardTitle tag='h6' className='mb-0 align-self-center'>
-            Right Input Button
-          </CardTitle>
+        <div className='d-flex justify-content-between mb-3'>
+          <h6 className='p1'>{primaryTrack.name || 'No Track Loaded..'}</h6>
+          <InputGroup
+            size='sm'
+            className='float-right'
+            style={{ width: '140px' }}
+          >
+            <Input
+              type='number'
+              step='.1'
+              name='newBpm'
+              className={`ml-auto ${!primaryBpm ? 'text-gray-500' : ''}`}
+              disabled={!primaryBpm}
+              onChange={e => adjustBPM(e.target.value)}
+              value={primaryBpm?.toFixed(1) || 0}
+            />
+            <InputGroupAddon addonType='append'>
+              <Button
+                color='primary'
+                disabled={!primaryBpm || primaryBpm === primaryTrack.bpm}
+                onClick={() => adjustBPM(primaryTrack.bpm)}
+              >
+                Reset BPM
+              </Button>
+            </InputGroupAddon>
+          </InputGroup>
         </div>
         <div>
           <Button color='success' onClick={() => canvas.player.play()}>
@@ -154,26 +176,6 @@ const TrackForm = () => {
             Load
           </Button>
         </div>
-
-        {!primaryTrack.name ? null : (
-          <div className='m-lg'> {primaryTrack.name} </div>
-        )}
-
-        <Form inline className='ml-auto' onSubmit={adjustBPM}>
-          <FormGroup>
-            <InputGroup size='sm'>
-              <Input
-                type='text'
-                name='newBpm'
-                className='ml-auto'
-                placeholder={primaryTrack.bpm || 0}
-              />
-              <InputGroupAddon addonType='append'>
-                <Button color='primary'>Adjust BPM</Button>
-              </InputGroupAddon>
-            </InputGroup>
-          </FormGroup>
-        </Form>
 
         <Loader hidden={!analyzing} />
 

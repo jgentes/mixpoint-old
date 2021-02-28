@@ -1,8 +1,6 @@
 import { db, putTrack } from './db'
 import { guess } from 'web-audio-beat-detector'
 
-export { getAudioBuffer, processTrack }
-
 const getAudioBuffer = async file => {
   const arrayBuffer = await file.arrayBuffer()
   const audioCtx = new (window.AudioContext || window.webkitAudioContext)()
@@ -32,3 +30,5 @@ const processTrack = async fileHandle => {
   const track = await db.tracks.get(name)
   return { track, audioBuffer, audioCtx, bpm: tempo, offset }
 }
+
+export { getAudioBuffer, processTrack }

@@ -26,11 +26,7 @@ module.exports = {
     publicPath: BASE_PATH
   },
   resolve: {
-    modules: [
-      'node_modules',
-      config.srcDir,
-      config.editorDir
-    ]
+    modules: ['node_modules', config.srcDir, config.editorDir]
   },
   plugins: [
     new CleanWebpackPlugin(),
@@ -84,8 +80,11 @@ module.exports = {
           },
           { loader: 'postcss-loader' }
         ],
-        exclude: [path.resolve(config.srcDir, 'styles')],
-        include: [config.srcDir]
+        exclude: [
+          path.resolve(config.srcDir, 'styles'),
+          path.resolve(config.editorDir, 'styles')
+        ],
+        include: [config.srcDir, config.editorDir]
       },
       {
         test: /\.scss$/,
@@ -106,18 +105,20 @@ module.exports = {
             }
           }
         ],
-        exclude: [path.resolve(config.srcDir, 'styles')],
-        include: [config.srcDir]
+        exclude: [
+          path.resolve(config.srcDir, 'styles'),
+          path.resolve(config.editorDir, 'styles')
+        ],
+        include: [config.srcDir, config.editorDir]
       },
       // Global Styles
       {
         test: /\.css$/,
-        use: [
-          ExtractCssChunks.loader,
-          'css-loader',
-          'postcss-loader'
-        ],
-        include: [path.resolve(config.srcDir, 'styles')]
+        use: [ExtractCssChunks.loader, 'css-loader', 'postcss-loader'],
+        include: [
+          path.resolve(config.srcDir, 'styles'),
+          path.resolve(config.editorDir, 'styles')
+        ]
       },
       {
         test: /\.scss$/,
@@ -132,7 +133,10 @@ module.exports = {
             }
           }
         ],
-        include: [path.resolve(config.srcDir, 'styles')]
+        include: [
+          path.resolve(config.srcDir, 'styles'),
+          path.resolve(config.editorDir, 'styles')
+        ]
       },
       // Fonts
       {
@@ -160,8 +164,10 @@ module.exports = {
       index: BASE_PATH
     },
     before (app) {
-      app.use('/assets',
-        express.static(path.join(__dirname, '/../djseteditor/assets')))
+      app.use(
+        '/assets',
+        express.static(path.join(__dirname, '/../djseteditor/assets'))
+      )
     },
     host: '0.0.0.0',
     port: 4100

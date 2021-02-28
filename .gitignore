@@ -9,3 +9,6 @@ yarn.lock
 # uploads
 tmp
 uploads
+
+# airframe
+airframe-src

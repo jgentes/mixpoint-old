@@ -1,10 +1,10 @@
 import React from 'react'
 import PropTypes from 'prop-types'
 
-import '../../airframe/styles/bootstrap.scss'
-import '../../airframe/styles/main.scss'
-import '../../airframe/styles/plugins/plugins.scss'
-import '../../airframe/styles/plugins/plugins.css'
+import '../styles/bootstrap.scss'
+import '../styles/main.scss'
+import '../styles/plugins/plugins.scss'
+import '../styles/plugins/plugins.css'
 
 import { Helmet } from 'react-helmet'
 import { TopNavbar } from './topnav/topnavbar'
@@ -13,8 +13,18 @@ import { ToastContainer } from 'react-toastify'
 import config from '../../config'
 
 const favIcons = [
-  { rel: 'icon', type: 'image/jpg', sizes: '32x32', href: '/assets/soundwave-32px.jpg' },
-  { rel: 'icon', type: 'image/jpg', sizes: '16x16', href: '/assets/soundwave-16px.jpg' }
+  {
+    rel: 'icon',
+    type: 'image/jpg',
+    sizes: '32x32',
+    href: '/assets/soundwave-32px.jpg'
+  },
+  {
+    rel: 'icon',
+    type: 'image/jpg',
+    sizes: '16x16',
+    href: '/assets/soundwave-16px.jpg'
+  }
 ]
 
 class AppLayout extends React.Component {
@@ -28,16 +38,13 @@ class AppLayout extends React.Component {
     return (
       <>
         <Helmet>
-          <meta charSet="utf-8" />
+          <meta charSet='utf-8' />
           <title>{config.siteTitle}</title>
-          <link rel="canonical" href={config.siteCannonicalUrl} />
-          <meta name="description" content={config.siteDescription} />
-          {
-            favIcons.map((favIcon, index) => (
-              <link {...favIcon} key={index} />
-            ))
-          }
-
+          <link rel='canonical' href={config.siteCannonicalUrl} />
+          <meta name='description' content={config.siteDescription} />
+          {favIcons.map((favIcon, index) => (
+            <link {...favIcon} key={index} />
+          ))}
         </Helmet>
 
         <TopNavbar />

@@ -1,6 +1,5 @@
 import React, { useState, useEffect } from 'react'
 import PropTypes from 'prop-types'
-import classNames from 'classnames'
 import BootstrapTable from 'react-bootstrap-table-next'
 import ToolkitProvider from 'react-bootstrap-table2-toolkit'
 import { toast } from 'react-toastify'
@@ -8,19 +7,17 @@ import moment from 'moment'
 import { db, deleteTrack } from '../../db'
 import { processTrack } from '../../audio'
 import Loader from '../../layout/loader'
+import { SearchBar } from './SearchBar'
 
-import {
-  Card,
-  Container,
-  Badge,
-  UncontrolledTooltip
-} from '../../../airframe/components'
+import { Card, Container, Badge, UncontrolledTooltip } from 'reactstrap'
 
-import { CustomSearch } from '../../../airframe/routes/Tables/ExtendedTable/components/CustomSearch'
-
-const sortCaret = (order) => {
-  if (!order) { return <i className="fa fa-fw fa-sort text-muted"></i> }
-  if (order) { return <i className={`fa fa-fw text-muted fa-sort-${order}`}></i> }
+const sortCaret = order => {
+  if (!order) {
+    return <i className='fa fa-fw fa-sort text-muted'></i>
+  }
+  if (order) {
+    return <i className={`fa fa-fw text-muted fa-sort-${order}`}></i>
+  }
 }
 
 export const Tracks = () => {
@@ -38,7 +35,11 @@ export const Tracks = () => {
   const _removeFile = async (e, row) => {
     e.preventDefault()
     await deleteTrack(row.name)
-    toast.success(<>Deleted <strong>{row.name}</strong></>)
+    toast.success(
+      <>
+        Deleted <strong>{row.name}</strong>
+      </>
+    )
     setTracks(tracks.filter(t => t.name !== row.name))
   }
 
@@ -50,7 +51,9 @@ export const Tracks = () => {
         // do not await here!
         item.getAsFileSystemHandle().then(async fileHandle => {
           if (fileHandle.kind === 'directory') {
-            toast.error('Sorry, folder support is not ready yet. For now, you can select multiple files to add.')
+            toast.error(
+              'Sorry, folder support is not ready yet. For now, you can select multiple files to add.'
+            )
           } else {
             await processTrack(fileHandle)
             setAnalyzing(false)
@@ -61,14 +64,20 @@ export const Tracks = () => {
     setIsOver(false)
   }
 
-  const actions = (cell, row) => <>
-        <div onClick={e => _removeFile(e, row)} id="UncontrolledTooltipDelete" style={{ cursor: 'pointer' }}>
-            <i className="fa fa-fw fa-close text-danger"></i>
-        </div>
-        <UncontrolledTooltip placement="left" target="UncontrolledTooltipDelete">
-            Delete Track
-    </UncontrolledTooltip>
+  const actions = (cell, row) => (
+    <>
+      <div
+        onClick={e => _removeFile(e, row)}
+        id='UncontrolledTooltipDelete'
+        style={{ cursor: 'pointer' }}
+      >
+        <i className='fa fa-fw fa-close text-danger'></i>
+      </div>
+      <UncontrolledTooltip placement='left' target='UncontrolledTooltipDelete'>
+        Delete Track
+      </UncontrolledTooltip>
     </>
+  )
 
   const createColumnDefinitions = () => {
     const classes = 'text-center'
@@ -87,7 +96,8 @@ export const Tracks = () => {
           textAlign: 'left'
         },
         sortCaret
-      }, {
+      },
+      {
         dataField: 'bpm',
         text: 'BPM',
         sort: true,
@@ -95,7 +105,8 @@ export const Tracks = () => {
         classes,
         sortCaret,
         formatter: cell => cell.toFixed(0)
-      }, {
+      },
+      {
         dataField: 'duration',
         text: 'Duration',
         sort: true,
@@ -111,7 +122,8 @@ export const Tracks = () => {
         headerStyle,
         classes,
         sortCaret
-      }, {
+      },
+      {
         dataField: 'sets',
         text: 'Sets',
         sort: true,
@@ -140,10 +152,6 @@ export const Tracks = () => {
     ]
   }
 
-  const dropzoneClass = classNames({
-    'dropzone--active': isOver
-  }, 'dropzone')
-
   const columnDefs = createColumnDefinitions()
 
   const browseFile = async () => {
@@ -156,71 +164,61 @@ export const Tracks = () => {
   }
 
   return (
-        <Container>
-            <div className="mt-4 mb-4">
-                <div
-                    onClick={browseFile}
-                    className={dropzoneClass}
-                    onDrop={e => _filesDropped(e)}
-                    onDragOver={e => e.preventDefault()}
-                    onDragEnter={() => setIsOver(true)}
-                    onDragLeave={() => setIsOver(false)}
-                >
-                    <i className="fa fa-cloud-upload fa-fw fa-3x drop"></i>
-                    <h5 className='mt-0 drop'>
-                        Add Tracks
-                    </h5>
-                    <div className='drop'>
-                        Drag a file here or <span className='text-primary'>browse</span> for a file to add.
-                    </div>
+    <Container>
+      <div className='mt-4 mb-4'>
+        <div
+          onClick={browseFile}
+          className={`dropzone ${isOver ? 'dropzone--active' : ''}`}
+          onDrop={e => _filesDropped(e)}
+          onDragOver={e => e.preventDefault()}
+          onDragEnter={() => setIsOver(true)}
+          onDragLeave={() => setIsOver(false)}
+        >
+          <i className='fa fa-cloud-upload fa-fw fa-3x drop'></i>
+          <h5 className='mt-0 drop'>Add Tracks</h5>
+          <div className='drop'>
+            Drag a file here or <span className='text-primary'>browse</span> for
+            a file to add.
+          </div>
+        </div>
+      </div>
+
+      <Loader hidden={!analyzing} />
+
+      {!tracks.length ? null : (
+        <ToolkitProvider
+          keyField='name'
+          data={tracks}
+          columns={columnDefs}
+          search
+        >
+          {props => (
+            <React.Fragment>
+              <div className='d-flex mb-2'>
+                <div>
+                  <SearchBar {...props.searchProps} />
                 </div>
-            </div>
-
-            <Loader hidden={!analyzing} />
-
-            {!tracks.length
-              ? null
-              : <ToolkitProvider
-                    keyField="name"
-                    data={tracks}
-                    columns={columnDefs}
-                    search
-                >
-                    {
-                        props => (
-                            <React.Fragment>
-                                <div className="d-flex mb-2">
-                                    <div>
-                                        <CustomSearch
-                                            {...props.searchProps}
-                                        />
-                                    </div>
-                                    <div className="ml-auto px-2">
-                                        <Badge
-                                            className="mr-2 text-white"
-                                            color="blue"
-                                        >
-                                            {tracks.length}
-                                        </Badge>
-                                        {`Track${tracks.length === 1 ? '' : 's'}`}
-                                    </div>
-                                </div>
-                                <Card className="mb-3 p-0 bt-0">
-                                    <BootstrapTable
-                                        classes="table-responsive-lg mb-0"
-                                        bordered={false}
-                                        responsive
-                                        hover
-                                        {...props.baseProps}
-                                    />
-                                </Card>
-
-                            </React.Fragment>
-                        )
-                    }
-                </ToolkitProvider>
-            }
-        </Container>
+                <div className='ml-auto px-2'>
+                  <Badge className='mr-2 text-white' color='blue'>
+                    {tracks.length}
+                  </Badge>
+                  {`Track${tracks.length === 1 ? '' : 's'}`}
+                </div>
+              </div>
+              <Card className='mb-3 p-0 bt-0'>
+                <BootstrapTable
+                  classes='table-responsive-lg mb-0'
+                  bordered={false}
+                  responsive
+                  hover
+                  {...props.baseProps}
+                />
+              </Card>
+            </React.Fragment>
+          )}
+        </ToolkitProvider>
+      )}
+    </Container>
   )
 }
 
