@@ -1,11 +1,6 @@
 import React from 'react'
 import PropTypes from 'prop-types'
 
-import '../styles/bootstrap.scss'
-import '../styles/main.scss'
-import '../styles/plugins/plugins.scss'
-import '../styles/plugins/plugins.css'
-
 import { Helmet } from 'react-helmet'
 import { TopNavbar } from './topnav/topnavbar'
 import { ToastContainer } from 'react-toastify'

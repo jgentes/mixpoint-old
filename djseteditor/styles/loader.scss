@@ -4,9 +4,8 @@
   height: 50px;
   text-align: center;
   font-size: 10px;
-}
 
-.loader  > div {
+  > div {
     height: 100%;
     width: 8px;
     display: inline-block;
@@ -45,6 +44,7 @@
     animation-delay: -0.3s;
   }
 
+}
 
 @-webkit-keyframes delay {
   0%, 40%, 100% { -webkit-transform: scaleY(0.05) }  

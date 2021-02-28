@@ -4,9 +4,6 @@ import {
   Button,
   Card,
   CardBody,
-  CardTitle,
-  Form,
-  FormGroup,
   InputGroup,
   InputGroupAddon,
   Input
@@ -132,15 +129,17 @@ const TrackForm = () => {
     audioElement.current.playbackRate = newBpm / primaryTrack.bpm
   }
 
+  const customBpm = primaryBpm && primaryBpm !== primaryTrack.bpm
+
   return (
     <Card className='mb-3'>
       <CardBody>
         <div className='d-flex justify-content-between mb-3'>
-          <h6 className='p1'>{primaryTrack.name || 'No Track Loaded..'}</h6>
+          <h6 className='p-1'>{primaryTrack.name || 'No Track Loaded..'}</h6>
           <InputGroup
             size='sm'
             className='float-right'
-            style={{ width: '140px' }}
+            style={{ width: `${customBpm ? '140' : '110'}px` }}
           >
             <Input
               type='number'
@@ -154,10 +153,11 @@ const TrackForm = () => {
             <InputGroupAddon addonType='append'>
               <Button
                 color='primary'
-                disabled={!primaryBpm || primaryBpm === primaryTrack.bpm}
+                disabled={!customBpm}
                 onClick={() => adjustBPM(primaryTrack.bpm)}
               >
-                Reset BPM
+                {customBpm ? 'Reset ' : ''}
+                BPM
               </Button>
             </InputGroupAddon>
           </InputGroup>
