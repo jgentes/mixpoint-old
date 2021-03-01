@@ -9,7 +9,6 @@ export const TopNavbar = () => (
     expand='sm'
     light
     color={'primary'}
-    fluid
     className='bg-white pt-2 initial-loader bb-black-02 shadow-sm'
   >
     <div className='navbar-collapse-wrap container-fluid'>

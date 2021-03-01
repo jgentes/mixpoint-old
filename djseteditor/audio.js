@@ -8,13 +8,15 @@ const getAudioBuffer = async file => {
   return { audioBuffer, audioCtx }
 }
 
+const getBpm = async buffer => await guess(buffer)
+
 const processTrack = async fileHandle => {
   const file = await fileHandle.getFile()
   const { name, size, type } = file
 
   const { audioBuffer, audioCtx } = await getAudioBuffer(file)
   const { duration, sampleRate } = audioBuffer
-  const { offset, tempo } = await guess(audioBuffer)
+  const { offset, tempo } = await getBpm(audioBuffer)
 
   await putTrack({
     name,
@@ -31,4 +33,4 @@ const processTrack = async fileHandle => {
   return { track, audioBuffer, audioCtx, bpm: tempo, offset }
 }
 
-export { getAudioBuffer, processTrack }
+export { getAudioBuffer, processTrack, getBpm }

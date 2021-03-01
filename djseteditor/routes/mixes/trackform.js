@@ -1,4 +1,5 @@
 import React, { useRef, useState } from 'react'
+import PropTypes from 'prop-types'
 import Peaks from 'peaks.js'
 import {
   Button,
@@ -12,7 +13,11 @@ import { processTrack, getAudioBuffer } from '../../audio'
 import { toast } from 'react-toastify'
 import Loader from '../../layout/loader'
 
-const TrackForm = () => {
+const TrackForm = ({ trackKey }) => {
+  TrackForm.propTypes = {
+    trackKey: PropTypes.number
+  }
+
   const audioElement = useRef()
 
   // const [sliderControl, setSliderControl] = useState({})
@@ -37,12 +42,12 @@ const TrackForm = () => {
     setAudioSrc(url)
     setAnalyzing(true)
 
-    const options = {
+    const peakOptions = {
       containers: {
-        overview: document.getElementById('overview-container'),
-        zoomview: document.getElementById('zoomview-container')
+        overview: document.getElementById(`overview-container_${trackKey}`),
+        zoomview: document.getElementById(`zoomview-container_${trackKey}`)
       },
-      mediaElement: document.querySelector('audio'),
+      mediaElement: document.getElementById(`audio_${trackKey}`),
       webAudio: {
         audioBuffer
       },
@@ -52,24 +57,24 @@ const TrackForm = () => {
       overviewWaveformColor: 'rgba(89, 165, 89, 0.7)'
     }
 
-    Peaks.init(options, function (err, waveform) {
+    Peaks.init(peakOptions, function (err, waveform) {
       if (err) return toast.error(err.message)
 
       setCanvas(waveform)
 
-      // destroy the overview until we have created our points
+      // destroy the overview so that it doesn't receive the beat markers
       waveform.views.destroyOverview()
 
       // set options
       waveform.zoom.setZoom(3) // 512
-      options.containers.zoomview.onwheel = e => {
+      peakOptions.containers.zoomview.onwheel = e => {
         e.preventDefault()
         e.deltaY === 100 ? waveform?.zoom.zoomOut() : waveform.zoom.zoomIn()
       }
 
       const controlPeaks = []
       const { duration, bpm, offset } = track
-      setBpm(bpm)
+      setBpm(Number(bpm).toFixed(1))
 
       const beatInterval = 60 / bpm
       let time = offset
@@ -86,7 +91,7 @@ const TrackForm = () => {
       }
 
       waveform.points.add(pointArray)
-      waveform.views.createOverview(options.containers.overview)
+      waveform.views.createOverview(peakOptions.containers.overview)
 
       // create initial segment
       waveform.segments.add({
@@ -109,7 +114,8 @@ const TrackForm = () => {
       toast.success(
         <>
           Loaded <strong>{track.name}</strong>
-        </>
+        </>,
+        { autoClose: 3000 }
       )
     })
   }
@@ -125,30 +131,29 @@ const TrackForm = () => {
   }
 
   const adjustBPM = newBpm => {
-    setBpm(Number(newBpm))
+    setBpm(Number(newBpm).toFixed(1))
     audioElement.current.playbackRate = newBpm / primaryTrack.bpm
   }
 
-  const customBpm = primaryBpm && primaryBpm !== primaryTrack.bpm
+  const customBpm = primaryBpm && primaryBpm !== primaryTrack.bpm.toFixed(1)
 
   return (
     <Card className='mb-3'>
       <CardBody>
         <div className='d-flex justify-content-between mb-3'>
-          <h6 className='p-1'>{primaryTrack.name || 'No Track Loaded..'}</h6>
+          <h5>{primaryTrack.name || 'No Track Loaded..'}</h5>
           <InputGroup
             size='sm'
             className='float-right'
             style={{ width: `${customBpm ? '140' : '110'}px` }}
           >
             <Input
-              type='number'
-              step='.1'
+              type='text'
               name='newBpm'
-              className={`ml-auto ${!primaryBpm ? 'text-gray-500' : ''}`}
+              className={`h-auto ${!primaryBpm ? 'text-gray-500' : ''}`}
               disabled={!primaryBpm}
               onChange={e => adjustBPM(e.target.value)}
-              value={primaryBpm?.toFixed(1) || 0}
+              value={primaryBpm || 0}
             />
             <InputGroupAddon addonType='append'>
               <Button
@@ -179,9 +184,12 @@ const TrackForm = () => {
 
         <Loader hidden={!analyzing} />
 
-        <div id='peaks-container'>
-          <div id='zoomview-container' />
-          <div id='overview-container' style={{ height: '60px' }} />
+        <div id={`peaks-container_${trackKey}`}>
+          <div id={`zoomview-container_${trackKey}`} />
+          <div
+            id={`overview-container_${trackKey}`}
+            style={{ height: '60px' }}
+          />
         </div>
 
         <div className='d-flex'>
@@ -213,7 +221,7 @@ const TrackForm = () => {
           </Button>
         </div>
 
-        <audio src={audioSrc} ref={audioElement} />
+        <audio id={`audio_${trackKey}`} src={audioSrc} ref={audioElement} />
       </CardBody>
     </Card>
   )

@@ -1,10 +1,10 @@
-import React from 'react'
+import React, { useState } from 'react'
 import { Container, Button } from 'reactstrap'
 import TrackForm from './trackform.js'
 
 export const Mixes = () => {
-  const login = () => console.log('login')
-
+  const [tracks, addTrack] = useState([Date.now()])
+  console.log({ tracks })
   return (
     <Container>
       <div className='d-flex'>
@@ -15,17 +15,19 @@ export const Mixes = () => {
         </div>
 
         <Button
-          onClick={login}
+          onClick={() => addTrack([...tracks, Date.now()])}
           className='ml-auto align-self-center'
           color='primary'
           outline
         >
-          Login to Spotify
+          Add Track
         </Button>
       </div>
 
       <div className='mb-5'>
-        <TrackForm />
+        {tracks?.map(trackKey => (
+          <TrackForm key={trackKey} trackKey={trackKey} />
+        ))}
       </div>
     </Container>
   )

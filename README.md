@@ -8,7 +8,7 @@ For some reason, there are two types of products on the market for DJ's to use f
 
 The goal of this app is to provide a focused user experience that delivers on the need to lay out a series of tracks, easily tweak the transition from one track to the next, and save the output as a finished set. Perhaps it will evolve to automatically suggest transition timing and effects based on the sound dynamics of the music, however that's not the initial goal.
 
-Thanks go to [**Tomasz Owczarczyk**](https://github.com/0wczar) for the wonderfully minimal Airframe UI theme repackaged with MIT license.
+Thanks go to [**Tomasz Owczarczyk**](https://github.com/0wczar) for the wonderfully minimal Airframe UI styling used for various components.
 
 Thanks also the great [**BBC**](https://github.com/bbc) who created the [peaks.js](https://github.com/bbc/peaks.js) library for waveform analysis and navigation.
 

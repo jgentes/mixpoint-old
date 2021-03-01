@@ -1,6 +1,0 @@
-{
-  "prettier.semi": false,
-  "eslint.codeAction.showDocumentation": {
-    "enable": true
-  }
-}
