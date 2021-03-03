@@ -1,22 +1,17 @@
 import React, { useRef, useState } from 'react'
 import PropTypes from 'prop-types'
 import Peaks from 'peaks.js'
-import {
-  Button,
-  Card,
-  CardBody,
-  InputGroup,
-  InputGroupAddon,
-  Input
-} from 'reactstrap'
+import { Button, Card, Input, InputGroup, InputGroupAddon } from 'reactstrap'
 import { processTrack, getAudioBuffer } from '../../audio'
 import { toast } from 'react-toastify'
 import Loader from '../../layout/loader'
 import Slider from 'rc-slider'
 
-const TrackForm = ({ trackKey }) => {
+const TrackForm = ({ trackKey, mixState, updateTrack }) => {
   TrackForm.propTypes = {
-    trackKey: PropTypes.number
+    trackKey: PropTypes.number,
+    mixState: PropTypes.object,
+    updateTrack: PropTypes.func
   }
 
   const audioElement = useRef()
@@ -27,7 +22,23 @@ const TrackForm = ({ trackKey }) => {
   const [primaryTrack, setTrack] = useState({})
   const [primaryBuffer, setBuffer] = useState()
   const [canvas, setCanvas] = useState()
-  const [primaryBpm, setBpm] = useState()
+
+  const track1 = trackKey % 2
+
+  const adjustBpm = bpm => {
+    // get bpm from the user input field or mixState or current track
+    bpm = Number(
+      bpm ||
+        (mixState?.tracks && mixState.tracks[trackKey]?.bpm) ||
+        primaryTrack.bpm
+    )
+    // update play speed to new bpm
+    const playbackRate = bpm / (primaryTrack.bpm || bpm)
+    audioElement.current.playbackRate = playbackRate
+
+    // store custom bpm value in mixstate
+    updateTrack({ [trackKey]: { bpm: bpm.toFixed(1) } })
+  }
 
   const initPeaks = async ({ track, audioBuffer = primaryBuffer }) => {
     if (track) setTrack(track)
@@ -62,10 +73,6 @@ const TrackForm = ({ trackKey }) => {
     Peaks.init(peakOptions, (err, waveform) => {
       if (err) return toast.error(err.message)
 
-      waveform.on('zoom.update', (curr, prev) =>
-        console.log('zoom:', curr, prev)
-      )
-
       setCanvas(waveform)
 
       const zoomView = waveform.views.getView('zoomview')
@@ -82,8 +89,8 @@ const TrackForm = ({ trackKey }) => {
         e.deltaY === 100 ? waveform?.zoom.zoomOut() : waveform.zoom.zoomIn()
       }
 
-      const { duration, bpm, offset } = track
-      setBpm(Number(bpm).toFixed(1))
+      let { duration, bpm, offset } = track
+      adjustBpm(bpm)
 
       const beatInterval = 60 / bpm
       let time = offset
@@ -106,13 +113,22 @@ const TrackForm = ({ trackKey }) => {
 
       waveform.views.createOverview(peakOptions.containers.overview)
 
+      const timeFormat = secs =>
+        new Date(secs * 1000).toISOString().substr(15, 6)
+      const markFormatter = point =>
+        track1 ? (
+          <div style={{ marginTop: '-45px' }}>{timeFormat(point)}</div>
+        ) : (
+          timeFormat(point)
+        )
+
       const timeChange = (start, end) => {
         setSliderControl({
           min: start,
           max: end,
           marks: pointArray.reduce((o, p) => {
             return p < end && p > start
-              ? { ...o, [p]: new Date(p * 1000).toISOString().substr(15, 6) }
+              ? { ...o, [p]: markFormatter(p) }
               : { ...o }
           }, {})
         })
@@ -145,10 +161,15 @@ const TrackForm = ({ trackKey }) => {
   }
 
   const audioChange = async () => {
-    const [fileHandle] = await window.showOpenFilePicker()
+    if (!primaryTrack.name) setAnalyzing(true)
 
-    setTrack({ name: 'Loading..' })
-    setAnalyzing(true)
+    let fileHandle
+    try {
+      ;[fileHandle] = await window.showOpenFilePicker()
+      setAnalyzing(true)
+    } catch (e) {
+      return setAnalyzing(false)
+    }
 
     // release resources from previous peak rendering
     if (canvas) canvas.destroy()
@@ -156,46 +177,36 @@ const TrackForm = ({ trackKey }) => {
     initPeaks(await processTrack(fileHandle))
   }
 
-  const adjustBPM = newBpm => {
-    setBpm(Number(newBpm).toFixed(1))
-    audioElement.current.playbackRate = newBpm / primaryTrack.bpm
-  }
-
-  const customBpm = primaryBpm && primaryBpm !== primaryTrack.bpm?.toFixed(1)
-
   const bpmControl = (
-    <InputGroup
-      size='sm'
-      className='float-right'
-      style={{
-        width: `${customBpm ? '140' : '110'}px`,
-        position: 'relative',
-        zIndex: '999'
-      }}
-    >
-      <Input
-        type='text'
-        name='newBpm'
-        className={`h-auto ${!primaryBpm ? 'text-gray-500' : ''}`}
-        disabled={!primaryBpm}
-        onChange={e => adjustBPM(e.target.value)}
-        value={primaryBpm || 0}
-      />
-      <InputGroupAddon addonType='append'>
-        <Button
-          color='primary'
-          disabled={!customBpm}
-          onClick={() => adjustBPM(primaryTrack.bpm)}
-        >
-          {customBpm ? 'Reset ' : ''}
-          BPM
-        </Button>
-      </InputGroupAddon>
-    </InputGroup>
+    <div className='pr-2'>
+      <InputGroup size='sm' style={{ width: '100px' }}>
+        <Input
+          type='text'
+          className={`${!primaryTrack.bpm ? 'text-gray-500' : ''}`}
+          disabled={!primaryTrack.bpm}
+          onChange={e => adjustBpm(e.target.value)}
+          value={
+            (mixState?.tracks && mixState.tracks[trackKey]?.bpm) ||
+            primaryTrack.bpm?.toFixed(1) ||
+            0
+          }
+        />
+        <InputGroupAddon addonType='append'>
+          <Button color='primary'>BPM</Button>
+        </InputGroupAddon>
+      </InputGroup>
+    </div>
   )
 
-  const playerControl = (
-    <div className='float-left' style={{ position: 'relative', zIndex: '999' }}>
+  const playerControl = !primaryTrack.name ? null : (
+    <div
+      className='float-left'
+      style={{
+        position: 'relative',
+        zIndex: '999',
+        visibility: analyzing ? 'hidden' : 'visible'
+      }}
+    >
       <Button
         color='light'
         title='Play'
@@ -218,60 +229,103 @@ const TrackForm = ({ trackKey }) => {
   )
 
   const trackHeader = (
-    <div className='d-flex justify-content-between mb-3'>
-      <h5>{primaryTrack.name || 'No Track Loaded..'}</h5>
-      <Button
-        color='light'
-        title='Load Track'
-        size='sm'
-        className='m-1 b-black-02 float-right'
-        onClick={audioChange}
-      >
-        <i className='fa fa-eject text-warning' />
-      </Button>
+    <div className='d-flex justify-content-between my-3'>
+      <div>
+        <Button
+          color='light'
+          title='Load Track'
+          size='sm'
+          className='b-black-02'
+          onClick={audioChange}
+        >
+          <i className='fa fa-eject text-warning' />
+        </Button>
+        <div
+          style={{ display: 'inline', verticalAlign: 'middle' }}
+          className='pl-3'
+        >
+          <span className='h5'>
+            {analyzing ? 'Loading..' : primaryTrack.name || 'No Track Loaded..'}
+          </span>
+        </div>
+      </div>
+      <div className='float-right'>{bpmControl}</div>
     </div>
+  )
+
+  const slider = !sliderControl ? null : (
+    <div
+      className={track1 ? 'pb-3 pt-5' : 'pb-5 pt-3'}
+      style={{ visibility: analyzing ? 'hidden' : 'visible' }}
+    >
+      <Slider
+        min={sliderControl.min}
+        max={sliderControl.max}
+        marks={sliderControl.marks}
+        step={null}
+        included={false}
+        onAfterChange={() => console.log('2changed')}
+      />
+    </div>
+  )
+
+  const zoomview = (
+    <div
+      id={`zoomview-container_${trackKey}`}
+      style={{
+        height: primaryTrack.name ? '150px' : '0px',
+        visibility: analyzing ? 'hidden' : 'visible'
+      }}
+    />
+  )
+  const overview = (
+    <div
+      id={`overview-container_${trackKey}`}
+      style={{
+        height: primaryTrack.name ? '40px' : '0px',
+        visibility: analyzing ? 'hidden' : 'visible'
+      }}
+    />
+  )
+
+  const loader = (
+    <Loader
+      className='my-5'
+      style={{
+        display: analyzing ? 'block' : 'none'
+      }}
+    />
   )
 
   return (
     <Card className='mb-3'>
-      <CardBody>
-        {trackHeader}
+      <div className='mx-3'>
+        {track1 ? trackHeader : null}
+        {!track1 ? slider : null}
 
-        <Loader hidden={!analyzing} />
-
-        <div
-          id={`peaks-container_${trackKey}`}
-          style={{ visibility: analyzing ? 'hidden' : 'visible' }}
-        >
-          <div hidden={!primaryTrack.name}>
-            {playerControl}
-
-            {bpmControl}
-          </div>
-
-          <div
-            id={`overview-container_${trackKey}`}
-            style={{ height: '60px' }}
-          />
-
-          <div id={`zoomview-container_${trackKey}`} />
-
-          {!sliderControl ? null : (
-            <div className='py-4'>
-              <Slider
-                min={sliderControl.min}
-                max={sliderControl.max}
-                marks={sliderControl.marks}
-                step={null}
-                included={false}
-                onAfterChange={() => console.log('2changed')}
-              />
-            </div>
+        <div id={`peaks-container_${trackKey}`}>
+          {track1 ? (
+            <>
+              {overview}
+              {playerControl}
+              {loader}
+              {zoomview}
+            </>
+          ) : (
+            <>
+              {playerControl}
+              {zoomview}
+              {loader}
+              {overview}
+            </>
           )}
         </div>
 
+        {track1 ? slider : null}
+        {!track1 ? trackHeader : null}
+
         <audio id={`audio_${trackKey}`} src={audioSrc} ref={audioElement} />
-      </CardBody>
+      </div>
     </Card>
   )
 }

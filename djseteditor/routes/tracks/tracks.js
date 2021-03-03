@@ -133,7 +133,7 @@ export const Tracks = () => {
       },
       {
         dataField: 'lastModified',
-        text: 'Uploaded',
+        text: 'Updated',
         sort: true,
         headerStyle,
         classes,
