@@ -1,5 +1,7 @@
 # DJ Set Editor (for lack of a better name)
 
+> :construction: This project is currently in development. :construction:
+
 For some reason, there are two types of products on the market for DJ's to use for mixing music:
 
 1. DJ apps (VirtualDJ, etc) - these all replicate the 2 turntable scenario, which is great for mixing 2 tracks together. The goal is 'real time' DJing based on the strategy of recording an entire set perfectly the first time, or start over and try again.

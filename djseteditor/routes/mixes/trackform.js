@@ -12,6 +12,7 @@ import {
 import { processTrack, getAudioBuffer } from '../../audio'
 import { toast } from 'react-toastify'
 import Loader from '../../layout/loader'
+import Slider from 'rc-slider'
 
 const TrackForm = ({ trackKey }) => {
   TrackForm.propTypes = {
@@ -20,7 +21,7 @@ const TrackForm = ({ trackKey }) => {
 
   const audioElement = useRef()
 
-  // const [sliderControl, setSliderControl] = useState({})
+  const [sliderControl, setSliderControl] = useState()
   const [audioSrc, setAudioSrc] = useState('')
   const [analyzing, setAnalyzing] = useState(false)
   const [primaryTrack, setTrack] = useState({})
@@ -52,27 +53,35 @@ const TrackForm = ({ trackKey }) => {
         audioBuffer
       },
       pointMarkerColor: 'rgba(30, 139, 195, 1)',
-      zoomLevels: [128, 256, 512, 1024, 2048],
+      zoomLevels: [64, 128, 256, 512],
       zoomWaveformColor: '#aaa',
-      overviewWaveformColor: 'rgba(89, 165, 89, 0.7)'
+      overviewWaveformColor: 'rgba(89, 165, 89, 0.7)',
+      emitCueEvents: true
     }
 
-    Peaks.init(peakOptions, function (err, waveform) {
+    Peaks.init(peakOptions, (err, waveform) => {
       if (err) return toast.error(err.message)
 
+      waveform.on('zoom.update', (curr, prev) =>
+        console.log('zoom:', curr, prev)
+      )
+
       setCanvas(waveform)
+
+      const zoomView = waveform.views.getView('zoomview')
 
       // destroy the overview so that it doesn't receive the beat markers
       waveform.views.destroyOverview()
 
-      // set options
       waveform.zoom.setZoom(3) // 512
+      zoomView.showPlayheadTime(true)
+
+      // adjust zoom view when mouse wheel is used
       peakOptions.containers.zoomview.onwheel = e => {
         e.preventDefault()
         e.deltaY === 100 ? waveform?.zoom.zoomOut() : waveform.zoom.zoomIn()
       }
 
-      const controlPeaks = []
       const { duration, bpm, offset } = track
       setBpm(Number(bpm).toFixed(1))
 
@@ -85,30 +94,45 @@ const TrackForm = ({ trackKey }) => {
       // now that we have zerotime, move forward with peaks based on the bpm (hope the bpm is accurate!)
       const pointArray = []
       while (time < duration) {
-        pointArray.push({ time })
-        controlPeaks.push(time)
+        pointArray.push(time)
         time += beatInterval
       }
 
-      waveform.points.add(pointArray)
+      waveform.points.add(
+        pointArray.map(time => ({
+          time
+        }))
+      )
+
       waveform.views.createOverview(peakOptions.containers.overview)
 
+      const timeChange = (start, end) => {
+        setSliderControl({
+          min: start,
+          max: end,
+          marks: pointArray.reduce((o, p) => {
+            return p < end && p > start
+              ? { ...o, [p]: new Date(p * 1000).toISOString().substr(15, 6) }
+              : { ...o }
+          }, {})
+        })
+      }
+
+      // update slider controls on display change
+      waveform.on('zoomview.displaying', timeChange)
+
+      // create initial slider control
+      timeChange(0, (zoomView._width * zoomView._scale) / track.sampleRate)
+
       // create initial segment
+      /*      
       waveform.segments.add({
-        startTime: controlPeaks[0],
-        endTime: controlPeaks[31],
+        startTime: sliderPoints[0],
+        endTime: sliderPoints[31],
         color: 'rgba(191, 191, 63, 0.5)',
         editable: true
       })
-      /*
-
-                setSliderControl({
-                    min: controlPeaks[0],
-                    max: controlPeaks[31],
-                    step: beatInterval
-                });
-    */
-
+ */
       setAnalyzing(false)
 
       toast.success(
@@ -123,10 +147,12 @@ const TrackForm = ({ trackKey }) => {
   const audioChange = async () => {
     const [fileHandle] = await window.showOpenFilePicker()
 
+    setTrack({ name: 'Loading..' })
+    setAnalyzing(true)
+
     // release resources from previous peak rendering
     if (canvas) canvas.destroy()
 
-    setAnalyzing(true)
     initPeaks(await processTrack(fileHandle))
   }
 
@@ -135,90 +161,113 @@ const TrackForm = ({ trackKey }) => {
     audioElement.current.playbackRate = newBpm / primaryTrack.bpm
   }
 
-  const customBpm = primaryBpm && primaryBpm !== primaryTrack.bpm.toFixed(1)
+  const customBpm = primaryBpm && primaryBpm !== primaryTrack.bpm?.toFixed(1)
+
+  const bpmControl = (
+    <InputGroup
+      size='sm'
+      className='float-right'
+      style={{
+        width: `${customBpm ? '140' : '110'}px`,
+        position: 'relative',
+        zIndex: '999'
+      }}
+    >
+      <Input
+        type='text'
+        name='newBpm'
+        className={`h-auto ${!primaryBpm ? 'text-gray-500' : ''}`}
+        disabled={!primaryBpm}
+        onChange={e => adjustBPM(e.target.value)}
+        value={primaryBpm || 0}
+      />
+      <InputGroupAddon addonType='append'>
+        <Button
+          color='primary'
+          disabled={!customBpm}
+          onClick={() => adjustBPM(primaryTrack.bpm)}
+        >
+          {customBpm ? 'Reset ' : ''}
+          BPM
+        </Button>
+      </InputGroupAddon>
+    </InputGroup>
+  )
+
+  const playerControl = (
+    <div className='float-left' style={{ position: 'relative', zIndex: '999' }}>
+      <Button
+        color='light'
+        title='Play'
+        size='sm'
+        className='mx-1 b-black-02'
+        onClick={() => canvas.player.play()}
+      >
+        <i className='fa fa-play text-success' />
+      </Button>
+      <Button
+        color='light'
+        title='Pause'
+        size='sm'
+        className='ml-1 b-black-02'
+        onClick={() => canvas.player.pause()}
+      >
+        <i className='fa fa-pause text-danger' />
+      </Button>
+    </div>
+  )
+
+  const trackHeader = (
+    <div className='d-flex justify-content-between mb-3'>
+      <h5>{primaryTrack.name || 'No Track Loaded..'}</h5>
+      <Button
+        color='light'
+        title='Load Track'
+        size='sm'
+        className='m-1 b-black-02 float-right'
+        onClick={audioChange}
+      >
+        <i className='fa fa-eject text-warning' />
+      </Button>
+    </div>
+  )
 
   return (
     <Card className='mb-3'>
       <CardBody>
-        <div className='d-flex justify-content-between mb-3'>
-          <h5>{primaryTrack.name || 'No Track Loaded..'}</h5>
-          <InputGroup
-            size='sm'
-            className='float-right'
-            style={{ width: `${customBpm ? '140' : '110'}px` }}
-          >
-            <Input
-              type='text'
-              name='newBpm'
-              className={`h-auto ${!primaryBpm ? 'text-gray-500' : ''}`}
-              disabled={!primaryBpm}
-              onChange={e => adjustBPM(e.target.value)}
-              value={primaryBpm || 0}
-            />
-            <InputGroupAddon addonType='append'>
-              <Button
-                color='primary'
-                disabled={!customBpm}
-                onClick={() => adjustBPM(primaryTrack.bpm)}
-              >
-                {customBpm ? 'Reset ' : ''}
-                BPM
-              </Button>
-            </InputGroupAddon>
-          </InputGroup>
-        </div>
-        <div>
-          <Button color='success' onClick={() => canvas.player.play()}>
-            <i className='fa fa-play mr-2'> </i>
-            Play
-          </Button>
-          <Button color='danger' onClick={() => canvas.player.pause()}>
-            <i className='fa fa-pause mr-2'> </i>
-            Pause
-          </Button>
-          <Button color='warning' onClick={audioChange}>
-            <i className='fa fa-eject mr-2'> </i>
-            Load
-          </Button>
-        </div>
+        {trackHeader}
 
         <Loader hidden={!analyzing} />
 
-        <div id={`peaks-container_${trackKey}`}>
-          <div id={`zoomview-container_${trackKey}`} />
+        <div
+          id={`peaks-container_${trackKey}`}
+          style={{ visibility: analyzing ? 'hidden' : 'visible' }}
+        >
+          <div hidden={!primaryTrack.name}>
+            {playerControl}
+
+            {bpmControl}
+          </div>
+
           <div
             id={`overview-container_${trackKey}`}
             style={{ height: '60px' }}
           />
-        </div>
 
-        <div className='d-flex'>
-          <Button
-            color='secondary'
-            outline
-            size='sm'
-            className='mr-2 align-self-center text-center'
-          >
-            <i className='fa fa-fw fa-caret-left'> </i>
-            <div> Prev </div>
-          </Button>
-          <Button
-            color='secondary'
-            size='lg'
-            className='mr-2 align-self-center text-center'
-          >
-            <i className='fa fa-fw fa-check'> </i>
-            <div> Confirm </div>
-          </Button>
-          <Button
-            color='secondary'
-            outline
-            size='sm'
-            className='mr-2 align-self-center'
-          >
-            <i className='fa fa-fw fa-caret-right'> </i>
-            <div> Next </div>
-          </Button>
+          <div id={`zoomview-container_${trackKey}`} />
+
+          {!sliderControl ? null : (
+            <div className='py-4'>
+              <Slider
+                min={sliderControl.min}
+                max={sliderControl.max}
+                marks={sliderControl.marks}
+                step={null}
+                included={false}
+                onAfterChange={() => console.log('2changed')}
+              />
+            </div>
+          )}
         </div>
 
         <audio id={`audio_${trackKey}`} src={audioSrc} ref={audioElement} />

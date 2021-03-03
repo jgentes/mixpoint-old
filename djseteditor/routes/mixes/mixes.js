@@ -1,18 +1,19 @@
-import React, { useState } from 'react'
-import { Container, Button } from 'reactstrap'
+import React from 'react'
+import { Container, Button, Breadcrumb, BreadcrumbItem } from 'reactstrap'
 import TrackForm from './trackform.js'
 
 export const Mixes = () => {
-  const [tracks, addTrack] = useState([Date.now()])
-  console.log({ tracks })
+  const tracks = [1, 2]
+
   return (
     <Container>
       <div className='d-flex'>
-        <div className='mb-5 mt-4'>
-          <h1 className='display-4 mr-3 mb-0 align-self-start'>
-            Mixing Canvas
-          </h1>
-        </div>
+        <Breadcrumb className='align-self-start'>
+          <BreadcrumbItem>
+            <a href='/mixes'>Mixes</a>
+          </BreadcrumbItem>
+          <BreadcrumbItem active>Mix Editor</BreadcrumbItem>
+        </Breadcrumb>
 
         <Button
           onClick={() => addTrack([...tracks, Date.now()])}
