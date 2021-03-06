@@ -1,17 +1,16 @@
-import React, { useRef, useState } from 'react'
+import React, { useRef, useState, useEffect } from 'react'
 import PropTypes from 'prop-types'
-import Peaks from 'peaks.js'
 import { Button, Card, Input, InputGroup, InputGroupAddon } from 'reactstrap'
-import { processTrack, getAudioBuffer } from '../../audio'
-import { toast } from 'react-toastify'
+import { processTrack } from '../../audio'
 import Loader from '../../layout/loader'
 import Slider from 'rc-slider'
+import { initPeaks } from './initPeaks'
+import { db, getMixState, updateMixState } from '../../db'
 
-const TrackForm = ({ trackKey, mixState, updateTrack }) => {
+const TrackForm = ({ trackKey, mixState }) => {
   TrackForm.propTypes = {
     trackKey: PropTypes.number,
-    mixState: PropTypes.object,
-    updateTrack: PropTypes.func
+    mixState: PropTypes.object
   }
 
   const audioElement = useRef()
@@ -20,145 +19,37 @@ const TrackForm = ({ trackKey, mixState, updateTrack }) => {
   const [audioSrc, setAudioSrc] = useState('')
   const [analyzing, setAnalyzing] = useState(false)
   const [primaryTrack, setTrack] = useState({})
-  const [primaryBuffer, setBuffer] = useState()
   const [canvas, setCanvas] = useState()
 
-  const track1 = trackKey % 2
+  const track1 = !!(trackKey % 2)
 
-  const adjustBpm = bpm => {
-    // get bpm from the user input field or mixState or current track
-    bpm = Number(
-      bpm ||
-        (mixState?.tracks && mixState.tracks[trackKey]?.bpm) ||
-        primaryTrack.bpm
-    )
+  const updatePlaybackRate = bpm => {
     // update play speed to new bpm
     const playbackRate = bpm / (primaryTrack.bpm || bpm)
     audioElement.current.playbackRate = playbackRate
+  }
+
+  const adjustBpm = async bpm => {
+    // get bpm from the user input field or mixState or current track
+    bpm = Number(bpm || primaryTrack.bpm)
+
+    updatePlaybackRate(bpm)
 
     // store custom bpm value in mixstate
-    updateTrack({ [trackKey]: { bpm: bpm.toFixed(1) } })
+    await updateMixState({ [`track${trackKey}_bpm`]: bpm.toFixed(1) })
   }
 
-  const initPeaks = async ({ track, audioBuffer = primaryBuffer }) => {
-    if (track) setTrack(track)
-    else track = primaryTrack
-
-    const file = await track.fileHandle.getFile()
-
-    if (!audioBuffer) audioBuffer = await getAudioBuffer(file)
-    setBuffer(audioBuffer)
-
-    const url = window.URL.createObjectURL(file)
-
-    setAudioSrc(url)
-    setAnalyzing(true)
-
-    const peakOptions = {
-      containers: {
-        overview: document.getElementById(`overview-container_${trackKey}`),
-        zoomview: document.getElementById(`zoomview-container_${trackKey}`)
-      },
-      mediaElement: document.getElementById(`audio_${trackKey}`),
-      webAudio: {
-        audioBuffer
-      },
-      pointMarkerColor: 'rgba(30, 139, 195, 1)',
-      zoomLevels: [64, 128, 256, 512],
-      zoomWaveformColor: '#aaa',
-      overviewWaveformColor: 'rgba(89, 165, 89, 0.7)',
-      emitCueEvents: true
-    }
-
-    Peaks.init(peakOptions, (err, waveform) => {
-      if (err) return toast.error(err.message)
-
-      setCanvas(waveform)
-
-      const zoomView = waveform.views.getView('zoomview')
-
-      // destroy the overview so that it doesn't receive the beat markers
-      waveform.views.destroyOverview()
-
-      waveform.zoom.setZoom(3) // 512
-      zoomView.showPlayheadTime(true)
-
-      // adjust zoom view when mouse wheel is used
-      peakOptions.containers.zoomview.onwheel = e => {
-        e.preventDefault()
-        e.deltaY === 100 ? waveform?.zoom.zoomOut() : waveform.zoom.zoomIn()
-      }
-
-      let { duration, bpm, offset } = track
-      adjustBpm(bpm)
-
-      const beatInterval = 60 / bpm
-      let time = offset
-
-      // work backward from initialPeak to peak out start of track (zerotime) based on bpm
-      while (time - beatInterval > 0) time -= beatInterval
-
-      // now that we have zerotime, move forward with peaks based on the bpm (hope the bpm is accurate!)
-      const pointArray = []
-      while (time < duration) {
-        pointArray.push(time)
-        time += beatInterval
-      }
-
-      waveform.points.add(
-        pointArray.map(time => ({
-          time
-        }))
-      )
-
-      waveform.views.createOverview(peakOptions.containers.overview)
-
-      const timeFormat = secs =>
-        new Date(secs * 1000).toISOString().substr(15, 6)
-      const markFormatter = point =>
-        track1 ? (
-          <div style={{ marginTop: '-45px' }}>{timeFormat(point)}</div>
-        ) : (
-          timeFormat(point)
-        )
-
-      const timeChange = (start, end) => {
-        setSliderControl({
-          min: start,
-          max: end,
-          marks: pointArray.reduce((o, p) => {
-            return p < end && p > start
-              ? { ...o, [p]: markFormatter(p) }
-              : { ...o }
-          }, {})
-        })
-      }
-
-      // update slider controls on display change
-      waveform.on('zoomview.displaying', timeChange)
-
-      // create initial slider control
-      timeChange(0, (zoomView._width * zoomView._scale) / track.sampleRate)
-
-      // create initial segment
-      /*      
-      waveform.segments.add({
-        startTime: sliderPoints[0],
-        endTime: sliderPoints[31],
-        color: 'rgba(191, 191, 63, 0.5)',
-        editable: true
-      })
- */
-      setAnalyzing(false)
-
-      toast.success(
-        <>
-          Loaded <strong>{track.name}</strong>
-        </>,
-        { autoClose: 3000 }
-      )
+  const getPeaks = async track =>
+    await initPeaks({
+      trackKey,
+      track,
+      setTrack,
+      setAudioSrc,
+      setSliderControl,
+      setCanvas,
+      adjustBpm,
+      setAnalyzing
     })
-  }
 
   const audioChange = async () => {
     if (!primaryTrack.name) setAnalyzing(true)
@@ -174,25 +65,61 @@ const TrackForm = ({ trackKey, mixState, updateTrack }) => {
     // release resources from previous peak rendering
     if (canvas) canvas.destroy()
 
-    initPeaks(await processTrack(fileHandle))
+    const track =
+      (await db.tracks.get(fileHandle.name)) || (await processTrack(fileHandle))
+    console.log(track)
+    getPeaks(track)
   }
+
+  useEffect(() => {
+    const hydrate = async () => {
+      try {
+        const state = await getMixState()
+        console.log('mixstate hydrate:', state)
+
+        const trackName = state?.[`track${trackKey}_name`]
+
+        let track
+        if (trackName) track = await db.tracks.get(trackName)
+        console.log('track:', track)
+        if (!track) return
+        const file = await track.fileHandle.getFile()
+        console.log('file:', file)
+        await getPeaks(track)
+
+        const newBpm = state?.[`track${trackKey}_bpm`]
+        console.log({ newBpm })
+        if (newBpm) updatePlaybackRate(newBpm)
+      } catch (e) {
+        console.error('hydreate err: ', e)
+      }
+    }
+    //hydrate()
+  }, [])
+
+  const bpmVal =
+    mixState?.[`track${trackKey}_bpm`] || primaryTrack.bpm?.toFixed(1) || 0
+
+  const bpmDiff = bpmVal === primaryTrack.bpm?.toFixed(1)
 
   const bpmControl = (
     <div className='pr-2'>
-      <InputGroup size='sm' style={{ width: '100px' }}>
+      <InputGroup size='sm' style={{ width: bpmDiff ? '130px' : '100px' }}>
         <Input
           type='text'
           className={`${!primaryTrack.bpm ? 'text-gray-500' : ''}`}
           disabled={!primaryTrack.bpm}
           onChange={e => adjustBpm(e.target.value)}
-          value={
-            (mixState?.tracks && mixState.tracks[trackKey]?.bpm) ||
-            primaryTrack.bpm?.toFixed(1) ||
-            0
-          }
+          value={bpmVal}
         />
         <InputGroupAddon addonType='append'>
-          <Button color='primary'>BPM</Button>
+          <Button
+            color='primary'
+            disabled={!bpmDiff}
+            onClick={() => adjustBpm(primaryTrack.bpm)}
+          >
+            {bpmDiff ? 'Reset ' : ''}BPM
+          </Button>
         </InputGroupAddon>
       </InputGroup>
     </div>
@@ -278,6 +205,7 @@ const TrackForm = ({ trackKey, mixState, updateTrack }) => {
       }}
     />
   )
+
   const overview = (
     <div
       id={`overview-container_${trackKey}`}

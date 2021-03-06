@@ -3,9 +3,12 @@ import PropTypes from 'prop-types'
 
 import { Helmet } from 'react-helmet'
 import { TopNavbar } from './topnav/topnavbar'
-import { ToastContainer } from 'react-toastify'
+import { ToastContainer, toast } from 'react-toastify'
 
 import config from '../../config'
+
+window.onerror = msg => toast.error(`Whoops! ${msg}`)
+window.onunhandledrejection = e => toast.error(`Whoops! ${e.reason.message}`)
 
 const favIcons = [
   {

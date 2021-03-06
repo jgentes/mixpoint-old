@@ -11,12 +11,11 @@ const config = {
   clientStatsFile: 'stats.webpack.json',
 
   // Source Directory ===============================================
-  srcDir: path.join(root, 'airframe'),
-  editorDir: path.join(root, 'djseteditor'),
+  srcDir: path.join(root, 'src'),
   srcServerDir: path.join(root, 'server'),
 
   // HTML Layout ====================================================
-  srcHtmlLayout: path.join(root, 'djseteditor', 'index.html'),
+  srcHtmlLayout: path.join(root, 'src', 'index.html'),
 
   // Site Config ====================================================
   siteTitle: 'DJ Set Editor',
