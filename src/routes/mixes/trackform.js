@@ -1,11 +1,11 @@
-import React, { useRef, useState, useEffect } from 'react'
+import React, { useRef, useState } from 'react'
 import PropTypes from 'prop-types'
 import { Button, Card, Input, InputGroup, InputGroupAddon } from 'reactstrap'
 import { processTrack } from '../../audio'
 import Loader from '../../layout/loader'
 import Slider from 'rc-slider'
 import { initPeaks } from './initPeaks'
-import { db, getMixState, updateMixState } from '../../db'
+import { db, updateMixState } from '../../db'
 
 const TrackForm = ({ trackKey, mixState }) => {
   TrackForm.propTypes = {
@@ -70,32 +70,6 @@ const TrackForm = ({ trackKey, mixState }) => {
     console.log(track)
     getPeaks(track)
   }
-
-  useEffect(() => {
-    const hydrate = async () => {
-      try {
-        const state = await getMixState()
-        console.log('mixstate hydrate:', state)
-
-        const trackName = state?.[`track${trackKey}_name`]
-
-        let track
-        if (trackName) track = await db.tracks.get(trackName)
-        console.log('track:', track)
-        if (!track) return
-        const file = await track.fileHandle.getFile()
-        console.log('file:', file)
-        await getPeaks(track)
-
-        const newBpm = state?.[`track${trackKey}_bpm`]
-        console.log({ newBpm })
-        if (newBpm) updatePlaybackRate(newBpm)
-      } catch (e) {
-        console.error('hydreate err: ', e)
-      }
-    }
-    //hydrate()
-  }, [])
 
   const bpmVal =
     mixState?.[`track${trackKey}_bpm`] || primaryTrack.bpm?.toFixed(1) || 0
