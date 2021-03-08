@@ -12,3 +12,6 @@ uploads
 
 # airframe
 airframe-src
+
+# parcel
+.parcel-cache

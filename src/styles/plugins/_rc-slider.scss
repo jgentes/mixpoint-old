@@ -1,54 +1,54 @@
 /* RC Sliders Overrides */
-@import "./../variables.scss";
+@import '../bootstrap/_variables.scss';
 
 .rc-slider {
-    .rc-slider-track {
-        background-color: $primary;
-    }
+  .rc-slider-track {
+    background-color: $primary;
+  }
 
-    .rc-slider-dot-active {
-        border-color: $primary !important;
-    }
+  .rc-slider-dot-active {
+    border-color: $primary !important;
+  }
 
-    .rc-slider-handle {
-        border-color: $primary;
+  .rc-slider-handle {
+    border-color: $primary;
 
-        &:active {
-            border-color: darken($primary, 10%);
-            box-shadow: 0 0 5px darken($primary, 10%);
-        }
-        &:hover {
-            border-color: darken($primary, 5%);
-        }
+    &:active {
+      border-color: darken($primary, 10%);
+      box-shadow: 0 0 5px darken($primary, 10%);
     }
+    &:hover {
+      border-color: darken($primary, 5%);
+    }
+  }
 
-    .rc-slider-rail {
-        background-color: $gray-400;
-    }
-    .rc-slider-dot {
-        background-color: $white;
-        border: 2px solid $gray-500;
-    }
+  .rc-slider-rail {
+    background-color: $gray-400;
+  }
+  .rc-slider-dot {
+    background-color: $white;
+    border: 2px solid $gray-500;
+  }
 }
 
 .markedSliderWrap {
-    padding: 0px 20px 50px;
+  padding: 0px 20px 50px;
 }
 
 .rangeSliderWrap {
-    padding: 0 0 20px 0;
+  padding: 0 0 20px 0;
 }
 
 .markedSliderVerticalWrap {
-    width: 100%;
-    height: 400px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    padding: 20px 20px 30px 20px;
+  width: 100%;
+  height: 400px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px 20px 30px 20px;
 }
 
 .inlineInput {
-    max-width: 70px;
-    margin-left: 0.5rem;
+  max-width: 70px;
+  margin-left: 0.5rem;
 }

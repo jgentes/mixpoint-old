@@ -8,7 +8,6 @@ import { db, deleteTrack } from '../../db'
 import { processTrack } from '../../audio'
 import Loader from '../../layout/loader'
 import { SearchBar } from './SearchBar'
-import { get, set } from 'idb-keyval'
 import { Card, Container, Badge, UncontrolledTooltip } from 'reactstrap'
 
 const sortCaret = order => {
@@ -82,7 +81,6 @@ export const Tracks = () => {
               'Sorry, folder support is not ready yet. For now, you can select multiple files to add.'
             )
           } else {
-            await set('file', fileHandle)
             await processTrack(fileHandle)
             setAnalyzing(false)
             success()

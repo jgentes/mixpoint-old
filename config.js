@@ -7,8 +7,6 @@ const config = {
   // Targets ========================================================
   serveDir: path.join(root, '.serve'),
   distDir: path.join(root, 'dist'),
-  clientManifestFile: 'manifest.webpack.json',
-  clientStatsFile: 'stats.webpack.json',
 
   // Source Directory ===============================================
   srcDir: path.join(root, 'src'),
@@ -20,7 +18,7 @@ const config = {
   // Site Config ====================================================
   siteTitle: 'DJ Set Editor',
   siteDescription: 'Multi-track audio editor designed for mixing dj sets',
-  siteCannonicalUrl: 'http://localhost:4100',
+  siteCannonicalUrl: 'http://localhost:1234',
   scssIncludes: []
 }
 
