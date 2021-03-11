@@ -209,7 +209,7 @@
     .nav-link {
       > .avatar-image,
       > .avatar-font {
-        .avatar__icon--stack > .fa-circle:first-child {
+        .avatar__icon--stack > .la-circle:first-child {
           color: var(--theme-navbar-background) !important;
         }
       }
@@ -315,7 +315,7 @@
     .nav-link {
       > .avatar-image,
       > .avatar-font {
-        .avatar__icon--stack > .fa-circle:first-child {
+        .avatar__icon--stack > .la-circle:first-child {
           color: var(--theme-navbar-background) !important;
         }
       }
@@ -335,7 +335,7 @@
     border-right: var(--theme-sidebar-border);
   }
 
-  .sidebar .avatar__icon--stack > .fa-circle:first-child {
+  .sidebar .avatar__icon--stack > .la-circle:first-child {
     color: var(--theme-sidebar-background) !important;
   }
 

@@ -15,7 +15,7 @@ export const SearchBar = props => {
   return (
     <InputGroup className={props.className} size='sm'>
       <InputGroupAddon addonType='prepend'>
-        <i className='input-group-text w-auto fa fa-search fa-fw'></i>
+        <i className='input-group-text w-auto las la-search la-fw'></i>
       </InputGroupAddon>
       <Input
         onChange={e => {
@@ -33,7 +33,7 @@ export const SearchBar = props => {
               setSearch('')
             }}
           >
-            <i className='fa fa-fw fa-times'></i>
+            <i className='las la-fw la-times'></i>
           </Button>
         </InputGroupAddon>
       )}

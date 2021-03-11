@@ -12,10 +12,10 @@ import { Card, Container, Badge, UncontrolledTooltip } from 'reactstrap'
 
 const sortCaret = order => {
   if (!order) {
-    return <i className='fa fa-fw fa-sort text-muted'></i>
+    return <i className='las la-fw la-sort text-muted'></i>
   }
   if (order) {
-    return <i className={`fa fa-fw text-muted fa-sort-${order}`}></i>
+    return <i className={`las la-fw text-muted la-sort-${order}`}></i>
   }
 }
 
@@ -112,7 +112,7 @@ export const Tracks = () => {
         id='UncontrolledTooltipDelete'
         style={{ cursor: 'pointer' }}
       >
-        <i className='fa fa-fw fa-close text-danger'></i>
+        <i className='las la-fw la-close text-danger'></i>
       </div>
       <UncontrolledTooltip placement='left' target='UncontrolledTooltipDelete'>
         Delete Track
@@ -206,7 +206,7 @@ export const Tracks = () => {
           onDragEnter={() => setIsOver(true)}
           onDragLeave={() => setIsOver(false)}
         >
-          <i className='fa fa-cloud-upload fa-fw fa-3x drop'></i>
+          <i className='las la-cloud-upload la-fw la-3x drop'></i>
           <h5 className='mt-0 drop'>Add Tracks</h5>
           <div className='drop'>
             Drag a file here or <span className='text-primary'>browse</span> for

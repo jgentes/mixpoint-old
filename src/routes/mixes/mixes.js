@@ -18,7 +18,7 @@ export const Mixes = () => {
         checked={mixState?.bpmSync || false}
         size='small'
         icons={{
-          checked: <i className='fa fa-check text-white' />,
+          checked: <i className='las la-check text-white' />,
           unchecked: null
         }}
         onChange={() => updateMixState({ bpmSync: true })}

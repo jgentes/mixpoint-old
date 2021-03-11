@@ -115,7 +115,7 @@ const TrackForm = ({ trackKey, mixState }) => {
         className='mx-1 b-black-02'
         onClick={() => canvas.player.play()}
       >
-        <i className='fa fa-play text-success' />
+        <i className='las la-play text-success' />
       </Button>
       <Button
         color='light'
@@ -124,7 +124,7 @@ const TrackForm = ({ trackKey, mixState }) => {
         className='ml-1 b-black-02'
         onClick={() => canvas.player.pause()}
       >
-        <i className='fa fa-pause text-danger' />
+        <i className='las la-pause text-danger' />
       </Button>
     </div>
   )

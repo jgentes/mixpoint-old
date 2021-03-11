@@ -18,10 +18,10 @@
 }
 
 // Toastiy: "SUCCESS" Alert
-.Toastify__toast--success .fa-check {
+.Toastify__toast--success .la-check {
   color: $success;
 }
-.Toastify__toast--success .fa-check-circle {
+.Toastify__toast--success .la-check-circle {
   color: $success !important;
 }
 .Toastify__toast--success {
@@ -33,7 +33,7 @@
 
 // Toastiy: "INFO" Alert
 
-.Toastify__toast--info .fa-info {
+.Toastify__toast--info .la-info {
   color: $primary;
 }
 .Toastify__toast--info {
@@ -45,7 +45,7 @@
 }
 
 // Toastiy: "WARNING" Alert
-.Toastify__toast--warning .fa-exclamation {
+.Toastify__toast--warning .la-exclamation {
   color: $warning;
 }
 .Toastify__toast--warning {
@@ -57,7 +57,7 @@
 }
 
 // Toastiy: "ERROR" Alert
-.Toastify__toast--error .fa-close {
+.Toastify__toast--error .la-close {
   color: $danger;
 }
 .Toastify__toast--error {
@@ -69,7 +69,7 @@
 }
 
 // Toastiy: "DEFAULT" Alert
-.Toastify__toast--default .fa-exclamation {
+.Toastify__toast--default .la-exclamation {
   color: $dark;
 }
 .Toastify__toast--default {
