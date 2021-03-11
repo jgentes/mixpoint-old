@@ -1,6 +1,3 @@
-@import '../../../node_modules/bootstrap/scss/functions';
-@import '../../../node_modules/bootstrap/scss/mixins/breakpoints';
-
 // Configurators
 @mixin setup-theme($config) {
   --theme-theme-color: #{map-get($config, 'theme-color')};

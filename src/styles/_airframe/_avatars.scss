@@ -1,5 +1,3 @@
-@import './_variables.scss';
-
 /* Variant Generator */
 @mixin avatar-variants($avatars-config) {
   @each $size, $avatar in $avatars-config {

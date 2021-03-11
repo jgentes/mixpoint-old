@@ -1,7 +1,3 @@
-@import '../../../node_modules/bootstrap/scss/functions';
-@import '../../../node_modules/bootstrap/scss/mixins/breakpoints';
-@import './_variables.scss';
-
 .navbar.navbar-shadow {
   box-shadow: map-get($navbar-shadow, 'shadow');
   border-bottom: map-get($navbar-shadow, 'border');
