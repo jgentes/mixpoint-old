@@ -78,7 +78,7 @@ const TrackForm = ({ trackKey, mixState }) => {
 
   const bpmControl = (
     <div className='pr-2'>
-      <InputGroup size='sm' style={{ width: bpmDiff ? '130px' : '100px' }}>
+      <InputGroup size='sm' style={{ width: bpmDiff ? '140px' : '110px' }}>
         <Input
           type='text'
           className={`${!primaryTrack.bpm ? 'text-gray-500' : ''}`}

@@ -250,7 +250,6 @@ export const Tracks = () => {
                 <BootstrapTable
                   classes='table-responsive-lg mb-0'
                   bordered={false}
-                  boostrap4={true}
                   responsive
                   hover
                   {...props.baseProps}

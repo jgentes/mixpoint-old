@@ -1,2 +1,8 @@
 /* to fix dropzone */
-.drop {pointer-events: none;}
+.drop {
+  pointer-events: none;
+}
+
+.breadcrumb {
+  background-color: transparent !important;
+}
