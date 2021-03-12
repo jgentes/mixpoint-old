@@ -2,7 +2,11 @@
   "name": "djseteditor",
   "version": "0.1.0",
   "description": "Multi-track audio editor designed for mixing dj sets",
-  "main": "src/index.html",
+  "app": "dist/index.js",
+  "targets": {
+    "app": {}
+  },
+  "source": "src/index.html",
   "scripts": {
     "test": "jest",
     "start": "parcel serve src/index.html"

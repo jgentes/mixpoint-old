@@ -139,7 +139,7 @@ const TrackForm = ({ trackKey, mixState }) => {
           className='b-black-02'
           onClick={audioChange}
         >
-          <i className='las la-eject la-2x text-warning' />
+          <i className='las la-eject la-15em text-warning' />
         </Button>
         <div
           style={{ display: 'inline', verticalAlign: 'middle' }}
