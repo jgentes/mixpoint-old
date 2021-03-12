@@ -9,6 +9,4 @@ import App from './appclient'
 
 const container = document.querySelector('#root')
 
-if (module.hot) module.hot.accept()
-
 ReactDOM.render(<App />, container)
