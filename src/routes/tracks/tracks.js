@@ -92,16 +92,21 @@ export const Tracks = () => {
   }
 
   const browseFile = async () => {
-    const files = await window.showOpenFilePicker({ multiple: true })
-    for (let fileHandle of files) {
-      setAnalyzing(true)
-      await processTrack(fileHandle)
-      await set('file', fileHandle)
-    }
+    try {
+      const files = await window.showOpenFilePicker({ multiple: true })
+      for (let fileHandle of files) {
+        setAnalyzing(true)
+        await processTrack(fileHandle)
+        await set('file', fileHandle)
+      }
 
-    setAnalyzing(false)
-    success()
-    getTracks()
+      setAnalyzing(false)
+      success()
+      getTracks()
+    } catch (e) {
+      if (e?.message?.includes('user aborted a request')) return
+      throw e
+    }
   }
 
   const actions = (cell, row) => (
@@ -197,7 +202,7 @@ export const Tracks = () => {
 
   return (
     <Container>
-      <div className='mt-4 mb-4'>
+      <div className='mt-4 mb-4 text-black-06'>
         <div
           onClick={browseFile}
           className={`dropzone ${isOver ? 'dropzone--active' : ''}`}
@@ -206,7 +211,7 @@ export const Tracks = () => {
           onDragEnter={() => setIsOver(true)}
           onDragLeave={() => setIsOver(false)}
         >
-          <i className='las la-cloud-upload la-fw la-3x drop'></i>
+          <i className='las la-cloud-upload-alt la-fw la-3x drop'></i>
           <h5 className='mt-0 drop'>Add Tracks</h5>
           <div className='drop'>
             Drag a file here or <span className='text-primary'>browse</span> for
@@ -245,6 +250,7 @@ export const Tracks = () => {
                 <BootstrapTable
                   classes='table-responsive-lg mb-0'
                   bordered={false}
+                  boostrap4={true}
                   responsive
                   hover
                   {...props.baseProps}
