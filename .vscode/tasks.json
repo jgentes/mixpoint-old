@@ -2,11 +2,11 @@
   "version": "2.0.0",
   "tasks": [
     {
+      "label": "Parcel",
       "type": "npm",
       "script": "start",
-      "problemMatcher": [],
-      "label": "npm: start",
-      "detail": "parcel serve src/index.html"
+      "isBackground": true,
+      "problemMatcher": []
     }
   ]
 }

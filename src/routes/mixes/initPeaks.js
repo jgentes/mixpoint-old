@@ -1,4 +1,3 @@
-import React from 'react'
 import Peaks from 'peaks.js'
 import { toast } from 'react-toastify'
 import { getAudioBuffer } from '../../audio'

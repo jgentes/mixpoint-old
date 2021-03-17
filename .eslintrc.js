@@ -21,6 +21,7 @@ module.exports = {
     'no-use-before-define': 'off',
     '@typescript-eslint/no-use-before-define': ['error'],
     'import/no-webpack-loader-syntax': 'off',
-    'no-unused-vars': 'warn'
+    'no-unused-vars': 'warn',
+    'react/react-in-jsx-scope': 'off'
   }
 }

@@ -1,4 +1,3 @@
-import React from 'react'
 import { Link, NavLink as RRNavLink } from 'react-router-dom'
 import { NavLink, NavItem, Nav, Navbar } from 'reactstrap'
 

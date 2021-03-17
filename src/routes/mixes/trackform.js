@@ -1,4 +1,4 @@
-import React, { useRef, useState } from 'react'
+import { useRef, useState } from 'react'
 import PropTypes from 'prop-types'
 import { Button, Card, Input, InputGroup, InputGroupAddon } from 'reactstrap'
 import { processTrack } from '../../audio'
@@ -190,14 +190,8 @@ const TrackForm = ({ trackKey, mixState }) => {
     />
   )
 
-  const loader = (
-    <Loader
-      className='my-5'
-      style={{
-        display: analyzing ? 'block' : 'none'
-      }}
-    />
-  )
+  const loader = analyzing ? <Loader className='my-5' /> : null
+  //mixState.bpm && mixState.
 
   return (
     <Card className='mb-3'>
