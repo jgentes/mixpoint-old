@@ -18,6 +18,7 @@ export const TopNavbar = () => (
             height='48px'
             className='d-block'
             alt='DJ Set Editor Logo'
+            id='headerLogo'
           />
         </Link>
       </NavItem>

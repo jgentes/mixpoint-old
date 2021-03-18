@@ -85,12 +85,14 @@ const TrackForm = ({ trackKey, mixState }) => {
           disabled={!primaryTrack.bpm}
           onChange={e => adjustBpm(e.target.value)}
           value={bpmVal}
+          id={`bpmInput_${trackKey}`}
         />
         <InputGroupAddon addonType='append'>
           <Button
             color='primary'
             disabled={!bpmDiff}
             onClick={() => adjustBpm(primaryTrack.bpm)}
+            id={`bpmButton_${trackKey}`}
           >
             {bpmDiff ? 'Reset ' : ''}BPM
           </Button>
@@ -114,6 +116,7 @@ const TrackForm = ({ trackKey, mixState }) => {
         size='sm'
         className='mx-1 b-black-02'
         onClick={() => canvas.player.play()}
+        id={`playButton_${trackKey}`}
       >
         <i className='las la-play text-success' />
       </Button>
@@ -123,6 +126,7 @@ const TrackForm = ({ trackKey, mixState }) => {
         size='sm'
         className='ml-1 b-black-02'
         onClick={() => canvas.player.pause()}
+        id={`pauseButton_${trackKey}`}
       >
         <i className='las la-pause text-danger' />
       </Button>
@@ -138,6 +142,7 @@ const TrackForm = ({ trackKey, mixState }) => {
           size='sm'
           className='b-black-02'
           onClick={audioChange}
+          id={`loadButton_${trackKey}`}
         >
           <i className='las la-eject la-15em text-warning' />
         </Button>
@@ -158,6 +163,7 @@ const TrackForm = ({ trackKey, mixState }) => {
     <div
       className={track1 ? 'pb-3 pt-5' : 'pb-5 pt-3'}
       style={{ visibility: analyzing ? 'hidden' : 'visible' }}
+      id={`slider_${trackKey}`}
     >
       <Slider
         min={sliderControl.min}

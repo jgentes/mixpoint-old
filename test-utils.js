@@ -4,7 +4,9 @@ import React from 'react'
 import PropTypes from 'prop-types'
 import { render } from '@testing-library/react'
 import { BrowserRouter as Router } from 'react-router-dom'
-import AppLayout from './layout/layout'
+import AppLayout from './src/layout/layout'
+
+const basePath = process.env.BASE_PATH || '/'
 
 const AllTheProviders = ({ children }) => {
   AllTheProviders.propTypes = {
