@@ -1,6 +1,8 @@
+import React from 'react'
 import { Link, NavLink as RRNavLink } from 'react-router-dom'
 import { NavLink, NavItem, Nav, Navbar } from 'reactstrap'
 
+const logo = require('../../assets/soundwave-640x450px.jpg')
 const navLinks = ['tracks', 'mixes', 'sets']
 
 export const TopNavbar = () => (
@@ -14,7 +16,7 @@ export const TopNavbar = () => (
       <NavItem className='navbar-brand'>
         <Link to='/'>
           <img
-            src='/assets/soundwave-640x450px.jpg'
+            src={logo}
             height='48px'
             className='d-block'
             alt='DJ Set Editor Logo'
@@ -22,7 +24,9 @@ export const TopNavbar = () => (
           />
         </Link>
       </NavItem>
-      <h1 className='h5 mb-0 mr-auto ml-2 d-lg-block'>DJ Set Editor</h1>
+      <h1 className='h5 mb-0 mr-auto ml-2 d-lg-block' title='site title'>
+        DJ Set Editor
+      </h1>
 
       <Nav className='nav-accent navbar-nav'>
         {navLinks.map(target => (

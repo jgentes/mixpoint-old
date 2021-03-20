@@ -3,7 +3,12 @@ module.exports = {
     browser: true,
     es2021: true
   },
-  extends: ['plugin:react/recommended'],
+  extends: [
+    'plugin:react/recommended',
+    'plugin:jest-dom/recommended',
+    'plugin:testing-library/recommended',
+    'plugin:testing-library/react'
+  ],
   settings: {
     react: { version: 'detect' }
   },
@@ -15,13 +20,14 @@ module.exports = {
     ecmaVersion: 12,
     sourceType: 'module'
   },
-  plugins: ['react', '@typescript-eslint'],
+  plugins: ['react', '@typescript-eslint', 'jest-dom', 'testing-library'],
   ignorePatterns: ['/airframe'],
   rules: {
     'no-use-before-define': 'off',
     '@typescript-eslint/no-use-before-define': ['error'],
     'import/no-webpack-loader-syntax': 'off',
     'no-unused-vars': 'warn',
-    'react/react-in-jsx-scope': 'off'
+    'react/react-in-jsx-scope': 'warn',
+    'react/prop-types': 'off'
   }
 }

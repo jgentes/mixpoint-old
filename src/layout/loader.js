@@ -1,11 +1,8 @@
 import PropTypes from 'prop-types'
-import classNames from 'classnames'
 
 const Loader = props => {
-  const loaderClass = classNames('loader', props.className)
-
   return (
-    <div className={loaderClass} style={props.style}>
+    <div className={`loader ${props.className}`} style={props.style}>
       <div className='bar1'></div>
       <div className='bar2'></div>
       <div className='bar3'></div>
