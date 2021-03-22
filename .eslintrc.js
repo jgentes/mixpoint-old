@@ -7,12 +7,13 @@ module.exports = {
     'plugin:react/recommended',
     'plugin:jest-dom/recommended',
     'plugin:testing-library/recommended',
-    'plugin:testing-library/react'
+    'plugin:testing-library/react',
+    'plugin:@typescript-eslint/recommended'
   ],
   settings: {
     react: { version: 'detect' }
   },
-  parser: 'babel-eslint',
+  parser: '@typescript-eslint/parser',
   parserOptions: {
     ecmaFeatures: {
       jsx: true
@@ -21,7 +22,6 @@ module.exports = {
     sourceType: 'module'
   },
   plugins: ['react', '@typescript-eslint', 'jest-dom', 'testing-library'],
-  ignorePatterns: ['/airframe'],
   rules: {
     'no-use-before-define': 'off',
     '@typescript-eslint/no-use-before-define': ['error'],
