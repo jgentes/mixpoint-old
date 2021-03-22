@@ -1,8 +1,7 @@
 import React from 'react'
 import { Link, NavLink as RRNavLink } from 'react-router-dom'
 import { NavLink, NavItem, Nav, Navbar } from 'reactstrap'
-
-const logo = require('../../assets/soundwave-640x450px.jpg')
+import logo from 'url:../../assets/soundwave-640x450px.jpg'
 const navLinks = ['tracks', 'mixes', 'sets']
 
 export const TopNavbar = () => (

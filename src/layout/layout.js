@@ -2,6 +2,8 @@ import React from 'react'
 import { Helmet } from 'react-helmet'
 import { TopNavbar } from './topnav/topnavbar'
 import { ToastContainer, toast } from 'react-toastify'
+import favIcon32 from 'url:../assets/soundwave-32px.jpg'
+import favIcon16 from 'url:../assets/soundwave-16px.jpg'
 
 window.onerror = msg => toast.error(`Whoops! ${msg}`)
 window.onunhandledrejection = e => toast.error(`Whoops! ${e.reason.message}`)
@@ -11,13 +13,13 @@ const favIcons = [
     rel: 'icon',
     type: 'image/jpg',
     sizes: '32x32',
-    href: require('../assets/soundwave-32px.jpg')
+    href: favIcon32
   },
   {
     rel: 'icon',
     type: 'image/jpg',
     sizes: '16x16',
-    href: require('../assets/soundwave-16px.jpg')
+    href: favIcon16
   }
 ]
 
