@@ -1,7 +1,8 @@
+import React from 'react'
 import Peaks from 'peaks.js'
 import { toast } from 'react-toastify'
 import { getAudioBuffer } from '../../audio'
-import { updateMixState } from '../../db'
+import { Track, updateMixState } from '../../db'
 
 export const initPeaks = async ({
   trackKey,
@@ -12,7 +13,17 @@ export const initPeaks = async ({
   setCanvas,
   adjustBpm,
   setAnalyzing
+}: {
+  trackKey: number
+  track: Track
+  setTrack: Function
+  setAudioSrc: Function
+  setSliderControl: Function
+  setCanvas: Function
+  adjustBpm: Function
+  setAnalyzing: Function
 }) => {
+  if (!track) throw new Error('No track to initialize!')
   setAnalyzing(true)
 
   const track1 = trackKey % 2
@@ -32,7 +43,7 @@ export const initPeaks = async ({
       overview: document.getElementById(`overview-container_${trackKey}`),
       zoomview: document.getElementById(`zoomview-container_${trackKey}`)
     },
-    mediaElement: document.getElementById(`audio_${trackKey}`),
+    mediaElement: document.getElementById(`audio_${trackKey}`) ?? undefined,
     webAudio: {
       audioBuffer
     },
@@ -45,6 +56,8 @@ export const initPeaks = async ({
 
   Peaks.init(peakOptions, async (err, waveform) => {
     if (err) return toast.error(err.message)
+    if (!waveform)
+      throw new Error('Unable to display waveform data for some reason..')
 
     setCanvas(waveform)
 
@@ -54,15 +67,20 @@ export const initPeaks = async ({
     waveform.views.destroyOverview()
 
     waveform.zoom.setZoom(3) // 512
-    zoomView.showPlayheadTime(true)
+    zoomView?.showPlayheadTime(true)
 
     // adjust zoom view when mouse wheel is used
-    peakOptions.containers.zoomview.onwheel = e => {
-      e.preventDefault()
-      e.deltaY === 100 ? waveform?.zoom.zoomOut() : waveform.zoom.zoomIn()
-    }
+    if (peakOptions.containers.zoomview) {
+      peakOptions.containers.zoomview.onwheel = e => {
+        e.preventDefault()
+        e.deltaY === 100 ? waveform?.zoom.zoomOut() : waveform.zoom.zoomIn()
+      }
+    } else
+      console.error(
+        'Zoomview container not found, could not set wheel zoom feature'
+      )
 
-    let { duration, bpm, offset } = track
+    let { duration = 1, bpm = 1, offset = 1 } = track
 
     await adjustBpm(bpm)
 
@@ -73,7 +91,7 @@ export const initPeaks = async ({
     while (time - beatInterval > 0) time -= beatInterval
 
     // now that we have zerotime, move forward with peaks based on the bpm (hope the bpm is accurate!)
-    const pointArray = []
+    const pointArray: number[] = []
     while (time < duration) {
       pointArray.push(time)
       time += beatInterval
@@ -85,21 +103,25 @@ export const initPeaks = async ({
       }))
     )
 
+    if (!peakOptions.containers.overview)
+      throw new Error('Overview container not found!')
+
     waveform.views.createOverview(peakOptions.containers.overview)
 
-    const timeFormat = secs => new Date(secs * 1000).toISOString().substr(15, 6)
-    const markFormatter = point =>
+    const timeFormat = (secs: number) =>
+      new Date(secs * 1000).toISOString().substr(15, 6)
+    const markFormatter = (point: number) =>
       track1 ? (
         <div style={{ marginTop: '-45px' }}>{timeFormat(point)}</div>
       ) : (
         timeFormat(point)
       )
 
-    const timeChange = (start, end) => {
+    const timeChange = (start: number, end: number) => {
       setSliderControl({
         min: start,
         max: end,
-        marks: pointArray.reduce((o, p) => {
+        marks: pointArray.reduce((o: any, p: number) => {
           return p < end && p > start
             ? { ...o, [p]: markFormatter(p) }
             : { ...o }
@@ -107,11 +129,16 @@ export const initPeaks = async ({
       })
     }
 
-    // update slider controls on display change
+    // update slider controls on display change 
+    // @ts-expect-error
     waveform.on('zoomview.displaying', timeChange)
 
     // create initial slider control
-    timeChange(0, (zoomView._width * zoomView._scale) / track.sampleRate)
+    timeChange(
+      0,
+      // @ts-expect-error
+      (zoomView?._width * zoomView?._scale) / (track.sampleRate || 1)
+    )
 
     // create initial segment
     /*      

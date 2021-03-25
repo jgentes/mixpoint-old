@@ -4,7 +4,10 @@
     "lib": ["es5", "es6", "dom"],
     "jsx": "react",
     "sourceMap": true,
-    "preserveConstEnums": true
+    "preserveConstEnums": true,
+    "paths": {
+      "test-setup": ["./test-setup"]
+    }
   },
   "moduleResolution": "node",
   "strict": false,

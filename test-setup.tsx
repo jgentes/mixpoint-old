@@ -1,17 +1,16 @@
 // from https://testing-library.com/docs/react-testing-library/setup
+// this file closely follows src/layout/layout.tsx
 
 import React from 'react'
-import PropTypes from 'prop-types'
 import { render } from '@testing-library/react'
 import { BrowserRouter as Router } from 'react-router-dom'
 import { Helmet } from 'react-helmet'
 import { ToastContainer, toast } from 'react-toastify'
 import '@testing-library/jest-dom'
 
-import config from './config'
-
 window.onerror = msg => toast.error(`Whoops! ${msg}`)
-window.onunhandledrejection = e => toast.error(`Whoops! ${e.reason.message}`)
+window.onunhandledrejection = (e: PromiseRejectionEvent) =>
+  toast.error(`Whoops! ${e.reason.message}`)
 
 const favIcons = [
   {
@@ -30,18 +29,16 @@ const favIcons = [
 
 const basePath = process.env.BASE_PATH || '/'
 
-const AllTheProviders = ({ children }) => {
-  AllTheProviders.propTypes = {
-    children: PropTypes.object
-  }
-
+const AllTheProviders = ({ children }: { children: object }) => {
   return (
     <Router basename={basePath}>
       <Helmet>
         <meta charSet='utf-8' />
-        <title>{config.siteTitle}</title>
-        <link rel='canonical' href={config.siteCannonicalUrl} />
-        <meta name='description' content={config.siteDescription} />
+        <title>DJ Set Editor</title>
+        <meta
+          name='description'
+          content={'Multi-track audio editor designed for mixing dj sets'}
+        />
         {favIcons.map((favIcon, index) => (
           <link {...favIcon} key={index} />
         ))}
@@ -60,7 +57,8 @@ const AllTheProviders = ({ children }) => {
   )
 }
 
-const customRender = (ui, options) =>
+const customRender = (ui: any, options?: object) =>
+  // @ts-expect-error
   render(ui, { wrapper: AllTheProviders, ...options })
 
 // re-export everything

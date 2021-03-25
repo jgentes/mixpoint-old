@@ -1,22 +1,22 @@
 import React from 'react'
 import { Container, Breadcrumb, BreadcrumbItem } from 'reactstrap'
 import Toggle from 'react-toggle'
-import TrackForm from './trackform.js'
-import { db, updateMixState } from '../../db'
+import TrackForm from './trackform'
+import { db, mixState, updateMixState } from '../../db'
 import { useLiveQuery } from 'dexie-react-hooks'
 
 export const Mixes = () => {
   const tracks = [1, 2]
 
   // pull state from db to hyrdate component state
-  const mixState = useLiveQuery(() => db.state.get('mixState'))
+  const state: mixState = useLiveQuery(() => db.state.get('mixState')) ?? {}
 
-  console.log('mixstate:', mixState)
+  console.log('mixstate:', state)
   const bpmControl = (
     <div className='mt-3'>
       <Toggle
-        checked={mixState?.bpmSync || false}
-        size='small'
+        checked={!!state?.bpmSync || false}
+        size={1}
         icons={{
           checked: <i className='las la-check text-white' />,
           unchecked: null
@@ -57,7 +57,7 @@ export const Mixes = () => {
 
       <div className='mb-5'>
         {tracks?.map(trackKey => (
-          <TrackForm key={trackKey} trackKey={trackKey} mixState={mixState} />
+          <TrackForm key={trackKey} trackKey={trackKey} mixState={state} />
         ))}
       </div>
     </Container>

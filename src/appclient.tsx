@@ -15,5 +15,4 @@ const AppClient = () => {
     </Router>
   )
 }
-
 export default AppClient

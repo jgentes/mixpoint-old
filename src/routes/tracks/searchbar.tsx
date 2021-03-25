@@ -1,13 +1,10 @@
-import { useEffect, useState } from 'react'
-import PropTypes from 'prop-types'
+import React, { useEffect, useState } from 'react'
 import { Input, InputGroup, Button, InputGroupAddon } from 'reactstrap'
 
-export const SearchBar = props => {
-  SearchBar.propTypes = {
-    className: PropTypes.string,
-    onSearch: PropTypes.func
-  }
-
+export const SearchBar = (props: {
+  className?: string
+  onSearch: (searchVal: string) => void
+}): JSX.Element => {
   const [searchVal, setSearch] = useState('')
 
   useEffect(() => props.onSearch(searchVal), [searchVal])

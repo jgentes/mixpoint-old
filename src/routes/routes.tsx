@@ -7,7 +7,7 @@ import { Tracks } from './tracks/tracks'
 
 // ------ Route Definitions --------
 // eslint-disable-next-line no-unused-vars
-export const RoutedContent = () => {
+export const RoutedContent = (): JSX.Element => {
   return (
     <Switch>
       <Redirect from='/' to='/mixes' exact />

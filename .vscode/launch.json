@@ -7,7 +7,11 @@
       "request": "launch",
       "preLaunchTask": "Parcel",
       "url": "http://localhost:1234",
-      "webRoot": "${workspaceFolder}"
+      "webRoot": "${workspaceFolder}",
+      "sourceMaps": true,
+      "sourceMapPathOverrides": {
+        "*": "${webRoot}/dist/*"
+      }
     }
   ]
 }

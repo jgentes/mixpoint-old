@@ -1,5 +1,6 @@
 import { render, screen } from 'test-setup'
 import '@testing-library/jest-dom/extend-expect'
+import React from 'react'
 import { TopNavbar } from './topnavbar'
 
 test('Logo must have proper src and alt text', () => {

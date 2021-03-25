@@ -1,37 +1,45 @@
 import React, { useRef, useState } from 'react'
-import PropTypes from 'prop-types'
-import { Button, Card, Input, InputGroup, InputGroupAddon } from 'reactstrap'
+import {
+  Button,
+  Card,
+  Input,
+  InputGroup,
+  InputGroupAddon,
+  InputGroupTextProps
+} from 'reactstrap'
 import { processTrack } from '../../audio'
 import Loader from '../../layout/loader'
-import Slider from 'rc-slider'
+import Slider, { SliderProps } from 'rc-slider'
 import { initPeaks } from './initPeaks'
-import { db, updateMixState } from '../../db'
+import { PeaksInstance } from 'peaks.js'
+import { Track, db, mixState, updateMixState } from '../../db'
 
-const TrackForm = ({ trackKey, mixState }) => {
-  TrackForm.propTypes = {
-    trackKey: PropTypes.number,
-    mixState: PropTypes.object
-  }
+const TrackForm = ({
+  trackKey,
+  mixState
+}: {
+  trackKey: number
+  mixState: mixState
+}) => {
+  const audioElement = useRef<HTMLAudioElement>(null)
 
-  const audioElement = useRef()
-
-  const [sliderControl, setSliderControl] = useState()
+  const [sliderControl, setSliderControl] = useState<SliderProps>()
   const [audioSrc, setAudioSrc] = useState('')
   const [analyzing, setAnalyzing] = useState(false)
-  const [primaryTrack, setTrack] = useState({})
-  const [canvas, setCanvas] = useState()
+  const [primaryTrack, setTrack] = useState<Track>()
+  const [canvas, setCanvas] = useState<PeaksInstance>()
 
   const track1 = !!(trackKey % 2)
 
-  const updatePlaybackRate = bpm => {
+  const updatePlaybackRate = (bpm: number) => {
     // update play speed to new bpm
-    const playbackRate = bpm / (primaryTrack.bpm || bpm)
-    audioElement.current.playbackRate = playbackRate
+    const playbackRate = bpm / (primaryTrack?.bpm || bpm)
+    if (audioElement.current) audioElement.current.playbackRate = playbackRate
   }
 
-  const adjustBpm = async bpm => {
+  const adjustBpm = async (bpm: number) => {
     // get bpm from the user input field or mixState or current track
-    bpm = Number(bpm || primaryTrack.bpm)
+    bpm = Number(bpm || primaryTrack?.bpm)
 
     updatePlaybackRate(bpm)
 
@@ -39,7 +47,7 @@ const TrackForm = ({ trackKey, mixState }) => {
     await updateMixState({ [`track${trackKey}_bpm`]: bpm.toFixed(1) })
   }
 
-  const getPeaks = async track =>
+  const getPeaks = async (track: Track) =>
     await initPeaks({
       trackKey,
       track,
@@ -52,7 +60,7 @@ const TrackForm = ({ trackKey, mixState }) => {
     })
 
   const audioChange = async () => {
-    if (!primaryTrack.name) setAnalyzing(true)
+    if (!primaryTrack?.name) setAnalyzing(true)
 
     let fileHandle
     try {
@@ -63,27 +71,27 @@ const TrackForm = ({ trackKey, mixState }) => {
     }
 
     // release resources from previous peak rendering
-    if (canvas) canvas.destroy()
+    if (canvas) canvas?.destroy()
 
     const track =
       (await db.tracks.get(fileHandle.name)) || (await processTrack(fileHandle))
     console.log(track)
-    getPeaks(track)
+    if (track) getPeaks(track)
   }
 
   const bpmVal =
-    mixState?.[`track${trackKey}_bpm`] || primaryTrack.bpm?.toFixed(1) || 0
+    mixState?.[`track${trackKey}_bpm`] || primaryTrack?.bpm?.toFixed(1) || 0
 
-  const bpmDiff = bpmVal === primaryTrack.bpm?.toFixed(1)
+  const bpmDiff = bpmVal === primaryTrack?.bpm?.toFixed(1)
 
   const bpmControl = (
     <div className='pr-2'>
       <InputGroup size='sm' style={{ width: bpmDiff ? '140px' : '110px' }}>
         <Input
           type='text'
-          className={`${!primaryTrack.bpm ? 'text-gray-500' : ''}`}
-          disabled={!primaryTrack.bpm}
-          onChange={e => adjustBpm(e.target.value)}
+          className={`${!primaryTrack?.bpm ? 'text-gray-500' : ''}`}
+          disabled={!primaryTrack?.bpm}
+          onChange={(e: InputGroupTextProps) => adjustBpm(e.target.value)}
           value={bpmVal}
           id={`bpmInput_${trackKey}`}
         />
@@ -91,7 +99,7 @@ const TrackForm = ({ trackKey, mixState }) => {
           <Button
             color='primary'
             disabled={!bpmDiff}
-            onClick={() => adjustBpm(primaryTrack.bpm)}
+            onClick={() => adjustBpm(primaryTrack?.bpm || 1)}
             id={`bpmButton_${trackKey}`}
           >
             {bpmDiff ? 'Reset ' : ''}BPM
@@ -101,12 +109,12 @@ const TrackForm = ({ trackKey, mixState }) => {
     </div>
   )
 
-  const playerControl = !primaryTrack.name ? null : (
+  const playerControl = !primaryTrack?.name ? null : (
     <div
       className='float-left'
       style={{
         position: 'relative',
-        zIndex: '999',
+        zIndex: 999,
         visibility: analyzing ? 'hidden' : 'visible'
       }}
     >
@@ -115,7 +123,7 @@ const TrackForm = ({ trackKey, mixState }) => {
         title='Play'
         size='sm'
         className='mx-1 b-black-02'
-        onClick={() => canvas.player.play()}
+        onClick={() => canvas?.player.play()}
         id={`playButton_${trackKey}`}
       >
         <i className='las la-play text-success' />
@@ -125,7 +133,7 @@ const TrackForm = ({ trackKey, mixState }) => {
         title='Pause'
         size='sm'
         className='ml-1 b-black-02'
-        onClick={() => canvas.player.pause()}
+        onClick={() => canvas?.player.pause()}
         id={`pauseButton_${trackKey}`}
       >
         <i className='las la-pause text-danger' />
@@ -151,7 +159,9 @@ const TrackForm = ({ trackKey, mixState }) => {
           className='pl-3'
         >
           <span className='h5'>
-            {analyzing ? 'Loading..' : primaryTrack.name || 'No Track Loaded..'}
+            {analyzing
+              ? 'Loading..'
+              : primaryTrack?.name || 'No Track Loaded..'}
           </span>
         </div>
       </div>
@@ -180,7 +190,7 @@ const TrackForm = ({ trackKey, mixState }) => {
     <div
       id={`zoomview-container_${trackKey}`}
       style={{
-        height: primaryTrack.name ? '150px' : '0px',
+        height: primaryTrack?.name ? '150px' : '0px',
         visibility: analyzing ? 'hidden' : 'visible'
       }}
     />
@@ -190,7 +200,7 @@ const TrackForm = ({ trackKey, mixState }) => {
     <div
       id={`overview-container_${trackKey}`}
       style={{
-        height: primaryTrack.name ? '40px' : '0px',
+        height: primaryTrack?.name ? '40px' : '0px',
         visibility: analyzing ? 'hidden' : 'visible'
       }}
     />

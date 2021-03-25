@@ -7,7 +7,8 @@ import favIcon32 from '../assets/soundwave-32px.jpg'
 import favIcon16 from '../assets/soundwave-16px.jpg'
 
 window.onerror = msg => toast.error(`Whoops! ${msg}`)
-window.onunhandledrejection = e => toast.error(`Whoops! ${e.reason.message}`)
+window.onunhandledrejection = (e: PromiseRejectionEvent) =>
+  toast.error(`Whoops! ${e.reason.message}`)
 
 const favIcons = [
   {

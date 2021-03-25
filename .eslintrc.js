@@ -4,6 +4,7 @@ module.exports = {
     es2021: true
   },
   extends: [
+    'eslint: recommended',
     'plugin:react/recommended',
     'plugin:jest-dom/recommended',
     'plugin:testing-library/recommended',
@@ -26,7 +27,8 @@ module.exports = {
     'no-use-before-define': 'off',
     '@typescript-eslint/no-use-before-define': ['error'],
     'import/no-webpack-loader-syntax': 'off',
-    'no-unused-vars': 'warn',
+    '@typescript-eslint/no-unused-vars': 'error',
+    'no-unused-vars': 'off',
     'react/react-in-jsx-scope': 'warn',
     'react/prop-types': 'off'
   }
