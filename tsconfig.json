@@ -4,8 +4,10 @@
     "lib": ["es5", "es6", "dom"],
     "jsx": "react",
     "sourceMap": true,
-    "preserveConstEnums": true
+    "preserveConstEnums": true,
+    "moduleResolution": "node"
   },
   "strict": false,
-  "include": ["./src/**/*"]
+  "include": ["./src/**/*"],
+  "exclude": ["node_modules"]
 }
