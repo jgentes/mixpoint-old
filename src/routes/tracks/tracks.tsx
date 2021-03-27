@@ -9,7 +9,7 @@ import Loader from '../../layout/loader'
 import { SearchBar } from './searchbar'
 import { Card, Container, Badge, UncontrolledTooltip } from 'reactstrap'
 
-export const Tracks = (props: { baseProps: object; searchProps: object }) => {
+export const Tracks = (props: { baseProps?: object; searchProps?: object }) => {
   const [isOver, setIsOver] = useState(false)
   const [tracks, setTracks] = useState<Track[]>([])
   const [analyzing, setAnalyzing] = useState(false)

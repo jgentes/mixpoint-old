@@ -4,13 +4,8 @@
     "lib": ["es5", "es6", "dom"],
     "jsx": "react",
     "sourceMap": true,
-    "preserveConstEnums": true,
-    "paths": {
-      "test-setup": ["./test-setup"]
-    }
+    "preserveConstEnums": true
   },
-  "moduleResolution": "node",
   "strict": false,
-  "include": ["src/**/*"],
-  "exclude": ["node_modules", "**/*.spec.ts"]
+  "include": ["./src/**/*"]
 }
