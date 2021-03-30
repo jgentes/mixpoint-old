@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react'
+import { useState, useEffect } from 'react'
 import BootstrapTable from 'react-bootstrap-table-next'
 import ToolkitProvider from 'react-bootstrap-table2-toolkit'
 import { toast } from 'react-toastify'
@@ -39,10 +39,19 @@ export const Tracks = (props: { baseProps?: object; searchProps?: object }) => {
     )
   }
 
-  const getFile = async (name: string, fileHandle: FileSystemFileHandle) => {
+  const getFile = async (name: string, fileHandle?: FileSystemFileHandle) => {
     try {
-      // const file = await get('file')
       let file
+
+      if (!fileHandle) {
+        file = await db.tracks.get(name)
+        if (!file) {
+          _removeFile(undefined, name)
+          throw new Error('File not found, deleting from tracklist')
+        }
+        fileHandle = file.fileHandle
+      }
+
       try {
         file = await fileHandle.getFile()
         if (file) return toast.success(file.name)
@@ -57,8 +66,8 @@ export const Tracks = (props: { baseProps?: object; searchProps?: object }) => {
     }
   }
 
-  const _removeFile = async (e: MouseEvent, name: string) => {
-    e.preventDefault()
+  const _removeFile = async (e: MouseEvent | undefined, name: string) => {
+    e?.preventDefault()
     await deleteTrack(name)
     toast.success(
       <>
@@ -69,7 +78,7 @@ export const Tracks = (props: { baseProps?: object; searchProps?: object }) => {
     setTracks(tracks.filter((t: Track) => t.name !== name))
   }
 
-  const _filesDropped = async (files: DataTransferItem[]) => {
+  const _filesDropped = async (files: DataTransferItemList) => {
     for (const item of files) {
       if (item.kind === 'file') {
         setAnalyzing(true)
@@ -109,22 +118,19 @@ export const Tracks = (props: { baseProps?: object; searchProps?: object }) => {
     }
   }
 
-  const actions = (
-    cell: void,
-    name: string,
-    fileHandle: FileSystemFileHandle
-  ) => (
+  const actions = (cell: void, row: { name: string }) => (
     <>
       <div
         //onClick={e => _removeFile(e, row)}
         onClick={e => {
           e.preventDefault()
-          getFile(name, fileHandle)
+          console.log('CELL:', row.name)
+          getFile(row.name)
         }}
         id='UncontrolledTooltipDelete'
         style={{ cursor: 'pointer' }}
       >
-        <i className='las la-fw la-close text-danger'></i>
+        <i className='las la-15em la-times-circle text-danger'></i>
       </div>
       <UncontrolledTooltip placement='left' target='UncontrolledTooltipDelete'>
         Delete Track
@@ -132,7 +138,7 @@ export const Tracks = (props: { baseProps?: object; searchProps?: object }) => {
     </>
   )
 
-  const sortCaret = (order: boolean, column: any): JSX.Element => (
+  const sortCaret = (order: 'desc' | 'asc' | undefined) => (
     <i
       className={`las la-fw text-muted ${
         order ? `la-sort-${order}` : `la-sort`
@@ -144,7 +150,7 @@ export const Tracks = (props: { baseProps?: object; searchProps?: object }) => {
     const classes = 'text-center'
     const headerStyle = {
       color: '#333',
-      textAlign: 'center'
+      textAlign: 'center' as const
     }
 
     return [
@@ -154,7 +160,7 @@ export const Tracks = (props: { baseProps?: object; searchProps?: object }) => {
         sort: true,
         headerStyle: {
           color: '#333',
-          textAlign: 'left'
+          textAlign: 'left' as const
         },
         sortCaret
       },
@@ -252,7 +258,7 @@ export const Tracks = (props: { baseProps?: object; searchProps?: object }) => {
           search
         >
           {props => (
-            <React.Fragment>
+            <>
               <div className='d-flex mb-2'>
                 <div>
                   <SearchBar {...props.searchProps} />
@@ -272,7 +278,7 @@ export const Tracks = (props: { baseProps?: object; searchProps?: object }) => {
                   {...props.baseProps}
                 />
               </Card>
-            </React.Fragment>
+            </>
           )}
         </ToolkitProvider>
       )}

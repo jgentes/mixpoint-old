@@ -1,18 +1,24 @@
 // from https://testing-library.com/docs/react-testing-library/setup
 // this file closely follows src/layout/layout.tsx
-
-import React from 'react'
 import { render } from '@testing-library/react'
 import { BrowserRouter as Router } from 'react-router-dom'
 import { Helmet } from 'react-helmet'
 import '@testing-library/jest-dom'
+require('fake-indexeddb/auto')
 
-// for URL.createObjectURL: https://github.com/jsdom/jsdom/issues/1721
+// for URL.createObjectURL & URL.revokeObjectURL: https://github.com/jsdom/jsdom/issues/1721
 
 function noOp () {}
 if (typeof window.URL.createObjectURL === 'undefined') {
   Object.defineProperty(window.URL, 'createObjectURL', { value: noOp })
 }
+
+if (typeof window.URL.revokeObjectURL === 'undefined') {
+  Object.defineProperty(window.URL, 'revokeObjectURL', { value: noOp })
+}
+
+// for Worker: https://github.com/facebook/jest/issues/3449
+window.Worker = jest.fn()
 
 const favIcons = [
   {

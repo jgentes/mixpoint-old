@@ -1,4 +1,3 @@
-import React from 'react'
 import { Helmet } from 'react-helmet'
 import { TopNavbar } from './topnav/topnavbar'
 import { ToastContainer, toast } from 'react-toastify'
@@ -25,38 +24,32 @@ const favIcons = [
   }
 ]
 
-class AppLayout extends React.Component {
-  render () {
-    const { children } = this.props
+const AppLayout: React.FunctionComponent = props => (
+  <>
+    <Helmet>
+      <meta charSet='utf-8' />
+      <title>DJ Set Editor</title>
+      <meta
+        name='description'
+        content={'Multi-track audio editor designed for mixing dj sets'}
+      />
+      {favIcons.map((favIcon, index) => (
+        <link {...favIcon} key={index} />
+      ))}
+    </Helmet>
 
-    return (
-      <>
-        <Helmet>
-          <meta charSet='utf-8' />
-          <title>DJ Set Editor</title>
-          <meta
-            name='description'
-            content={'Multi-track audio editor designed for mixing dj sets'}
-          />
-          {favIcons.map((favIcon, index) => (
-            <link {...favIcon} key={index} />
-          ))}
-        </Helmet>
+    <TopNavbar />
 
-        <TopNavbar />
+    {props.children}
 
-        {children}
-
-        <ToastContainer
-          position='bottom-center'
-          autoClose={10000}
-          draggable={false}
-          hideProgressBar={true}
-          bodyClassName='text-black'
-        />
-      </>
-    )
-  }
-}
+    <ToastContainer
+      position='bottom-center'
+      autoClose={10000}
+      draggable={false}
+      hideProgressBar={true}
+      bodyClassName='text-black'
+    />
+  </>
+)
 
 export default AppLayout

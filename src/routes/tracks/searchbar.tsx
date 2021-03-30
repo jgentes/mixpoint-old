@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react'
+import { useEffect, useState } from 'react'
 import { Input, InputGroup, Button, InputGroupAddon } from 'reactstrap'
 
 export const SearchBar = (props: {

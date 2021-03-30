@@ -1,13 +1,12 @@
 import { render, screen } from '../../test-setup'
 import '@testing-library/jest-dom/extend-expect'
-import React from 'react'
 import { TopNavbar } from './topnavbar'
 
 test('Logo must have proper src and alt text', () => {
   render(<TopNavbar />)
   const logo = screen.getByRole('img', { name: 'DJ Set Editor Logo' })
 
-  expect(logo).toBeDefined
+  expect(logo).toBeVisible
 })
 
 test('Site title must appear in header', () => {
