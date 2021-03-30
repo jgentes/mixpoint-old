@@ -9,16 +9,22 @@ import Loader from '../../layout/loader'
 import { SearchBar } from './searchbar'
 import { Card, Container, Badge, UncontrolledTooltip } from 'reactstrap'
 
-export const Tracks = (props: { baseProps?: object; searchProps?: object }) => {
+export const Tracks = (props: {
+  baseProps?: object
+  searchProps?: object
+  getTracksMock: Function
+}) => {
   const [isOver, setIsOver] = useState(false)
   const [tracks, setTracks] = useState<Track[]>([])
   const [analyzing, setAnalyzing] = useState(false)
 
-  const getTracks = () => {
+  const getTracks = () =>
     db.tracks.toArray().then(gotTracks => setTracks(gotTracks))
-  }
 
-  useEffect(() => getTracks(), [])
+  useEffect(
+    () => (props.getTracksMock ? props.getTracksMock() : getTracks()),
+    []
+  )
 
   const success = (trackName: string) => {
     toast.success(
@@ -40,30 +46,26 @@ export const Tracks = (props: { baseProps?: object; searchProps?: object }) => {
   }
 
   const getFile = async (name: string, fileHandle?: FileSystemFileHandle) => {
-    try {
-      let file
+    let file
 
-      if (!fileHandle) {
-        file = await db.tracks.get(name)
-        if (!file) {
-          _removeFile(undefined, name)
-          throw new Error('File not found, deleting from tracklist')
-        }
-        fileHandle = file.fileHandle
+    if (!fileHandle) {
+      file = await db.tracks.get(name)
+      if (!file) {
+        _removeFile(undefined, name)
+        throw new Error('File not found, deleting from tracklist')
       }
-
-      try {
-        file = await fileHandle.getFile()
-        if (file) return toast.success(file.name)
-      } catch (e) {
-        console.log('GETFILE caught:', e)
-        await fileHandle.requestPermission()
-      }
-
-      return failure(name)
-    } catch (e) {
-      toast.error(`caught getfile ${e}`)
+      fileHandle = file.fileHandle
     }
+
+    try {
+      file = await fileHandle.getFile()
+      if (file) return success(name)
+    } catch (e) {
+      const perms = await fileHandle.requestPermission()
+      if (perms === 'granted') return success(name)
+    }
+
+    return failure(name)
   }
 
   const _removeFile = async (e: MouseEvent | undefined, name: string) => {
@@ -124,7 +126,6 @@ export const Tracks = (props: { baseProps?: object; searchProps?: object }) => {
         //onClick={e => _removeFile(e, row)}
         onClick={e => {
           e.preventDefault()
-          console.log('CELL:', row.name)
           getFile(row.name)
         }}
         id='UncontrolledTooltipDelete'
