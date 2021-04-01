@@ -1,4 +1,5 @@
 import { Track, putTrack, db } from './db'
+import { success, failure } from './utils'
 import { guess } from 'web-audio-beat-detector'
 
 const getAudioBuffer = async (file: File): Promise<AudioBuffer> => {
@@ -14,7 +15,7 @@ const getBpm = async (
 const processTrack = async (
   fileHandle: FileSystemFileHandle | null
 ): Promise<Track | undefined> => {
-  if (!fileHandle) throw 'Unable to access file'
+  if (!fileHandle) throw new Error('Unable to obtain file handle')
 
   const file = await fileHandle.getFile()
   const { name, size, type } = file
@@ -38,6 +39,9 @@ const processTrack = async (
   }
 
   await putTrack(track)
+
+  if (!track) failure()
+  else success(track.name)
 
   return db.tracks.get(name)
 }

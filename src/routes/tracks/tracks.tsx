@@ -3,47 +3,20 @@ import BootstrapTable from 'react-bootstrap-table-next'
 import ToolkitProvider from 'react-bootstrap-table2-toolkit'
 import { toast } from 'react-toastify'
 import moment from 'moment'
-import { db, Track, deleteTrack } from '../../db'
-import { processTrack } from '../../audio'
+import { db, Track, removeTrack, putTrack } from '../../db'
+import { processTrack, getFileBasics } from '../../audio'
 import Loader from '../../layout/loader'
+import { success, failure } from '../../utils'
 import { SearchBar } from './searchbar'
 import { Card, Container, Badge, UncontrolledTooltip } from 'reactstrap'
+import { useLiveQuery } from 'dexie-react-hooks'
 
-export const Tracks = (props: {
-  baseProps?: object
-  searchProps?: object
-  getTracksMock: Function
-}) => {
+export const Tracks = (props: { baseProps?: object; searchProps?: object }) => {
   const [isOver, setIsOver] = useState(false)
-  const [tracks, setTracks] = useState<Track[]>([])
   const [analyzing, setAnalyzing] = useState(false)
 
-  const getTracks = () =>
-    db.tracks.toArray().then(gotTracks => setTracks(gotTracks))
-
-  useEffect(
-    () => (props.getTracksMock ? props.getTracksMock() : getTracks()),
-    []
-  )
-
-  const success = (trackName: string) => {
-    toast.success(
-      <>
-        Loaded <strong>{trackName}</strong>
-      </>,
-      { autoClose: 3000 }
-    )
-  }
-
-  const failure = (trackName?: string) => {
-    toast.error(
-      <>
-        Sorry, there was a problem loading{' '}
-        <strong>{trackName || `the track`}</strong>
-      </>,
-      { autoClose: 4000 }
-    )
-  }
+  // monitor db for track updates
+  const tracks: Track[] = useLiveQuery(() => db.tracks.toArray()) ?? []
 
   const getFile = async (name: string, fileHandle?: FileSystemFileHandle) => {
     let file
@@ -51,7 +24,7 @@ export const Tracks = (props: {
     if (!fileHandle) {
       file = await db.tracks.get(name)
       if (!file) {
-        _removeFile(undefined, name)
+        removeFile(undefined, name)
         throw new Error('File not found, deleting from tracklist')
       }
       fileHandle = file.fileHandle
@@ -68,52 +41,64 @@ export const Tracks = (props: {
     return failure(name)
   }
 
-  const _removeFile = async (e: MouseEvent | undefined, name: string) => {
-    e?.preventDefault()
-    await deleteTrack(name)
+  const removeFile = async (name: string) => {
+    await removeTrack(name)
     toast.success(
       <>
-        Deleted <strong>{name}</strong>
+        Removed <strong>{name}</strong>
       </>,
       { autoClose: 3000 }
     )
-    setTracks(tracks.filter((t: Track) => t.name !== name))
+    //setTracks(tracks.filter((t: Track) => t.name !== name))
   }
 
-  const _filesDropped = async (files: DataTransferItemList) => {
-    for (const item of files) {
-      if (item.kind === 'file') {
-        setAnalyzing(true)
-        console.warn('double check // do not await here!')
+  // first add the track to the db with the initial data we have
+  // and show a loader icon while processing the file
+  const initTrack = async (fileHandle: FileSystemFileHandle) => {
+    const { name, size, type } = await fileHandle.getFile()
+    const track = { name, size, type, fileHandle }
 
-        const handle = await item.getAsFileSystemHandle()
-        if (handle?.kind === 'directory') {
-          toast.error(
-            'Sorry, folder support is not ready yet. For now, you can select multiple files to add.'
-          )
-        } else {
-          const track = await processTrack(handle)
-          setAnalyzing(false)
-          if (!track) failure()
-          else success(track.name)
+    await putTrack(track)
+    return fileHandle
+  }
+
+  // queue files for processing after they are added to the DB
+  // this provides a more responsive UI experience
+  const queueTracks = async (handles: FileSystemFileHandle[]) => {
+    for (const handle of handles) await initTrack(handle)
+    for (const handle of handles) await processTrack(handle)
+  }
+
+  // careful wtih DataTransferItemList: https://stackoverflow.com/questions/55658851/javascript-datatransfer-items-not-persisting-through-async-calls
+  const filesDropped = async (files: DataTransferItemList) => {
+    const handles = [...files].map(item => {
+      if (item.kind === 'file') return item.getAsFileSystemHandle()
+    })
+
+    const handleArray = []
+
+    for await (const handle of handles) {
+      if (!handle) return failure()
+
+      if (handle?.kind === 'directory') {
+        for await (const entry of handle.values()) {
+          if (entry.kind === 'file') {
+            handleArray.push(entry)
+          }
         }
+      } else {
+        handleArray.push(handle)
       }
     }
+
+    await queueTracks(handleArray)
     setIsOver(false)
   }
 
   const browseFile = async () => {
     try {
       const files = await window.showOpenFilePicker({ multiple: true })
-      for (const fileHandle of files) {
-        setAnalyzing(true)
-        const track = await processTrack(fileHandle)
-        if (!track) failure(fileHandle.name)
-        else success(track.name)
-      }
-
-      setAnalyzing(false)
-      getTracks()
+      queueTracks(files)
     } catch (e) {
       if (e?.message?.includes('user aborted a request')) return
       throw e
@@ -123,18 +108,17 @@ export const Tracks = (props: {
   const actions = (cell: void, row: { name: string }) => (
     <>
       <div
-        //onClick={e => _removeFile(e, row)}
         onClick={e => {
           e.preventDefault()
-          getFile(row.name)
+          removeFile(row.name)
         }}
-        id='UncontrolledTooltipDelete'
+        id='removeTrack'
         style={{ cursor: 'pointer' }}
       >
         <i className='las la-15em la-times-circle text-danger'></i>
       </div>
-      <UncontrolledTooltip placement='left' target='UncontrolledTooltipDelete'>
-        Delete Track
+      <UncontrolledTooltip placement='left' target='removeTrack'>
+        Remove Track
       </UncontrolledTooltip>
     </>
   )
@@ -152,6 +136,13 @@ export const Tracks = (props: {
     const headerStyle = {
       color: '#333',
       textAlign: 'center' as const
+    }
+
+    const formatMinutes = (mins: number) => {
+      return moment()
+        .startOf('day')
+        .add(mins, 'minutes')
+        .format('m:ss')
     }
 
     return [
@@ -172,7 +163,8 @@ export const Tracks = (props: {
         headerStyle,
         classes,
         sortCaret,
-        formatter: (cell: number) => cell.toFixed(0)
+        formatter: (cell: number | undefined) =>
+          cell?.toFixed(0) || <Loader style={{ margin: 0 }} />
       },
       {
         dataField: 'duration',
@@ -181,7 +173,8 @@ export const Tracks = (props: {
         headerStyle,
         classes,
         sortCaret,
-        formatter: (cell: number) => `${(cell / 60).toFixed(1)}m`
+        formatter: (cell: number | undefined) =>
+          cell ? formatMinutes(cell / 60) : null
       },
       {
         dataField: 'mixes',
@@ -206,7 +199,7 @@ export const Tracks = (props: {
         headerStyle,
         classes,
         sortCaret,
-        style: { minWidth: '140px' },
+        style: { minWidth: '140px', fontSize: 'small' },
         formatter: (cell: moment.MomentInput) => moment(cell).fromNow()
       },
       {
@@ -230,7 +223,7 @@ export const Tracks = (props: {
           className={`dropzone ${isOver ? 'dropzone--active' : ''}`}
           onDrop={e => {
             e.preventDefault()
-            _filesDropped(e.dataTransfer.items)
+            filesDropped(e.dataTransfer.items)
           }}
           onDragOver={e => e.preventDefault()}
           onDragEnter={() => setIsOver(true)}
@@ -239,17 +232,11 @@ export const Tracks = (props: {
           <i className='las la-cloud-upload-alt la-fw la-3x drop'></i>
           <h5 className='mt-0 drop'>Add Tracks</h5>
           <div className='drop'>
-            Drag a file here or <span className='text-primary'>browse</span> for
-            a file to add.
+            Drag a file or <strong>folder</strong> here or{' '}
+            <span className='text-primary'>browse</span> for a file to add.
           </div>
         </div>
       </div>
-
-      <Loader
-        style={{
-          display: analyzing ? 'block' : 'none'
-        }}
-      />
 
       {!tracks.length ? null : (
         <ToolkitProvider

@@ -1,8 +1,9 @@
 {
   "extends": "@tsconfig/node12/tsconfig.json",
   "compilerOptions": {
-    "lib": ["es5", "es6", "dom", "dom.Iterable"],
+    "lib": ["es5", "es6", "dom", "dom.iterable"],
     "jsx": "react-jsx",
+    "target": "ESNext",
     "sourceMap": true,
     "preserveConstEnums": true,
     "moduleResolution": "node"

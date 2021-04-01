@@ -64,8 +64,9 @@ db.on('populate', function () {
   db.state.put({}, 'setState')
 })
 
-const errHandler = (err: Error) =>
+const errHandler = (err: Error) => {
   toast.error(`Oops, there was a problem: ${err.message}`)
+}
 
 const getTrackState = async (): Promise<trackState> =>
   (await db.state.get('trackState')) ?? {}
@@ -108,7 +109,7 @@ const putTrack = async ({
     .catch(errHandler)
 }
 
-const deleteTrack = (name: string): Promise<void> =>
+const removeTrack = (name: string): Promise<void> =>
   db.tracks.delete(name).catch(errHandler)
 
 export {
@@ -120,7 +121,7 @@ export {
   Set,
   setState,
   putTrack,
-  deleteTrack,
+  removeTrack,
   getTrackState,
   getMixState,
   getSetState,
