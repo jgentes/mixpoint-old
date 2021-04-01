@@ -22,7 +22,13 @@ const processTrack = async (
 
   const audioBuffer = await getAudioBuffer(file)
   const { duration, sampleRate } = audioBuffer
-  const { offset, bpm } = await getBpm(audioBuffer)
+  let offset = 0,
+    bpm = 1
+  try {
+    ;({ offset, bpm } = await getBpm(audioBuffer))
+  } catch (e) {
+    failure(undefined, `Unable to determine BPM for <strong>${name}</strong>`)
+  }
 
   // adjust for miscalc tempo > 160bpm
   const adjustedBpm = bpm > 160 ? bpm / 2 : bpm

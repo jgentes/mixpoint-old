@@ -174,7 +174,7 @@ export const Tracks = (props: { baseProps?: object; searchProps?: object }) => {
         classes,
         sortCaret,
         formatter: (cell: number | undefined) =>
-          cell ? formatMinutes(cell / 60) : null
+          cell ? formatMinutes(cell / 60) : false
       },
       {
         dataField: 'mixes',
@@ -263,6 +263,7 @@ export const Tracks = (props: { baseProps?: object; searchProps?: object }) => {
                   classes='table-responsive-lg mb-0'
                   bordered={false}
                   hover
+                  defaultSorted={[{ dataField: 'lastModified', order: 'desc' }]}
                   {...props.baseProps}
                 />
               </Card>
