@@ -1,10 +1,10 @@
-import { useState, useEffect } from 'react'
+import { useState } from 'react'
 import BootstrapTable from 'react-bootstrap-table-next'
 import ToolkitProvider from 'react-bootstrap-table2-toolkit'
 import { toast } from 'react-toastify'
 import moment from 'moment'
 import { db, Track, removeTrack, putTrack } from '../../db'
-import { processTrack, getFileBasics } from '../../audio'
+import { processTrack } from '../../audio'
 import Loader from '../../layout/loader'
 import { success, failure } from '../../utils'
 import { SearchBar } from './searchbar'
@@ -13,10 +13,9 @@ import { useLiveQuery } from 'dexie-react-hooks'
 
 export const Tracks = (props: { baseProps?: object; searchProps?: object }) => {
   const [isOver, setIsOver] = useState(false)
-  const [analyzing, setAnalyzing] = useState(false)
 
   // monitor db for track updates
-  const tracks: Track[] = useLiveQuery(() => db.tracks.toArray()) ?? []
+  const tracks: Track[] | null = useLiveQuery(() => db.tracks.toArray()) ?? null
 
   const getFile = async (name: string, fileHandle?: FileSystemFileHandle) => {
     let file
@@ -174,7 +173,7 @@ export const Tracks = (props: { baseProps?: object; searchProps?: object }) => {
         classes,
         sortCaret,
         formatter: (cell: number | undefined) =>
-          cell ? formatMinutes(cell / 60) : false
+          cell ? formatMinutes(cell / 60) : <></>
       },
       {
         dataField: 'mixes',
@@ -238,7 +237,9 @@ export const Tracks = (props: { baseProps?: object; searchProps?: object }) => {
         </div>
       </div>
 
-      {!tracks.length ? null : (
+      {!tracks ? (
+        <Loader className='my-5' />
+      ) : !tracks.length ? null : (
         <ToolkitProvider
           keyField='name'
           data={tracks}
