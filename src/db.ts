@@ -82,6 +82,7 @@ const updateMixState = async (state: mixState) =>
 const updateSetState = async (state: setState) =>
   await db.state.update('setState', state)
 
+// Note this will overwrite an existing db entry with the same track name!
 const putTrack = async ({
   name,
   size,
@@ -93,7 +94,6 @@ const putTrack = async ({
   sampleRate,
   fileHandle
 }: Track): Promise<string> => {
-  // Note this will overwrite an existing db entry with the same track name!
   return await db.tracks
     .put({
       name,
@@ -109,6 +109,10 @@ const putTrack = async ({
     .catch(errHandler)
 }
 
+const putTracks = async (tracks: Track[]) => {
+  return await db.tracks.bulkPut(tracks).catch(errHandler)
+}
+
 const removeTrack = (name: string): Promise<void> =>
   db.tracks.delete(name).catch(errHandler)
 
@@ -121,6 +125,7 @@ export {
   Set,
   setState,
   putTrack,
+  putTracks,
   removeTrack,
   getTrackState,
   getMixState,

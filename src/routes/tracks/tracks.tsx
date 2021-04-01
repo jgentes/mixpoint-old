@@ -3,7 +3,7 @@ import BootstrapTable from 'react-bootstrap-table-next'
 import ToolkitProvider from 'react-bootstrap-table2-toolkit'
 import { toast } from 'react-toastify'
 import moment from 'moment'
-import { db, Track, removeTrack, putTrack } from '../../db'
+import { db, Track, removeTrack, putTracks } from '../../db'
 import { processTrack } from '../../audio'
 import Loader from '../../layout/loader'
 import { success, failure } from '../../utils'
@@ -13,6 +13,7 @@ import { useLiveQuery } from 'dexie-react-hooks'
 
 export const Tracks = (props: { baseProps?: object; searchProps?: object }) => {
   const [isOver, setIsOver] = useState(false)
+  const [processing, setProcessing] = useState(false)
 
   // monitor db for track updates
   const tracks: Track[] | null = useLiveQuery(() => db.tracks.toArray()) ?? null
@@ -57,19 +58,21 @@ export const Tracks = (props: { baseProps?: object; searchProps?: object }) => {
     const { name, size, type } = await fileHandle.getFile()
     const track = { name, size, type, fileHandle }
 
-    await putTrack(track)
-    return fileHandle
+    return track
   }
 
   // queue files for processing after they are added to the DB
   // this provides a more responsive UI experience
-  const queueTracks = async (handles: FileSystemFileHandle[]) => {
-    for (const handle of handles) await initTrack(handle)
-    for (const handle of handles) await processTrack(handle)
+  const queueTracks = async (tracks: Track[]) => {
+    await putTracks(tracks)
+    setProcessing(false)
+
+    for (const track of tracks) await processTrack(track.fileHandle)
   }
 
   // careful wtih DataTransferItemList: https://stackoverflow.com/questions/55658851/javascript-datatransfer-items-not-persisting-through-async-calls
   const filesDropped = async (files: DataTransferItemList) => {
+    setProcessing(true)
     const handles = [...files].map(item => {
       if (item.kind === 'file') return item.getAsFileSystemHandle()
     })
@@ -82,11 +85,11 @@ export const Tracks = (props: { baseProps?: object; searchProps?: object }) => {
       if (handle?.kind === 'directory') {
         for await (const entry of handle.values()) {
           if (entry.kind === 'file') {
-            handleArray.push(entry)
+            handleArray.push(await initTrack(entry))
           }
         }
       } else {
-        handleArray.push(handle)
+        handleArray.push(await initTrack(handle))
       }
     }
 
@@ -97,7 +100,12 @@ export const Tracks = (props: { baseProps?: object; searchProps?: object }) => {
   const browseFile = async () => {
     try {
       const files = await window.showOpenFilePicker({ multiple: true })
-      queueTracks(files)
+      setProcessing(true)
+
+      let fileArray = []
+      for (const file of files) fileArray.push(await initTrack(file))
+
+      queueTracks(fileArray)
     } catch (e) {
       if (e?.message?.includes('user aborted a request')) return
       throw e
@@ -237,7 +245,7 @@ export const Tracks = (props: { baseProps?: object; searchProps?: object }) => {
         </div>
       </div>
 
-      {!tracks ? (
+      {!tracks || processing ? (
         <Loader className='my-5' />
       ) : !tracks.length ? null : (
         <ToolkitProvider
