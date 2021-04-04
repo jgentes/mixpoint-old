@@ -3,7 +3,7 @@
   "compilerOptions": {
     "lib": ["es5", "es6", "dom", "dom.iterable"],
     "jsx": "react-jsx",
-    "target": "ESNext",
+    "target": "ES6",
     "sourceMap": true,
     "preserveConstEnums": true,
     "moduleResolution": "node"

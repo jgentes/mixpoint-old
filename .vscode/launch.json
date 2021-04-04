@@ -9,9 +9,11 @@
       "url": "http://localhost:1234",
       "webRoot": "${workspaceFolder}",
       "sourceMaps": true,
-      "sourceMapPathOverrides": {
-        "*": "${webRoot}/dist/*"
-      }
+      "skipFiles": [
+        "/node_modules/**/*.{ts,js}",
+        "**/<node_internals>/**/*.{ts,js}"
+      ],
+      "outFiles": ["/dist/*.js", "!**/node_modules/**"]
     }
   ]
 }

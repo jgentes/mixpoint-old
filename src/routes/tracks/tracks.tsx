@@ -1,123 +1,112 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import BootstrapTable from 'react-bootstrap-table-next'
 import ToolkitProvider from 'react-bootstrap-table2-toolkit'
-import { toast } from 'react-toastify'
 import moment from 'moment'
 import { db, Track, removeTrack, putTracks } from '../../db'
-import { processTrack } from '../../audio'
+import { initTrack, processAudio } from '../../audio'
+import { getFile, getPermission } from '../../fileHandlers'
 import Loader from '../../layout/loader'
-import { success, failure } from '../../utils'
 import { SearchBar } from './searchbar'
-import { Card, Container, Badge, UncontrolledTooltip } from 'reactstrap'
+import { Card, Container, Button, UncontrolledTooltip } from 'reactstrap'
 import { useLiveQuery } from 'dexie-react-hooks'
 
 export const Tracks = (props: { baseProps?: object; searchProps?: object }) => {
-  const [isOver, setIsOver] = useState(false)
-  const [processing, setProcessing] = useState(false)
+  const [isOver, setIsOver] = useState(false) // for dropzone
+  const [processing, setProcessing] = useState(false) // show progress if no table
+  const [dirtyTracks, setDirty] = useState<Track[]>([])
 
   // monitor db for track updates
   const tracks: Track[] | null = useLiveQuery(() => db.tracks.toArray()) ?? null
-
-  const getFile = async (name: string, fileHandle?: FileSystemFileHandle) => {
-    let file
-
-    if (!fileHandle) {
-      file = await db.tracks.get(name)
-      if (!file) {
-        removeFile(undefined, name)
-        throw new Error('File not found, deleting from tracklist')
+  const checkDirty = async () => {
+    const dirty = tracks?.filter(t => !t.bpm) || []
+    for (const track of dirty) {
+      if (!(await getFile(track))) {
+        setDirty(dirty)
+        break
       }
-      fileHandle = file.fileHandle
     }
-
-    try {
-      file = await fileHandle.getFile()
-      if (file) return success(name)
-    } catch (e) {
-      const perms = await fileHandle.requestPermission()
-      if (perms === 'granted') return success(name)
-    }
-
-    return failure(name)
   }
 
-  const removeFile = async (name: string) => {
-    await removeTrack(name)
-    toast.success(
-      <>
-        Removed <strong>{name}</strong>
-      </>,
-      { autoClose: 3000 }
-    )
-    //setTracks(tracks.filter((t: Track) => t.name !== name))
-  }
-
-  // first add the track to the db with the initial data we have
-  // and show a loader icon while processing the file
-  const initTrack = async (fileHandle: FileSystemFileHandle) => {
-    const { name, size, type } = await fileHandle.getFile()
-    const track = { name, size, type, fileHandle }
-
-    return track
-  }
+  // if we see any tracks that haven't been processed, process them, or
+  // if we haven't had user activation, show button to resume processing
+  // https://html.spec.whatwg.org/multipage/interaction.html#tracking-user-activation
+  useEffect(() => {
+    const go = async () => await checkDirty()
+    go()
+  }, [tracks])
 
   // queue files for processing after they are added to the DB
   // this provides a more responsive UI experience
-  const queueTracks = async (tracks: Track[]) => {
-    await putTracks(tracks)
+  const processTracks = async (
+    handles: (FileSystemFileHandle | FileSystemDirectoryHandle)[]
+  ) => {
+    let trackArray = []
+
+    setProcessing(true)
+
+    for await (const fileOrDirectoryHandle of handles) {
+      if (!fileOrDirectoryHandle) continue
+
+      if (fileOrDirectoryHandle?.kind === 'directory') {
+        const directoryHandle = fileOrDirectoryHandle
+        for await (const entry of directoryHandle.values()) {
+          if (entry.kind === 'file') {
+            trackArray.push(await initTrack(entry, directoryHandle))
+          }
+        }
+      } else {
+        trackArray.push(await initTrack(fileOrDirectoryHandle))
+      }
+    }
+
+    await putTracks(trackArray)
     setProcessing(false)
 
-    for (const track of tracks) await processTrack(track.fileHandle)
+    for (const track of trackArray) await processAudio(track)
   }
 
   // careful wtih DataTransferItemList: https://stackoverflow.com/questions/55658851/javascript-datatransfer-items-not-persisting-through-async-calls
   const filesDropped = async (files: DataTransferItemList) => {
-    setProcessing(true)
-    const handles = [...files].map(item => {
-      if (item.kind === 'file') return item.getAsFileSystemHandle()
-    })
-
     const handleArray = []
 
-    for await (const handle of handles) {
-      if (!handle) return failure()
-
-      if (handle?.kind === 'directory') {
-        for await (const entry of handle.values()) {
-          if (entry.kind === 'file') {
-            handleArray.push(await initTrack(entry))
-          }
-        }
-      } else {
-        handleArray.push(await initTrack(handle))
+    for (const file of files) {
+      if (file.kind === 'file') {
+        const handle = await file.getAsFileSystemHandle()
+        if (handle) handleArray.push(handle)
       }
     }
 
-    await queueTracks(handleArray)
     setIsOver(false)
+    processTracks(handleArray)
   }
 
   const browseFile = async () => {
-    try {
-      const files = await window.showOpenFilePicker({ multiple: true })
-      setProcessing(true)
+    const files = await window
+      .showOpenFilePicker({ multiple: true })
+      .catch(e => {
+        if (e?.message?.includes('user aborted a request')) return []
+        throw e
+      })
 
-      let fileArray = []
-      for (const file of files) fileArray.push(await initTrack(file))
+    processTracks(files)
+  }
 
-      queueTracks(fileArray)
-    } catch (e) {
-      if (e?.message?.includes('user aborted a request')) return
-      throw e
+  const analyzeTracks = async (tracks: Track[]) => {
+    for (const track of tracks) {
+      const ok = await getPermission(track)
+      if (!ok) tracks = tracks.filter(t => t.name !== track.name)
     }
+
+    for (const track of tracks) await processAudio(track)
+    checkDirty()
   }
 
   const actions = (cell: void, row: { name: string }) => (
     <>
       <div
-        onClick={e => {
+        onClick={async e => {
           e.preventDefault()
-          removeFile(row.name)
+          await removeTrack(row.name)
         }}
         id='removeTrack'
         style={{ cursor: 'pointer' }}
@@ -152,6 +141,22 @@ export const Tracks = (props: { baseProps?: object; searchProps?: object }) => {
         .format('m:ss')
     }
 
+    const resumeButton = (row: Track) => {
+      return (
+        <Button
+          color='outline-primary'
+          size='sm'
+          onClick={e => {
+            e.preventDefault()
+            setDirty(dirtyTracks.filter(t => t.name !== row.name))
+            analyzeTracks([row])
+          }}
+        >
+          Get BPM
+        </Button>
+      )
+    }
+
     return [
       {
         dataField: 'name',
@@ -170,8 +175,19 @@ export const Tracks = (props: { baseProps?: object; searchProps?: object }) => {
         headerStyle,
         classes,
         sortCaret,
-        formatter: (cell: number | undefined) =>
-          cell?.toFixed(0) || <Loader style={{ margin: 0 }} />
+        formatter: (
+          cell: number | undefined,
+          row: any,
+          rowIndex: number,
+          dirtyState: Track[]
+        ) =>
+          cell?.toFixed(0) ||
+          (dirtyState.some(t => t.name == row.name) ? (
+            resumeButton(row)
+          ) : (
+            <Loader style={{ margin: 0 }} />
+          )),
+        formatExtraData: dirtyTracks
       },
       {
         dataField: 'duration',
@@ -241,6 +257,7 @@ export const Tracks = (props: { baseProps?: object; searchProps?: object }) => {
           <div className='drop'>
             Drag a file or <strong>folder</strong> here or{' '}
             <span className='text-primary'>browse</span> for a file to add.
+            Folders are preferred.
           </div>
         </div>
       </div>
@@ -256,14 +273,42 @@ export const Tracks = (props: { baseProps?: object; searchProps?: object }) => {
         >
           {props => (
             <>
-              <div className='d-flex mb-2'>
+              <div className='d-flex mb-2 align-items-baseline'>
                 <div>
                   <SearchBar {...props.searchProps} />
                 </div>
-                <div className='ml-auto px-2'>
-                  <Badge className='mr-2 text-white' color='blue'>
+                {!dirtyTracks.length ? null : (
+                  <div className='ml-auto'>
+                    <div>
+                      <i
+                        className='las la-exclamation-circle la-2x text-danger mr-1'
+                        style={{ verticalAlign: 'middle' }}
+                      />
+                      <Button
+                        color='outline-danger'
+                        size='sm'
+                        className='py-0'
+                        onClick={e => {
+                          e.preventDefault()
+                          setDirty([])
+                          analyzeTracks(dirtyTracks)
+                        }}
+                      >
+                        Analyze {dirtyTracks.length} Tracks
+                      </Button>
+                    </div>
+                  </div>
+                )}
+                <div className='ml-auto'>
+                  <Button
+                    color='primary'
+                    size='sm'
+                    className='mr-2 text-white py-0'
+                    disabled={true}
+                    //tyle={{ verticalAlign: 'middle' }}
+                  >
                     {tracks.length}
-                  </Badge>
+                  </Button>
                   {`Track${tracks.length === 1 ? '' : 's'}`}
                 </div>
               </div>
@@ -272,7 +317,7 @@ export const Tracks = (props: { baseProps?: object; searchProps?: object }) => {
                   classes='table-responsive-lg mb-0'
                   bordered={false}
                   hover
-                  defaultSorted={[{ dataField: 'lastModified', order: 'desc' }]}
+                  defaultSorted={[{ dataField: 'name', order: 'asc' }]}
                   {...props.baseProps}
                 />
               </Card>

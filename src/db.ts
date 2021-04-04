@@ -29,6 +29,7 @@ class EditorDatabase extends Dexie {
 interface Track {
   name: string
   fileHandle: FileSystemFileHandle
+  dirHandle?: FileSystemDirectoryHandle
   size?: number
   type?: string
   lastModified?: number
@@ -83,30 +84,14 @@ const updateSetState = async (state: setState) =>
   await db.state.update('setState', state)
 
 // Note this will overwrite an existing db entry with the same track name!
-const putTrack = async ({
-  name,
-  size,
-  lastModified = Date.now(),
-  type,
-  duration,
-  bpm,
-  offset,
-  sampleRate,
-  fileHandle
-}: Track): Promise<string> => {
-  return await db.tracks
-    .put({
-      name,
-      size,
-      lastModified,
-      type,
-      duration,
-      bpm,
-      offset,
-      sampleRate,
-      fileHandle
-    })
-    .catch(errHandler)
+const putTrack = async (track: Track): Promise<string> => {
+  track.lastModified = Date.now()
+  return await db.tracks.put(track).catch(errHandler)
+}
+
+const updateTrack = async (track: Track): Promise<number> => {
+  track.lastModified = Date.now()
+  return await db.tracks.update(track.name, track).catch(errHandler)
 }
 
 const putTracks = async (tracks: Track[]) => {
@@ -125,6 +110,7 @@ export {
   Set,
   setState,
   putTrack,
+  updateTrack,
   putTracks,
   removeTrack,
   getTrackState,
