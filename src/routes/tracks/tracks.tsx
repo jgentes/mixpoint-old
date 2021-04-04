@@ -4,36 +4,25 @@ import ToolkitProvider from 'react-bootstrap-table2-toolkit'
 import moment from 'moment'
 import { db, Track, removeTrack, putTracks } from '../../db'
 import { initTrack, processAudio } from '../../audio'
-import { getFile, getPermission } from '../../fileHandlers'
+import { getPermission } from '../../fileHandlers'
 import Loader from '../../layout/loader'
 import { SearchBar } from './searchbar'
-import { Card, Container, Button, UncontrolledTooltip } from 'reactstrap'
+import { Card, Container, Button, UncontrolledTooltip, Row } from 'reactstrap'
 import { useLiveQuery } from 'dexie-react-hooks'
 
 export const Tracks = (props: { baseProps?: object; searchProps?: object }) => {
   const [isOver, setIsOver] = useState(false) // for dropzone
   const [processing, setProcessing] = useState(false) // show progress if no table
+  const [analyzingTracks, setAnalyzing] = useState<Track[]>([])
   const [dirtyTracks, setDirty] = useState<Track[]>([])
 
   // monitor db for track updates
   const tracks: Track[] | null = useLiveQuery(() => db.tracks.toArray()) ?? null
-  const checkDirty = async () => {
-    const dirty = tracks?.filter(t => !t.bpm) || []
-    for (const track of dirty) {
-      if (!(await getFile(track))) {
-        setDirty(dirty)
-        break
-      }
-    }
-  }
 
   // if we see any tracks that haven't been processed, process them, or
   // if we haven't had user activation, show button to resume processing
   // https://html.spec.whatwg.org/multipage/interaction.html#tracking-user-activation
-  useEffect(() => {
-    const go = async () => await checkDirty()
-    go()
-  }, [tracks])
+  useEffect(() => setDirty(tracks?.filter(t => !t.bpm) || []), [tracks])
 
   // queue files for processing after they are added to the DB
   // this provides a more responsive UI experience
@@ -61,6 +50,7 @@ export const Tracks = (props: { baseProps?: object; searchProps?: object }) => {
 
     await putTracks(trackArray)
     setProcessing(false)
+    setAnalyzing(trackArray)
 
     for (const track of trackArray) await processAudio(track)
   }
@@ -91,22 +81,34 @@ export const Tracks = (props: { baseProps?: object; searchProps?: object }) => {
     processTracks(files)
   }
 
-  const analyzeTracks = async (tracks: Track[]) => {
-    for (const track of tracks) {
-      const ok = await getPermission(track)
-      if (!ok) tracks = tracks.filter(t => t.name !== track.name)
+  const analyzeTrack = async (track: Track) => {
+    const ok = await getPermission(track)
+    if (ok) {
+      // if the user approves access to a folder, we can process all files in that folder :)
+      const siblingTracks = track.dirHandle
+        ? dirtyTracks.filter(t => t.dirHandle?.name == track.dirHandle?.name)
+        : [track]
+      setAnalyzing(siblingTracks)
+      for (const sibling of siblingTracks) {
+        await processAudio(sibling)
+        setDirty(
+          track.dirHandle
+            ? dirtyTracks.filter(
+                t => !t.bpm && t.dirHandle?.name !== track.dirHandle?.name
+              )
+            : dirtyTracks
+        )
+        setAnalyzing(siblingTracks.filter(s => s.name !== sibling.name))
+      }
     }
-
-    for (const track of tracks) await processAudio(track)
-    checkDirty()
   }
 
   const actions = (cell: void, row: { name: string }) => (
     <>
       <div
-        onClick={async e => {
+        onClick={e => {
           e.preventDefault()
-          await removeTrack(row.name)
+          removeTrack(row.name)
         }}
         id='removeTrack'
         style={{ cursor: 'pointer' }}
@@ -141,15 +143,14 @@ export const Tracks = (props: { baseProps?: object; searchProps?: object }) => {
         .format('m:ss')
     }
 
-    const resumeButton = (row: Track) => {
+    const getBpmButton = (row: Track) => {
       return (
         <Button
           color='outline-primary'
           size='sm'
           onClick={e => {
             e.preventDefault()
-            setDirty(dirtyTracks.filter(t => t.name !== row.name))
-            analyzeTracks([row])
+            analyzeTrack(row)
           }}
         >
           Get BPM
@@ -166,6 +167,7 @@ export const Tracks = (props: { baseProps?: object; searchProps?: object }) => {
           color: '#333',
           textAlign: 'left' as const
         },
+        formatter: (cell: string) => cell.replace(/\.[^/.]+$/, ''), // remove suffix (ie. .mp3)
         sortCaret
       },
       {
@@ -179,15 +181,19 @@ export const Tracks = (props: { baseProps?: object; searchProps?: object }) => {
           cell: number | undefined,
           row: any,
           rowIndex: number,
-          dirtyState: Track[]
+          dirtyState: {
+            dirtyTracks: Track[]
+            analyzingTracks: Track[]
+          }
         ) =>
           cell?.toFixed(0) ||
-          (dirtyState.some(t => t.name == row.name) ? (
-            resumeButton(row)
+          (dirtyState.dirtyTracks.some(t => t.name == row.name) &&
+          !dirtyState.analyzingTracks.some(a => a.name == row.name) ? (
+            getBpmButton(row)
           ) : (
             <Loader style={{ margin: 0 }} />
           )),
-        formatExtraData: dirtyTracks
+        formatExtraData: { dirtyTracks, analyzingTracks }
       },
       {
         dataField: 'duration',
@@ -262,9 +268,9 @@ export const Tracks = (props: { baseProps?: object; searchProps?: object }) => {
         </div>
       </div>
 
-      {!tracks || processing ? (
+      {!tracks && processing ? (
         <Loader className='my-5' />
-      ) : !tracks.length ? null : (
+      ) : !tracks?.length ? null : (
         <ToolkitProvider
           keyField='name'
           data={tracks}
@@ -284,18 +290,9 @@ export const Tracks = (props: { baseProps?: object; searchProps?: object }) => {
                         className='las la-exclamation-circle la-2x text-danger mr-1'
                         style={{ verticalAlign: 'middle' }}
                       />
-                      <Button
-                        color='outline-danger'
-                        size='sm'
-                        className='py-0'
-                        onClick={e => {
-                          e.preventDefault()
-                          setDirty([])
-                          analyzeTracks(dirtyTracks)
-                        }}
-                      >
-                        Analyze {dirtyTracks.length} Tracks
-                      </Button>
+                      <span className='text-danger align-middle fs-15'>
+                        BPM needed for {dirtyTracks.length} Tracks
+                      </span>
                     </div>
                   </div>
                 )}
@@ -303,13 +300,14 @@ export const Tracks = (props: { baseProps?: object; searchProps?: object }) => {
                   <Button
                     color='primary'
                     size='sm'
-                    className='mr-2 text-white py-0'
+                    className='mr-2 text-white py-0 fs-15'
                     disabled={true}
-                    //tyle={{ verticalAlign: 'middle' }}
                   >
                     {tracks.length}
                   </Button>
-                  {`Track${tracks.length === 1 ? '' : 's'}`}
+                  <span className='text-black-06 align-middle fs-15'>{`Track${
+                    tracks.length === 1 ? '' : 's'
+                  }`}</span>
                 </div>
               </div>
               <Card className='mb-3 p-0 bt-0'>

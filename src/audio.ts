@@ -25,7 +25,7 @@ const getBpm = async (
 
 const processAudio = async (track: Track): Promise<Track | undefined> => {
   if (!track.fileHandle) throw Error('Please try adding the Track again')
-  console.log('hit')
+
   const file = await getFile(track)
   if (!file) return // this would be due to denial of permission
 
@@ -46,6 +46,7 @@ const processAudio = async (track: Track): Promise<Track | undefined> => {
   // adjust for miscalc tempo > 160bpm
   const adjustedBpm = bpm > 160 ? bpm / 2 : bpm
 
+  // name is the key!
   const updatedTrack = {
     ...track,
     name,
