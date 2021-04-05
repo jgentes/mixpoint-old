@@ -91,13 +91,6 @@ export const Tracks = (props: { baseProps?: object; searchProps?: object }) => {
       setAnalyzing(siblingTracks)
       for (const sibling of siblingTracks) {
         await processAudio(sibling)
-        setDirty(
-          track.dirHandle
-            ? dirtyTracks.filter(
-                t => !t.bpm && t.dirHandle?.name !== track.dirHandle?.name
-              )
-            : dirtyTracks
-        )
         setAnalyzing(siblingTracks.filter(s => s.name !== sibling.name))
       }
     }
@@ -268,7 +261,7 @@ export const Tracks = (props: { baseProps?: object; searchProps?: object }) => {
         </div>
       </div>
 
-      {!tracks && processing ? (
+      {!tracks || processing ? (
         <Loader className='my-5' />
       ) : !tracks?.length ? null : (
         <ToolkitProvider
