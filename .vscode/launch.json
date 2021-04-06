@@ -6,6 +6,7 @@
       "type": "pwa-msedge",
       "request": "launch",
       "preLaunchTask": "Parcel",
+      "postDebugTask": "Terminate All Tasks",
       "url": "http://localhost:1234",
       "webRoot": "${workspaceFolder}",
       "sourceMaps": true,
@@ -15,7 +16,8 @@
       },
       "skipFiles": [
         "${workspaceFolder}/node_modules/**/*.{ts,js}",
-        "<node_internals>/**/*.{ts,js}"
+        "<node_internals>/**/*.{ts,js}",
+        "${webRoot}/dist/src.*.js"
       ],
       "outFiles": ["dist/**/*.js", "!**/node_modules/**"]
     }

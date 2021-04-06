@@ -77,8 +77,6 @@ export const initPeaks = async ({
 
     let { duration = 1, bpm = 1, offset = 1 } = track
 
-    await adjustBpm(bpm)
-
     const beatInterval = 60 / bpm
     let time = offset
 

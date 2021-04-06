@@ -39,7 +39,7 @@ const TrackForm = ({
 
   const adjustBpm = async (bpm?: number) => {
     // get bpm from the user input field or mixState or current track
-    bpm = Number(bpm || track.originalBpm)
+    bpm = Number(bpm || track.bpm)
 
     updatePlaybackRate(bpm)
 
@@ -47,8 +47,7 @@ const TrackForm = ({
     await updateMixState({
       [`track${trackKey}`]: {
         ...track,
-        bpm: bpm.toFixed(1),
-        originalBpm: track.bpm
+        adjustedBpm: Number(bpm.toFixed(1))
       }
     })
   }
@@ -85,12 +84,17 @@ const TrackForm = ({
       await initTrack(fileHandle, dbTrack?.dirHandle)
     )
 
+    await updateMixState({
+      [`track${trackKey}`]: newTrack
+    })
+
     if (newTrack) getPeaks(newTrack)
+    else setAnalyzing(false)
   }
 
-  const bpmVal = track.bpm?.toFixed(1) || 0
+  const adjustedBpm = track.adjustedBpm && Number(track.adjustedBpm).toFixed(1)
 
-  const bpmDiff = track.originalBpm && track.originalBpm.toFixed(1) !== bpmVal
+  const bpmDiff = adjustedBpm !== track.bpm?.toFixed(1)
 
   const bpmControl = (
     <div className='pr-2'>
@@ -100,7 +104,7 @@ const TrackForm = ({
           className={`${!track.bpm ? 'text-gray-500' : ''}`}
           disabled={!track.bpm}
           onChange={(e: InputGroupTextProps) => adjustBpm(e.target.value)}
-          value={bpmVal}
+          value={adjustedBpm || track.bpm?.toFixed(1) || 0}
           id={`bpmInput_${trackKey}`}
         />
         <InputGroupAddon addonType='append'>
@@ -215,7 +219,6 @@ const TrackForm = ({
   )
 
   const loader = analyzing ? <Loader className='my-5' /> : null
-  //mixState.bpm && mixState.
 
   return (
     <Card className='mb-3'>

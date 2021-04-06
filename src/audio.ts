@@ -1,6 +1,6 @@
-import { Track, updateTrack, db } from './db'
+import { Track, putTrack } from './db'
 import { failure } from './utils'
-import { getFile } from './fileHandlers'
+import { getPermission } from './fileHandlers'
 import { guess } from 'web-audio-beat-detector'
 
 const initTrack = async (
@@ -26,8 +26,7 @@ const getBpm = async (
 const processAudio = async (track: Track): Promise<Track | undefined> => {
   if (!track.fileHandle) throw Error('Please try adding the Track again')
 
-  const file = await getFile(track.dirHandle || track.fileHandle)
-  console.log('FILE:', file)
+  const file = await getPermission(track)
   if (!file) return // this would be due to denial of permission
 
   const { name, size, type } = file
@@ -58,10 +57,10 @@ const processAudio = async (track: Track): Promise<Track | undefined> => {
     offset,
     sampleRate
   }
-  console.log('updated track:', updatedTrack)
-  await updateTrack(updatedTrack)
 
-  return db.tracks.get(name)
+  await putTrack(updatedTrack)
+
+  return updatedTrack
 }
 
 export { getAudioBuffer, processAudio, getBpm, initTrack }
