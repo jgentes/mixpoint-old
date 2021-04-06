@@ -10,7 +10,7 @@ const getFile = async (
     handle = await handle.getFileHandle(handle.name)
 
   perms = await handle.queryPermission()
-  console.log('perms:', perms, perms === 'granted')
+
   if (perms === 'granted') file = await handle.getFile()
   // in the case perms aren't granted, return null - we need to request permission
   return file
