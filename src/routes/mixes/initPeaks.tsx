@@ -1,12 +1,11 @@
 import Peaks from 'peaks.js'
 import { toast } from 'react-toastify'
 import { getAudioBuffer } from '../../audio'
-import { Track, updateMixState } from '../../db'
+import { Track } from '../../db'
 
 export const initPeaks = async ({
   trackKey,
   track,
-  setTrack,
   setAudioSrc,
   setSliderControl,
   setCanvas,
@@ -15,7 +14,6 @@ export const initPeaks = async ({
 }: {
   trackKey: number
   track: Track
-  setTrack: Function
   setAudioSrc: Function
   setSliderControl: Function
   setCanvas: Function
@@ -26,15 +24,13 @@ export const initPeaks = async ({
   setAnalyzing(true)
 
   const track1 = trackKey % 2
-  console.log('a')
+
   const file = await track.fileHandle.getFile()
 
-  setTrack(track)
-  console.log('b')
   const audioBuffer = await getAudioBuffer(file)
-  console.log('x')
+
   const url = window.URL.createObjectURL(file)
-  console.log('y')
+
   setAudioSrc(url)
 
   const peakOptions = {
@@ -128,7 +124,7 @@ export const initPeaks = async ({
       })
     }
 
-    // update slider controls on display change 
+    // update slider controls on display change
     // @ts-expect-error
     waveform.on('zoomview.displaying', timeChange)
 
@@ -150,13 +146,5 @@ export const initPeaks = async ({
 */
 
     setAnalyzing(false)
-    await updateMixState({ [`track${trackKey}_name`]: track.name })
-
-    toast.success(
-      <>
-        Loaded <strong>{track.name}</strong>
-      </>,
-      { autoClose: 3000 }
-    )
   })
 }

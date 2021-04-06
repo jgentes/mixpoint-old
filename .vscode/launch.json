@@ -7,13 +7,14 @@
       "request": "launch",
       "preLaunchTask": "Parcel",
       "url": "http://localhost:1234",
-      "webRoot": "${workspaceFolder}",
+      "webRoot": "dist",
       "sourceMaps": true,
-      "skipFiles": [
-        "/node_modules/**/*.{ts,js}",
-        "**/<node_internals>/**/*.{ts,js}"
-      ],
-      "outFiles": ["/dist/*.js", "!**/node_modules/**"]
+      "smartStep": true,
+      // "skipFiles": [
+      //   "${workspaceFolder}/node_modules/**/*.{ts,js}",
+      //   "<node_internals>/**/*.{ts,js}"
+      // ],
+      "outFiles": ["dist/**/*.js", "!**/node_modules/**"]
     }
   ]
 }

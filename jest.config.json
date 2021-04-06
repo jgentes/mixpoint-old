@@ -6,7 +6,5 @@
   "moduleNameMapper": {
     "^.+.(css|styl|less|sass|scss|png|jpg|ttf|woff|woff2)$": "jest-transform-stub"
   },
-  "moduleFileExtensions": ["ts", "tsx", "js", "jsx", "json", "node"],
-  "coverageDirectory": "coverage",
-  "collectCoverageFrom": ["src/**/*.{ts,js}", "!src/**/*.d.ts"]
+  "moduleFileExtensions": ["ts", "tsx", "js", "jsx", "json", "node"]
 }

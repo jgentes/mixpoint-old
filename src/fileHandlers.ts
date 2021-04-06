@@ -1,11 +1,17 @@
 import { Track } from './db'
 
-const getFile = async (track: Track): Promise<File | null> => {
+const getFile = async (
+  handle: FileSystemFileHandle | FileSystemDirectoryHandle
+): Promise<File | null> => {
   let file = null,
     perms
 
-  perms = await track.fileHandle.queryPermission()
-  if (perms === 'granted') file = await track.fileHandle.getFile()
+  if (handle.kind == 'directory')
+    handle = await handle.getFileHandle(handle.name)
+
+  perms = await handle.queryPermission()
+  console.log('perms:', perms, perms === 'granted')
+  if (perms === 'granted') file = await handle.getFile()
   // in the case perms aren't granted, return null - we need to request permission
   return file
 }
@@ -16,18 +22,17 @@ const getFile = async (track: Track): Promise<File | null> => {
  */
 const getPermission = async (track: Track): Promise<File | null> => {
   // first check perms
-  let file = await getFile(track)
+  let file = await getFile(track.fileHandle)
   if (file) return file
 
   // directory handle is preferred over file handle
   // note: this will throw "DOMException: User activation is required
   // to request permissions" if user hasn't interacted with the page yet
 
-  track.dirHandle
-    ? await track.dirHandle.requestPermission()
-    : await track.fileHandle.requestPermission()
+  const handle = track.dirHandle || track.fileHandle
+  await handle.requestPermission()
 
-  return await getFile(track)
+  return await getFile(handle)
 }
 
 export { getFile, getPermission }

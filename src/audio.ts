@@ -26,7 +26,8 @@ const getBpm = async (
 const processAudio = async (track: Track): Promise<Track | undefined> => {
   if (!track.fileHandle) throw Error('Please try adding the Track again')
 
-  const file = await getFile(track)
+  const file = await getFile(track.dirHandle || track.fileHandle)
+  console.log('FILE:', file)
   if (!file) return // this would be due to denial of permission
 
   const { name, size, type } = file
@@ -57,7 +58,7 @@ const processAudio = async (track: Track): Promise<Track | undefined> => {
     offset,
     sampleRate
   }
-
+  console.log('updated track:', updatedTrack)
   await updateTrack(updatedTrack)
 
   return db.tracks.get(name)

@@ -4,9 +4,11 @@
     "lib": ["es5", "es6", "dom", "dom.iterable"],
     "jsx": "react-jsx",
     "target": "ES6",
+    "outDir": "dist",
+    "rootDir": "src",
     "sourceMap": true,
     "preserveConstEnums": true,
-    "moduleResolution": "node"
+    "moduleResolution": "Node"
   },
   "strict": false,
   "include": ["./src/**/*"],

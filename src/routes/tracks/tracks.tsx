@@ -284,7 +284,9 @@ export const Tracks = (props: { baseProps?: object; searchProps?: object }) => {
                         style={{ verticalAlign: 'middle' }}
                       />
                       <span className='text-danger align-middle fs-15'>
-                        BPM needed for {dirtyTracks.length} Tracks
+                        {`BPM needed for ${dirtyTracks.length} Track${
+                          tracks.length === 1 ? '' : 's'
+                        }`}
                       </span>
                     </div>
                   </div>

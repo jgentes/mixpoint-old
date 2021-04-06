@@ -7,7 +7,7 @@ import {
   InputGroupAddon,
   InputGroupTextProps
 } from 'reactstrap'
-import { processTrack } from '../../audio'
+import { initTrack, processAudio } from '../../audio'
 import Loader from '../../layout/loader'
 import Slider, { SliderProps } from 'rc-slider'
 import { initPeaks } from './initPeaks'
@@ -22,36 +22,41 @@ const TrackForm = ({
   mixState: mixState
 }) => {
   const audioElement = useRef<HTMLAudioElement>(null)
-
+  console.log('trackkey, mixstate', trackKey, mixState)
   const [sliderControl, setSliderControl] = useState<SliderProps>()
   const [audioSrc, setAudioSrc] = useState('')
   const [analyzing, setAnalyzing] = useState(false)
-  const [primaryTrack, setTrack] = useState<Track>()
   const [canvas, setCanvas] = useState<PeaksInstance>()
 
   const track1 = !!(trackKey % 2)
+  const track = mixState[`track${trackKey}`] || {}
 
   const updatePlaybackRate = (bpm: number) => {
     // update play speed to new bpm
-    const playbackRate = bpm / (primaryTrack?.bpm || bpm)
+    const playbackRate = bpm / (track.bpm || bpm)
     if (audioElement.current) audioElement.current.playbackRate = playbackRate
   }
 
-  const adjustBpm = async (bpm: number) => {
+  const adjustBpm = async (bpm?: number) => {
     // get bpm from the user input field or mixState or current track
-    bpm = Number(bpm || primaryTrack?.bpm)
+    bpm = Number(bpm || track.originalBpm)
 
     updatePlaybackRate(bpm)
 
     // store custom bpm value in mixstate
-    await updateMixState({ [`track${trackKey}_bpm`]: bpm.toFixed(1) })
+    await updateMixState({
+      [`track${trackKey}`]: {
+        ...track,
+        bpm: bpm.toFixed(1),
+        originalBpm: track.bpm
+      }
+    })
   }
 
   const getPeaks = async (track: Track) =>
     await initPeaks({
       trackKey,
       track,
-      setTrack,
       setAudioSrc,
       setSliderControl,
       setCanvas,
@@ -60,7 +65,7 @@ const TrackForm = ({
     })
 
   const audioChange = async () => {
-    if (!primaryTrack?.name) setAnalyzing(true)
+    if (!track.name) setAnalyzing(true)
 
     let fileHandle
     try {
@@ -73,24 +78,27 @@ const TrackForm = ({
     // release resources from previous peak rendering
     if (canvas) canvas?.destroy()
 
-    const track =
-      (await db.tracks.get(fileHandle.name)) || (await processTrack(fileHandle))
-    console.log(track)
-    if (track) getPeaks(track)
+    // do not lose the directory handle if it exists
+    const dbTrack = await db.tracks.get(fileHandle.name)
+
+    const newTrack = await processAudio(
+      await initTrack(fileHandle, dbTrack?.dirHandle)
+    )
+
+    if (newTrack) getPeaks(newTrack)
   }
 
-  const bpmVal =
-    mixState?.[`track${trackKey}_bpm`] || primaryTrack?.bpm?.toFixed(1) || 0
+  const bpmVal = track.bpm?.toFixed(1) || 0
 
-  const bpmDiff = bpmVal === primaryTrack?.bpm?.toFixed(1)
+  const bpmDiff = track.originalBpm && track.originalBpm.toFixed(1) !== bpmVal
 
   const bpmControl = (
     <div className='pr-2'>
       <InputGroup size='sm' style={{ width: bpmDiff ? '140px' : '110px' }}>
         <Input
           type='text'
-          className={`${!primaryTrack?.bpm ? 'text-gray-500' : ''}`}
-          disabled={!primaryTrack?.bpm}
+          className={`${!track.bpm ? 'text-gray-500' : ''}`}
+          disabled={!track.bpm}
           onChange={(e: InputGroupTextProps) => adjustBpm(e.target.value)}
           value={bpmVal}
           id={`bpmInput_${trackKey}`}
@@ -99,7 +107,7 @@ const TrackForm = ({
           <Button
             color='primary'
             disabled={!bpmDiff}
-            onClick={() => adjustBpm(primaryTrack?.bpm || 1)}
+            onClick={() => adjustBpm(track.bpm || 1)}
             id={`bpmButton_${trackKey}`}
           >
             {bpmDiff ? 'Reset ' : ''}BPM
@@ -109,7 +117,7 @@ const TrackForm = ({
     </div>
   )
 
-  const playerControl = !primaryTrack?.name ? null : (
+  const playerControl = !track.name ? null : (
     <div
       className='float-left'
       style={{
@@ -161,7 +169,7 @@ const TrackForm = ({
           <span className='h5'>
             {analyzing
               ? 'Loading..'
-              : primaryTrack?.name || 'No Track Loaded..'}
+              : track.name?.replace(/\.[^/.]+$/, '') || 'No Track Loaded..'}
           </span>
         </div>
       </div>
@@ -190,7 +198,7 @@ const TrackForm = ({
     <div
       id={`zoomview-container_${trackKey}`}
       style={{
-        height: primaryTrack?.name ? '150px' : '0px',
+        height: track.name ? '150px' : '0px',
         visibility: analyzing ? 'hidden' : 'visible'
       }}
     />
@@ -200,7 +208,7 @@ const TrackForm = ({
     <div
       id={`overview-container_${trackKey}`}
       style={{
-        height: primaryTrack?.name ? '40px' : '0px',
+        height: track.name ? '40px' : '0px',
         visibility: analyzing ? 'hidden' : 'visible'
       }}
     />
@@ -212,8 +220,8 @@ const TrackForm = ({
   return (
     <Card className='mb-3'>
       <div className='mx-3'>
-        {track1 ? trackHeader : null}
-        {!track1 ? slider : null}
+        {track1 && trackHeader}
+        {!track1 && slider}
 
         <div id={`peaks-container_${trackKey}`}>
           {track1 ? (
@@ -233,8 +241,8 @@ const TrackForm = ({
           )}
         </div>
 
-        {track1 ? slider : null}
-        {!track1 ? trackHeader : null}
+        {track1 && slider}
+        {!track1 && trackHeader}
 
         <audio id={`audio_${trackKey}`} src={audioSrc} ref={audioElement} />
       </div>
