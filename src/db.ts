@@ -76,12 +76,24 @@ const getMixState = async (): Promise<mixState> =>
 const getSetState = async (): Promise<setState> =>
   (await db.state.get('setState')) ?? {}
 
-const updateTrackState = async (state: trackState) =>
-  await db.state.update('trackState', state)
-const updateMixState = async (state: mixState) =>
-  await db.state.update('mixState', state)
-const updateSetState = async (state: setState) =>
-  await db.state.update('setState', state)
+const updateTrackState = async (state: trackState) => {
+  getTrackState().then(
+    async (currentState: trackState) =>
+      await db.state.update('trackState', { ...currentState, ...state })
+  )
+}
+const updateMixState = async (state: mixState) => {
+  getMixState().then(
+    async (currentState: mixState) =>
+      await db.state.update('mixState', { ...currentState, ...state })
+  )
+}
+const updateSetState = async (state: setState) => {
+  getSetState().then(
+    async (currentState: setState) =>
+      await db.state.update('setState', { ...currentState, ...state })
+  )
+}
 
 // Note this will overwrite an existing db entry with the same track name!
 const putTrack = async (track: Track): Promise<string> => {

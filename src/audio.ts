@@ -32,6 +32,7 @@ const processAudio = async (track: Track): Promise<Track | undefined> => {
   const { name, size, type } = file
 
   const audioBuffer = await getAudioBuffer(file)
+
   const { duration, sampleRate } = audioBuffer
 
   let offset = 0,
@@ -46,7 +47,7 @@ const processAudio = async (track: Track): Promise<Track | undefined> => {
   // adjust for miscalc tempo > 160bpm
   const adjustedBpm = bpm > 160 ? bpm / 2 : bpm
 
-  // name is the key!
+  // name is the table key!
   const updatedTrack = {
     ...track,
     name,

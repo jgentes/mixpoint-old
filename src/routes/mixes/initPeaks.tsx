@@ -6,6 +6,7 @@ import { Track } from '../../db'
 export const initPeaks = async ({
   trackKey,
   track,
+  file,
   setAudioSrc,
   setSliderControl,
   setCanvas,
@@ -14,6 +15,7 @@ export const initPeaks = async ({
 }: {
   trackKey: number
   track: Track
+  file: File | undefined
   setAudioSrc: Function
   setSliderControl: Function
   setCanvas: Function
@@ -25,7 +27,7 @@ export const initPeaks = async ({
 
   const track1 = trackKey % 2
 
-  const file = await track.fileHandle.getFile()
+  if (!file) file = await track.fileHandle.getFile()
 
   const audioBuffer = await getAudioBuffer(file)
 

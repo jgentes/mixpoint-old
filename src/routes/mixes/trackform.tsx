@@ -1,4 +1,4 @@
-import { useRef, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import {
   Button,
   Card,
@@ -31,6 +31,10 @@ const TrackForm = ({
   const track1 = !!(trackKey % 2)
   const track = mixState[`track${trackKey}`] || {}
 
+  useEffect(() => {
+    if (track.file) getPeaks(track, track.file)
+  }, [track])
+
   const updatePlaybackRate = (bpm: number) => {
     // update play speed to new bpm
     const playbackRate = bpm / (track.bpm || bpm)
@@ -52,10 +56,11 @@ const TrackForm = ({
     })
   }
 
-  const getPeaks = async (track: Track) =>
+  const getPeaks = async (track: Track, file?: File) =>
     await initPeaks({
       trackKey,
       track,
+      file,
       setAudioSrc,
       setSliderControl,
       setCanvas,
@@ -84,11 +89,14 @@ const TrackForm = ({
       await initTrack(fileHandle, dbTrack?.dirHandle)
     )
 
+    // store the file in mixState (limit to 2 files, as they are big)
+    const file = await fileHandle.getFile()
+
     await updateMixState({
-      [`track${trackKey}`]: newTrack
+      [`track${trackKey}`]: { ...newTrack, file }
     })
 
-    if (newTrack) getPeaks(newTrack)
+    if (newTrack) getPeaks(newTrack, file)
     else setAnalyzing(false)
   }
 
