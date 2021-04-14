@@ -14,6 +14,18 @@ import { initPeaks } from './initPeaks'
 import { PeaksInstance } from 'peaks.js'
 import { Track, db, mixState, updateMixState } from '../../db'
 
+const marks = {
+  0: '0°C',
+  26: '26°C',
+  37: '37°C',
+  100: {
+    style: {
+      color: '#f50'
+    },
+    label: <strong>100°C</strong>
+  }
+}
+
 const TrackForm = ({
   trackKey,
   mixState
@@ -21,8 +33,8 @@ const TrackForm = ({
   trackKey: number
   mixState: mixState
 }) => {
+  console.log('RENDER')
   const audioElement = useRef<HTMLAudioElement>(null)
-  console.log('trackkey, mixstate', trackKey, mixState)
   const [sliderControl, setSliderControl] = useState<SliderProps>()
   const [audioSrc, setAudioSrc] = useState('')
   const [analyzing, setAnalyzing] = useState(false)
