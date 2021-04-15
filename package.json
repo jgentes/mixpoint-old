@@ -19,7 +19,7 @@
     "@parcel/transformer-sass": "2.0.0-nightly.643",
     "@testing-library/jest-dom": "^5.11.9",
     "@testing-library/react": "^11.2.5",
-    "@tsconfig/node12": "^1.0.7",
+    "@tsconfig/node14": "^1.0.0",
     "@types/jest": "^26.0.22",
     "@types/rc-slider": "^8.6.6",
     "@types/react": "^17.0.3",
