@@ -4,6 +4,7 @@
   "description": "Multi-track audio editor designed for mixing dj sets",
   "scripts": {
     "test": "jest",
+    "build": "parcel build src/index.html",
     "start": "parcel serve src/index.html"
   },
   "author": "James Gentes",
