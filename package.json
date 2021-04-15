@@ -65,8 +65,5 @@
     "react-toggle": "^4.0.2",
     "reactstrap": "^8.0.0",
     "web-audio-beat-detector": "^8.1.1"
-  },
-  "engines": {
-    "node": "14"
   }
 }
