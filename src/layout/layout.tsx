@@ -2,8 +2,8 @@ import { Helmet } from 'react-helmet'
 import { TopNavbar } from './topnav/topnavbar'
 import { ToastContainer, toast } from 'react-toastify'
 
-import favIcon32 from '../assets/soundwave-32px.jpg'
-import favIcon16 from '../assets/soundwave-16px.jpg'
+import favIcon32 from 'url:../assets/soundwave-32px.jpg'
+import favIcon16 from 'url:../assets/soundwave-16px.jpg'
 
 window.onerror = msg => toast.error(`Whoops! ${msg}`)
 window.onunhandledrejection = (e: PromiseRejectionEvent) =>
