@@ -44,7 +44,6 @@
     "typescript": "^4.2.3"
   },
   "dependencies": {
-    "@babel/polyfill": "^7.4.4",
     "bootstrap": "^4.6.0",
     "dexie": "^3.1.0-alpha.8",
     "dexie-react-hooks": "^1.0.6",
