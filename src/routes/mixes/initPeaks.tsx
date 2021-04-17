@@ -10,8 +10,8 @@ export const initPeaks = async ({
   setAudioSrc,
   setSliderControl,
   setCanvas,
-  adjustBpm,
-  setAnalyzing
+  setAnalyzing,
+  setRange
 }: {
   trackKey: number
   track: Track
@@ -19,8 +19,8 @@ export const initPeaks = async ({
   setAudioSrc: Function
   setSliderControl: Function
   setCanvas: Function
-  adjustBpm: Function
   setAnalyzing: Function
+  setRange: Function
 }) => {
   if (!track) throw new Error('No track to initialize!')
   setAnalyzing(true)
@@ -48,7 +48,7 @@ export const initPeaks = async ({
     zoomLevels: [64, 128, 256, 512],
     zoomWaveformColor: '#aaa',
     overviewWaveformColor: 'rgba(89, 165, 89, 0.7)',
-    emitCueEvents: true
+    emitCueEvents: true // for mouse drag listener
   }
 
   Peaks.init(peakOptions, async (err, waveform) => {
@@ -62,7 +62,13 @@ export const initPeaks = async ({
 
     // destroy the overview so that it doesn't receive the beat markers
     waveform.views.destroyOverview()
-
+    /* 
+    zoomView.setWaveformColor({
+      linearGradientStart: 15,
+      linearGradientEnd: 30,
+      linearGradientColorStops: ['hsl(120, 78%, 26%)', 'hsl(120, 78%, 10%)']
+    })
+ */
     waveform.zoom.setZoom(3) // 512
     zoomView?.showPlayheadTime(true)
 
@@ -80,17 +86,19 @@ export const initPeaks = async ({
     let { duration = 1, bpm = 1, offset = 1 } = track
 
     const beatInterval = 60 / bpm
-    let time = offset
+    let startPoint = offset
 
     // work backward from initialPeak to peak out start of track (zerotime) based on bpm
-    while (time - beatInterval > 0) time -= beatInterval
+    while (startPoint - beatInterval > 0) startPoint -= beatInterval
 
     // now that we have zerotime, move forward with peaks based on the bpm (hope the bpm is accurate!)
     const pointArray: number[] = []
-    while (time < duration) {
+    for (let time = startPoint; time < duration; time += beatInterval) {
       pointArray.push(time)
-      time += beatInterval
     }
+
+    // add last point at the end to accurately size slider
+    pointArray.push(duration)
 
     waveform.points.add(
       pointArray.map(time => ({
@@ -112,28 +120,31 @@ export const initPeaks = async ({
         timeFormat(point)
       )
 
-    const timeChange = (start: number, end: number) => {
-      setSliderControl({
-        min: start,
-        max: end,
-        marks: pointArray.reduce((o: any, p: number) => {
-          return p < end && p > start
-            ? { ...o, [p]: markFormatter(p) }
-            : { ...o }
-        }, {})
-      })
+    const slider = document.querySelector(`#slider_${trackKey}`)
+
+    let lastMove = Date.now()
+    const move = (start: Number, end: Number) => {
+      if (Date.now() - lastMove < 100) return // debounce
+      // @ts-expect-error
+      const scroll = (start * track.sampleRate) / zoomView?._scale
+      if (slider) slider.scrollLeft = scroll
+      lastMove = Date.now()
     }
 
     // update slider controls on display change
     // @ts-expect-error
-    waveform.on('zoomview.displaying', timeChange)
+    waveform.on('zoomview.displaying', move)
 
     // create initial slider control
-    timeChange(
-      0,
-      // @ts-expect-error
-      (zoomView?._width * zoomView?._scale) / (track.sampleRate || 1)
-    )
+    setSliderControl({
+      min: 0,
+      max: pointArray[pointArray.length - 1],
+      width: `${zoomView?._pixelLength}px`,
+      marks: pointArray.reduce(
+        (o: any, p: number) => ({ ...o, [p]: markFormatter(p) }),
+        {}
+      )
+    })
 
     // create initial segment
     /*      

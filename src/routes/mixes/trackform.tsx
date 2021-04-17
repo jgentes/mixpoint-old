@@ -10,6 +10,7 @@ import {
 import { initTrack, processAudio } from '../../audio'
 import Loader from '../../layout/loader'
 import Slider, { SliderProps } from 'rc-slider'
+import { Range, getTrackBackground } from 'react-range'
 import { initPeaks } from './initPeaks'
 import { PeaksInstance } from 'peaks.js'
 import { Track, db, mixState, updateMixState } from '../../db'
@@ -33,13 +34,17 @@ const TrackForm = ({
   trackKey: number
   mixState: mixState
 }) => {
-  console.log('RENDER')
   const audioElement = useRef<HTMLAudioElement>(null)
-  const [sliderControl, setSliderControl] = useState<SliderProps>()
+  const [sliderControl, setSliderControl] = useState({})
   const [audioSrc, setAudioSrc] = useState('')
   const [analyzing, setAnalyzing] = useState(false)
   const [canvas, setCanvas] = useState<PeaksInstance>()
+  const [rangeValue, setRangeValue] = useState([])
 
+  const setRange = diff => {
+    console.log({ diff, rangeValue }, rangeValue[0] + diff)
+    setRangeValue([rangeValue[0] + diff])
+  }
   const track1 = !!(trackKey % 2)
   const track = mixState[`track${trackKey}`] || {}
 
@@ -76,8 +81,8 @@ const TrackForm = ({
       setAudioSrc,
       setSliderControl,
       setCanvas,
-      adjustBpm,
-      setAnalyzing
+      setAnalyzing,
+      setRange
     })
 
   const audioChange = async () => {
@@ -201,20 +206,31 @@ const TrackForm = ({
     </div>
   )
 
-  const slider = !sliderControl ? null : (
+  const slider = !sliderControl.max ? null : (
     <div
-      className={track1 ? 'pb-3 pt-5' : 'pb-5 pt-3'}
-      style={{ visibility: analyzing ? 'hidden' : 'visible' }}
+      style={{
+        overflow: 'scroll',
+        overflowX: 'hidden',
+        overflowY: 'hidden',
+        visibility: analyzing ? 'hidden' : 'visible'
+      }}
       id={`slider_${trackKey}`}
     >
-      <Slider
-        min={sliderControl.min}
-        max={sliderControl.max}
-        marks={sliderControl.marks}
-        step={null}
-        included={false}
-        onAfterChange={() => console.log('2changed')}
-      />
+      <div
+        className={track1 ? 'pb-3 pt-5' : 'pb-5 pt-3'}
+        style={{
+          width: sliderControl.width
+        }}
+      >
+        <Slider
+          min={sliderControl.min}
+          max={sliderControl.max}
+          marks={sliderControl.marks}
+          step={null}
+          included={false}
+          onAfterChange={() => console.log('2changed')}
+        />
+      </div>
     </div>
   )
 
@@ -244,7 +260,7 @@ const TrackForm = ({
     <Card className='mb-3'>
       <div className='mx-3'>
         {track1 && trackHeader}
-        {!track1 && slider}
+        <>{!track1 && track.name && slider}</>
 
         <div id={`peaks-container_${trackKey}`}>
           {track1 ? (
@@ -264,7 +280,7 @@ const TrackForm = ({
           )}
         </div>
 
-        {track1 && slider}
+        <>{track1 && track.name && slider}</>
         {!track1 && trackHeader}
 
         <audio id={`audio_${trackKey}`} src={audioSrc} ref={audioElement} />
