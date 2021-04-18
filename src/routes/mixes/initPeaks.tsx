@@ -10,8 +10,7 @@ export const initPeaks = async ({
   setAudioSrc,
   setSliderControl,
   setCanvas,
-  setAnalyzing,
-  setRange
+  setAnalyzing
 }: {
   trackKey: number
   track: Track
@@ -20,7 +19,6 @@ export const initPeaks = async ({
   setSliderControl: Function
   setCanvas: Function
   setAnalyzing: Function
-  setRange: Function
 }) => {
   if (!track) throw new Error('No track to initialize!')
   setAnalyzing(true)
@@ -46,8 +44,6 @@ export const initPeaks = async ({
     },
     pointMarkerColor: 'rgba(30, 139, 195, 1)',
     zoomLevels: [64, 128, 256, 512],
-    zoomWaveformColor: '#aaa',
-    overviewWaveformColor: 'rgba(89, 165, 89, 0.7)',
     emitCueEvents: true // for mouse drag listener
   }
 
@@ -62,13 +58,13 @@ export const initPeaks = async ({
 
     // destroy the overview so that it doesn't receive the beat markers
     waveform.views.destroyOverview()
-    /* 
-    zoomView.setWaveformColor({
-      linearGradientStart: 15,
-      linearGradientEnd: 30,
-      linearGradientColorStops: ['hsl(120, 78%, 26%)', 'hsl(120, 78%, 10%)']
+
+    zoomView?.setWaveformColor({
+      linearGradientStart: 45,
+      linearGradientEnd: 58,
+      linearGradientColorStops: ['#D8B945', '#DD9045']
     })
- */
+
     waveform.zoom.setZoom(3) // 512
     zoomView?.showPlayheadTime(true)
 

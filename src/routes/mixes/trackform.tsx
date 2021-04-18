@@ -10,7 +10,6 @@ import {
 import { initTrack, processAudio } from '../../audio'
 import Loader from '../../layout/loader'
 import Slider, { SliderProps } from 'rc-slider'
-import { Range, getTrackBackground } from 'react-range'
 import { initPeaks } from './initPeaks'
 import { PeaksInstance } from 'peaks.js'
 import { Track, db, mixState, updateMixState } from '../../db'
@@ -39,12 +38,7 @@ const TrackForm = ({
   const [audioSrc, setAudioSrc] = useState('')
   const [analyzing, setAnalyzing] = useState(false)
   const [canvas, setCanvas] = useState<PeaksInstance>()
-  const [rangeValue, setRangeValue] = useState([])
 
-  const setRange = diff => {
-    console.log({ diff, rangeValue }, rangeValue[0] + diff)
-    setRangeValue([rangeValue[0] + diff])
-  }
   const track1 = !!(trackKey % 2)
   const track = mixState[`track${trackKey}`] || {}
 
@@ -81,8 +75,7 @@ const TrackForm = ({
       setAudioSrc,
       setSliderControl,
       setCanvas,
-      setAnalyzing,
-      setRange
+      setAnalyzing
     })
 
   const audioChange = async () => {
