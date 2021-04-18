@@ -14,18 +14,6 @@ import { initPeaks } from './initPeaks'
 import { PeaksInstance } from 'peaks.js'
 import { Track, db, mixState, updateMixState } from '../../db'
 
-const marks = {
-  0: '0°C',
-  26: '26°C',
-  37: '37°C',
-  100: {
-    style: {
-      color: '#f50'
-    },
-    label: <strong>100°C</strong>
-  }
-}
-
 const TrackForm = ({
   trackKey,
   mixState
@@ -33,8 +21,12 @@ const TrackForm = ({
   trackKey: number
   mixState: mixState
 }) => {
+  interface SliderControlProps extends SliderProps {
+    width: number
+  }
+
   const audioElement = useRef<HTMLAudioElement>(null)
-  const [sliderControl, setSliderControl] = useState({})
+  const [sliderControl, setSliderControl] = useState<SliderControlProps>()
   const [audioSrc, setAudioSrc] = useState('')
   const [analyzing, setAnalyzing] = useState(false)
   const [canvas, setCanvas] = useState<PeaksInstance>()
@@ -110,12 +102,29 @@ const TrackForm = ({
     else setAnalyzing(false)
   }
 
+  const setMixPoint = (time: number) => {
+    // create segment
+    console.log('hit:', time)
+    canvas?.player.seek(time)
+    canvas?.player.play()
+    /*
+    canvas?.segments.add({
+      startTime: time,
+      endTime: sliderPoints[31],
+      color: 'rgba(191, 191, 63, 0.5)',
+      editable: true
+    })
+    */
+  }
+
   const adjustedBpm = track.adjustedBpm && Number(track.adjustedBpm).toFixed(1)
 
-  const bpmDiff = adjustedBpm !== track.bpm?.toFixed(1)
+  const bpmDiff = adjustedBpm && adjustedBpm !== track.bpm?.toFixed(1)
+
+  const alignment = track1 ? 'align-self-sm-start' : 'align-self-sm-end'
 
   const bpmControl = (
-    <div className='pr-2'>
+    <div className={alignment}>
       <InputGroup size='sm' style={{ width: bpmDiff ? '140px' : '110px' }}>
         <Input
           type='text'
@@ -141,18 +150,18 @@ const TrackForm = ({
 
   const playerControl = !track.name ? null : (
     <div
-      className='float-left'
       style={{
         position: 'relative',
         zIndex: 999,
         visibility: analyzing ? 'hidden' : 'visible'
       }}
+      className={alignment}
     >
       <Button
         color='light'
         title='Play'
         size='sm'
-        className='mx-1 b-black-02'
+        className='b-black-02 my-auto'
         onClick={() => canvas?.player.play()}
         id={`playButton_${trackKey}`}
       >
@@ -162,7 +171,7 @@ const TrackForm = ({
         color='light'
         title='Pause'
         size='sm'
-        className='ml-1 b-black-02'
+        className='b-black-02 mx-2 my-auto'
         onClick={() => canvas?.player.pause()}
         id={`pauseButton_${trackKey}`}
       >
@@ -195,11 +204,14 @@ const TrackForm = ({
           </span>
         </div>
       </div>
-      <div className='float-right'>{bpmControl}</div>
+      <div className='d-flex'>
+        {playerControl}
+        {bpmControl}
+      </div>
     </div>
   )
 
-  const slider = !sliderControl.max ? null : (
+  const slider = !sliderControl?.max ? null : (
     <div
       style={{
         overflow: 'scroll',
@@ -212,16 +224,16 @@ const TrackForm = ({
       <div
         className={track1 ? 'pb-3 pt-5' : 'pb-5 pt-3'}
         style={{
-          width: sliderControl.width
+          width: `${sliderControl?.width}px`
         }}
       >
         <Slider
-          min={sliderControl.min}
-          max={sliderControl.max}
-          marks={sliderControl.marks}
+          min={sliderControl?.min}
+          max={sliderControl?.max}
+          marks={sliderControl?.marks}
           step={null}
           included={false}
-          onAfterChange={() => console.log('2changed')}
+          onAfterChange={time => setMixPoint(time)}
         />
       </div>
     </div>
@@ -259,13 +271,11 @@ const TrackForm = ({
           {track1 ? (
             <>
               {overview}
-              {playerControl}
               {loader}
               {zoomview}
             </>
           ) : (
             <>
-              {playerControl}
               {zoomview}
               {loader}
               {overview}

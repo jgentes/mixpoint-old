@@ -73,6 +73,7 @@ export const initPeaks = async ({
       peakOptions.containers.zoomview.onwheel = e => {
         e.preventDefault()
         e.deltaY === 100 ? waveform?.zoom.zoomOut() : waveform.zoom.zoomIn()
+        setSlider()
       }
     } else
       console.error(
@@ -121,26 +122,30 @@ export const initPeaks = async ({
     let lastMove = Date.now()
     const move = (start: Number, end: Number) => {
       if (Date.now() - lastMove < 100) return // debounce
-      // @ts-expect-error
+      // @ts-ignore
       const scroll = (start * track.sampleRate) / zoomView?._scale
       if (slider) slider.scrollLeft = scroll
       lastMove = Date.now()
     }
 
     // update slider controls on display change
-    // @ts-expect-error
+    // @ts-ignore
     waveform.on('zoomview.displaying', move)
 
     // create initial slider control
-    setSliderControl({
-      min: 0,
-      max: pointArray[pointArray.length - 1],
-      width: `${zoomView?._pixelLength}px`,
-      marks: pointArray.reduce(
-        (o: any, p: number) => ({ ...o, [p]: markFormatter(p) }),
-        {}
-      )
-    })
+    const setSlider = () =>
+      setSliderControl({
+        min: 0,
+        max: pointArray[pointArray.length - 1],
+        // @ts-ignore
+        width: zoomView?._pixelLength,
+        marks: pointArray.reduce(
+          (o: any, p: number) => ({ ...o, [p]: markFormatter(p) }),
+          {}
+        )
+      })
+
+    setSlider()
 
     // create initial segment
     /*      
