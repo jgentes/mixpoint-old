@@ -12,8 +12,8 @@ import Loader from '../../layout/loader'
 import Slider, { SliderProps } from 'rc-slider'
 import { initPeaks } from './initPeaks'
 import { PeaksInstance } from 'peaks.js'
-import { Track, db, mixState, updateMixState } from '../../db'
 import WaveformData from 'waveform-data'
+import { Track, db, mixState, updateMixState } from '../../db'
 
 const TrackForm = ({
   trackKey,

@@ -11,7 +11,7 @@ export const TopNavbar = () => (
     color={'primary'}
     className='bg-white pt-2 initial-loader bb-black-02 shadow-sm'
   >
-    <div className='navbar-collapse-wrap container-fluid'>
+    <div className='navbar-collapse-wrap container'>
       <NavItem className='navbar-brand'>
         <Link to='/'>
           <img
