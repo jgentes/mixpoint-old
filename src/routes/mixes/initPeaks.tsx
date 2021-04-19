@@ -1,21 +1,20 @@
-import Peaks from 'peaks.js'
+import Peaks, { JsonWaveformData, PeaksOptions } from 'peaks.js'
 import { toast } from 'react-toastify'
 import { getAudioBuffer } from '../../audio'
-import { Track } from '../../db'
+import { Track, updateMixState } from '../../db'
+import WaveformData from 'waveform-data'
 
 export const initPeaks = async ({
   trackKey,
   track,
-  file,
-  setAudioSrc,
+  waveformData,
   setSliderControl,
   setCanvas,
   setAnalyzing
 }: {
   trackKey: number
   track: Track
-  file: File | undefined
-  setAudioSrc: Function
+  waveformData: WaveformData | undefined
   setSliderControl: Function
   setCanvas: Function
   setAnalyzing: Function
@@ -25,27 +24,54 @@ export const initPeaks = async ({
 
   const track1 = trackKey % 2
 
-  if (!file) file = await track.fileHandle.getFile()
-
-  const audioBuffer = await getAudioBuffer(file)
-
-  const url = window.URL.createObjectURL(file)
-
-  setAudioSrc(url)
-
-  const peakOptions = {
+  const peakOptions: PeaksOptions = {
     containers: {
       overview: document.getElementById(`overview-container_${trackKey}`),
       zoomview: document.getElementById(`zoomview-container_${trackKey}`)
     },
     mediaElement: document.getElementById(`audio_${trackKey}`) ?? undefined,
-    webAudio: {
-      audioBuffer
-    },
     pointMarkerColor: 'rgba(30, 139, 195, 1)',
     zoomLevels: [64, 128, 256, 512],
     emitCueEvents: true // for mouse drag listener
   }
+
+  // use waveformData to init the waveform (fast) otherwise analyze using the file handle (slow)
+  if (!waveformData) {
+    const file = await track.fileHandle.getFile()
+    if (!file) throw new Error('Problem reaching file!')
+
+    const arrayBuffer = await file.arrayBuffer()
+    const audioCtx = new window.AudioContext()
+    const audioBuffer = await audioCtx.decodeAudioData(arrayBuffer)
+
+    await new Promise<void>(resolve =>
+      WaveformData.createFromAudio(
+        {
+          audio_context: audioCtx,
+          audio_buffer: audioBuffer,
+          scale: 64
+        },
+        (err, wave: WaveformData) => {
+          if (err) throw err
+          // @ts-ignore
+          waveformData = wave.toJSON()
+
+          updateMixState({
+            [`track${trackKey}`]: {
+              ...track,
+              waveformData
+            }
+          })
+          resolve()
+        }
+      )
+    )
+  }
+
+  if (!waveformData) throw new Error('Waveform data is missing!')
+
+  // @ts-ignore
+  peakOptions.waveformData = { json: waveformData }
 
   Peaks.init(peakOptions, async (err, waveform) => {
     if (err) return toast.error(err.message)
@@ -72,7 +98,7 @@ export const initPeaks = async ({
     if (peakOptions.containers.zoomview) {
       peakOptions.containers.zoomview.onwheel = e => {
         e.preventDefault()
-        e.deltaY === 100 ? waveform?.zoom.zoomOut() : waveform.zoom.zoomIn()
+        e.deltaY === 100 ? waveform.zoom.zoomOut() : waveform.zoom.zoomIn()
         setSlider()
       }
     } else
@@ -119,12 +145,16 @@ export const initPeaks = async ({
 
     const slider = document.querySelector(`#slider_${trackKey}`)
 
-    let lastMove = Date.now()
-    const move = (start: Number, end: Number) => {
-      if (Date.now() - lastMove < 100) return // debounce
+    const updateScroll = (start: number) => {
       // @ts-ignore
       const scroll = (start * track.sampleRate) / zoomView?._scale
       if (slider) slider.scrollLeft = scroll
+    }
+
+    let lastMove = Date.now()
+    const move = (start: number, end: number) => {
+      if (Date.now() - lastMove < 100) return
+      updateScroll(start)
       lastMove = Date.now()
     }
 
@@ -149,12 +179,12 @@ export const initPeaks = async ({
 
     // create initial segment
     /*      
-    waveform.segments.add({
-      startTime: sliderPoints[0],
-      endTime: sliderPoints[31],
-      color: 'rgba(191, 191, 63, 0.5)',
-      editable: true
-    })
+  waveform.segments.add({
+    startTime: sliderPoints[0],
+    endTime: sliderPoints[31],
+    color: 'rgba(191, 191, 63, 0.5)',
+    editable: true
+  })
 */
 
     setAnalyzing(false)

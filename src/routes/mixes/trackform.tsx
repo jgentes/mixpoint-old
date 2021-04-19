@@ -13,6 +13,7 @@ import Slider, { SliderProps } from 'rc-slider'
 import { initPeaks } from './initPeaks'
 import { PeaksInstance } from 'peaks.js'
 import { Track, db, mixState, updateMixState } from '../../db'
+import WaveformData from 'waveform-data'
 
 const TrackForm = ({
   trackKey,
@@ -27,7 +28,6 @@ const TrackForm = ({
 
   const audioElement = useRef<HTMLAudioElement>(null)
   const [sliderControl, setSliderControl] = useState<SliderControlProps>()
-  const [audioSrc, setAudioSrc] = useState('')
   const [analyzing, setAnalyzing] = useState(false)
   const [canvas, setCanvas] = useState<PeaksInstance>()
 
@@ -35,7 +35,9 @@ const TrackForm = ({
   const track = mixState[`track${trackKey}`] || {}
 
   useEffect(() => {
-    if (track.file) getPeaks(track, track.file)
+    // pass waveformData here as a separate argument because it only
+    // exists in mixState, not on the Track schema
+    if (track.waveformData) getPeaks(track, track.waveformData)
   }, [track])
 
   const updatePlaybackRate = (bpm: number) => {
@@ -59,16 +61,16 @@ const TrackForm = ({
     })
   }
 
-  const getPeaks = async (track: Track, file?: File) =>
-    await initPeaks({
+  const getPeaks = async (track: Track, waveformData?: WaveformData) => {
+    return await initPeaks({
       trackKey,
       track,
-      file,
-      setAudioSrc,
+      waveformData,
       setSliderControl,
       setCanvas,
       setAnalyzing
     })
+  }
 
   const audioChange = async () => {
     if (!track.name) setAnalyzing(true)
@@ -91,15 +93,9 @@ const TrackForm = ({
       await initTrack(fileHandle, dbTrack?.dirHandle)
     )
 
-    // store the file in mixState (limit to 2 files, as they are big)
-    const file = await fileHandle.getFile()
-
-    await updateMixState({
-      [`track${trackKey}`]: { ...newTrack, file }
-    })
-
-    if (newTrack) getPeaks(newTrack, file)
-    else setAnalyzing(false)
+    if (newTrack) {
+      await getPeaks(newTrack)
+    } else setAnalyzing(false)
   }
 
   const setMixPoint = (time: number) => {
@@ -286,7 +282,7 @@ const TrackForm = ({
         <>{track1 && track.name && slider}</>
         {!track1 && trackHeader}
 
-        <audio id={`audio_${trackKey}`} src={audioSrc} ref={audioElement} />
+        <audio id={`audio_${trackKey}`} ref={audioElement} />
       </div>
     </Card>
   )
