@@ -15,7 +15,7 @@
     "@babel/preset-env": "^7.4.5",
     "@babel/preset-react": "^7.13.13",
     "@babel/preset-typescript": "^7.13.0",
-    "@parcel/transformer-image": "2.0.0-nightly.2265",
+    "@parcel/transformer-image": "2.0.0-nightly.2266",
     "@parcel/transformer-sass": "2.0.0-nightly.644",
     "@testing-library/jest-dom": "^5.11.9",
     "@testing-library/react": "^11.2.5",
