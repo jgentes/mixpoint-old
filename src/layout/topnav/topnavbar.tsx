@@ -23,7 +23,7 @@ export const TopNavbar = () => (
           />
         </Link>
       </NavItem>
-      <h1 className='h5 mb-0 mr-auto ml-2 d-lg-block' title='site title'>
+      <h1 className='h5 mb-0 mr-auto ml-2 d-lg-block' title='DJ Set Editor'>
         DJ Set Editor
       </h1>
 

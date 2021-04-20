@@ -30,6 +30,7 @@ const TrackForm = ({
   const [sliderControl, setSliderControl] = useState<SliderControlProps>()
   const [analyzing, setAnalyzing] = useState(false)
   const [canvas, setCanvas] = useState<PeaksInstance>()
+  const [audioSrc, setAudioSrc] = useState('')
 
   const track1 = !!(trackKey % 2)
   const track = mixState[`track${trackKey}`] || {}
@@ -61,12 +62,18 @@ const TrackForm = ({
     })
   }
 
-  const getPeaks = async (track: Track, waveformData?: WaveformData) => {
+  const getPeaks = async (
+    track: Track,
+    file?: File,
+    waveformData?: WaveformData
+  ) => {
     return await initPeaks({
       trackKey,
       track,
+      file,
       waveformData,
       setSliderControl,
+      setAudioSrc,
       setCanvas,
       setAnalyzing
     })
@@ -282,7 +289,7 @@ const TrackForm = ({
         <>{track1 && track.name && slider}</>
         {!track1 && trackHeader}
 
-        <audio id={`audio_${trackKey}`} ref={audioElement} />
+        <audio id={`audio_${trackKey}`} src={audioSrc} ref={audioElement} />
       </div>
     </Card>
   )
