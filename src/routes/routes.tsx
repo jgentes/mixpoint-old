@@ -1,4 +1,4 @@
-import { Route, Switch, Redirect } from 'react-router'
+import { Route, Switch, Redirect } from 'react-router-dom'
 
 // ----------- Pages Imports ---------------
 import { Mixes } from './mixes/mixes'

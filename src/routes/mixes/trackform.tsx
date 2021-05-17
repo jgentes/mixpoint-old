@@ -29,16 +29,17 @@ const TrackForm = ({
   const audioElement = useRef<HTMLAudioElement>(null)
   const [sliderControl, setSliderControl] = useState<SliderControlProps>()
   const [analyzing, setAnalyzing] = useState(false)
-  const [canvas, setCanvas] = useState<PeaksInstance>()
+  const [waveform, setWaveform] = useState<PeaksInstance>()
   const [audioSrc, setAudioSrc] = useState('')
 
   const track1 = !!(trackKey % 2)
   const track = mixState[`track${trackKey}`] || {}
+  const zoomView = waveform?.views.getView('zoomview')
 
   useEffect(() => {
     // pass waveformData here as a separate argument because it only
     // exists in mixState, not on the Track schema
-    if (track.waveformData) getPeaks(track, track.waveformData)
+    if (track.waveformData) getPeaks(track, track.file, track.waveformData)
   }, [track])
 
   const updatePlaybackRate = (bpm: number) => {
@@ -74,7 +75,7 @@ const TrackForm = ({
       waveformData,
       setSliderControl,
       setAudioSrc,
-      setCanvas,
+      setWaveform,
       setAnalyzing
     })
   }
@@ -91,7 +92,7 @@ const TrackForm = ({
     }
 
     // release resources from previous peak rendering
-    if (canvas) canvas?.destroy()
+    if (waveform) waveform?.destroy()
 
     // do not lose the directory handle if it exists
     const dbTrack = await db.tracks.get(fileHandle.name)
@@ -107,11 +108,14 @@ const TrackForm = ({
 
   const setMixPoint = (time: number) => {
     // create segment
+
     console.log('hit:', time)
-    canvas?.player.seek(time)
-    canvas?.player.play()
+    waveform?.player.seek(time)
+    zoomView?.enableAutoScroll(false)
+    waveform?.player.play()
+
     /*
-    canvas?.segments.add({
+    waveform?.segments.add({
       startTime: time,
       endTime: sliderPoints[31],
       color: 'rgba(191, 191, 63, 0.5)',
@@ -165,7 +169,10 @@ const TrackForm = ({
         title='Play'
         size='sm'
         className='b-black-02 my-auto'
-        onClick={() => canvas?.player.play()}
+        onClick={() => {
+          zoomView?.enableAutoScroll(true)
+          waveform?.player.play()
+        }}
         id={`playButton_${trackKey}`}
       >
         <i className='las la-play text-success' />
@@ -175,7 +182,10 @@ const TrackForm = ({
         title='Pause'
         size='sm'
         className='b-black-02 mx-2 my-auto'
-        onClick={() => canvas?.player.pause()}
+        onClick={() => {
+          waveform?.player.pause()
+          zoomView?.enableAutoScroll(true)
+        }}
         id={`pauseButton_${trackKey}`}
       >
         <i className='las la-pause text-danger' />
@@ -214,7 +224,7 @@ const TrackForm = ({
     </div>
   )
 
-  const slider = !sliderControl?.max ? null : (
+  const slider = (
     <div
       style={{
         overflow: 'scroll',
@@ -230,14 +240,16 @@ const TrackForm = ({
           width: `${sliderControl?.width}px`
         }}
       >
-        <Slider
-          min={sliderControl?.min}
-          max={sliderControl?.max}
-          marks={sliderControl?.marks}
-          step={null}
-          included={false}
-          onAfterChange={time => setMixPoint(time)}
-        />
+        {!sliderControl?.max ? null : (
+          <Slider
+            min={sliderControl?.min}
+            max={sliderControl?.max}
+            marks={sliderControl?.marks}
+            step={null}
+            included={false}
+            onAfterChange={time => setMixPoint(time)}
+          />
+        )}
       </div>
     </div>
   )
@@ -262,36 +274,41 @@ const TrackForm = ({
     />
   )
 
+  const midSection = null
+
   const loader = analyzing ? <Loader className='my-5' /> : null
 
   return (
-    <Card className='mb-3'>
-      <div className='mx-3'>
-        {track1 && trackHeader}
-        <>{!track1 && track.name && slider}</>
+    <>
+      <Card className='mb-3'>
+        <div className='mx-3'>
+          {track1 && trackHeader}
+          <>{!track1 && track.name && slider}</>
 
-        <div id={`peaks-container_${trackKey}`}>
-          {track1 ? (
-            <>
-              {overview}
-              {loader}
-              {zoomview}
-            </>
-          ) : (
-            <>
-              {zoomview}
-              {loader}
-              {overview}
-            </>
-          )}
+          <div id={`peaks-container_${trackKey}`}>
+            {track1 ? (
+              <>
+                {overview}
+                {loader}
+                {zoomview}
+              </>
+            ) : (
+              <>
+                {zoomview}
+                {loader}
+                {overview}
+              </>
+            )}
+          </div>
+
+          <>{track1 && track.name && slider}</>
+          {!track1 && trackHeader}
+
+          <audio id={`audio_${trackKey}`} src={audioSrc} ref={audioElement} />
         </div>
-
-        <>{track1 && track.name && slider}</>
-        {!track1 && trackHeader}
-
-        <audio id={`audio_${trackKey}`} src={audioSrc} ref={audioElement} />
-      </div>
-    </Card>
+      </Card>
+      {track1 && track.name && midSection}
+    </>
   )
 }
 

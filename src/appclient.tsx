@@ -5,13 +5,11 @@ import { RoutedContent } from './routes/routes'
 
 const basePath = process.env.BASE_PATH || '/'
 
-const AppClient = () => {
-  return (
-    <Router basename={basePath}>
-      <AppLayout>
-        <RoutedContent />
-      </AppLayout>
-    </Router>
-  )
-}
+const AppClient = () => (
+  <Router basename={basePath}>
+    <AppLayout>
+      <RoutedContent />
+    </AppLayout>
+  </Router>
+)
 export default AppClient

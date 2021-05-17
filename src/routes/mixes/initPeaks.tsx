@@ -1,6 +1,5 @@
-import Peaks, { JsonWaveformData, PeaksOptions } from 'peaks.js'
+import Peaks, { PeaksOptions } from 'peaks.js'
 import { toast } from 'react-toastify'
-import { getAudioBuffer } from '../../audio'
 import { Track, updateMixState } from '../../db'
 import WaveformData from 'waveform-data'
 
@@ -11,7 +10,7 @@ export const initPeaks = async ({
   waveformData,
   setSliderControl,
   setAudioSrc,
-  setCanvas,
+  setWaveform,
   setAnalyzing
 }: {
   trackKey: number
@@ -20,7 +19,7 @@ export const initPeaks = async ({
   waveformData: WaveformData | undefined
   setSliderControl: Function
   setAudioSrc: Function
-  setCanvas: Function
+  setWaveform: Function
   setAnalyzing: Function
 }) => {
   if (!track) throw new Error('No track to initialize')
@@ -89,7 +88,7 @@ export const initPeaks = async ({
     if (!waveform)
       throw new Error('Unable to display waveform data for some reason..')
 
-    setCanvas(waveform)
+    setWaveform(waveform)
 
     const zoomView = waveform.views.getView('zoomview')
 

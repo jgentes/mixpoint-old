@@ -5,6 +5,4 @@ import './styles/app.scss'
 
 import App from './appclient'
 
-const container = document.querySelector('#root')
-
-ReactDOM.render(<App />, container)
+ReactDOM.render(<App />, document.querySelector('#root'))
