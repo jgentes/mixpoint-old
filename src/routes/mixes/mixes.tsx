@@ -26,25 +26,7 @@ export const Mixes = () => {
       </span>
     </div>
   )
-  /*
-  const centerArea = (
-    <div className='timeline'>
-      <div className='timeline-date'>something here</div>
-      <div className='timeline-item'>
-        <div className='timeline-icon'>
-          <i className={`las la-exclamation-circle la-15em text-danger`}></i>
-        </div>
-        <div className='timeline-item-head clearfix mb-0 pl-3'>
-          <div className='mb-2'>
-            <span className={`badge badge-primary `}>Badge Title</span>
-          </div>
 
-          <p className='text-inverse mb-1'>hello! content</p>
-        </div>
-      </div>
-    </div>
-  )
-*/
   return (
     <Container>
       <div className='d-flex justify-content-between align-items-center'>
