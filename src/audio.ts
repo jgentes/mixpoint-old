@@ -47,7 +47,6 @@ const processAudio = async (track: Track): Promise<Track | undefined> => {
   // adjust for miscalc tempo > 160bpm
   const adjustedBpm = bpm > 160 ? bpm / 2 : bpm
 
-  // name is the table key!
   const updatedTrack = {
     ...track,
     name,

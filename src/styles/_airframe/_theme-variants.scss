@@ -1,3 +1,5 @@
+@use "sass:math";
+
 @import '../_mixins/_layout-theme.scss';
 
 /**
@@ -113,7 +115,7 @@ $color-alternatives: (
       // brand color
         none,
       // sidebar border
-        1px solid rgba($white, 0.2) / / slim menu border
+        1px solid math.div(rgba($white, 0.2), / slim) menu border
     );
 
     @include theme-dark-navbar($gray-800, $white, $gray-600, $color);
@@ -145,7 +147,7 @@ $color-alternatives: (
       // brand color
         none,
       // sidebar border
-        1px solid rgba($white, 0.2) / / slim menu border
+        1px solid math.div(rgba($white, 0.2), / slim) menu border
     );
   }
 }

@@ -1,3 +1,5 @@
+@use "sass:math";
+
 .fullscreen {
   min-height: 100vh;
   display: flex;
@@ -22,6 +24,6 @@
 @media (max-width: breakpoint-max('sm', $grid-breakpoints)) {
   .fullscreen {
     min-height: auto;
-    padding: #{$grid-gutter-width / 2};
+    padding: #{math.div($grid-gutter-width, 2)};
   }
 }

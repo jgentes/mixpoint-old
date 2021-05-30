@@ -2,12 +2,12 @@ import { useEffect, useState } from 'react'
 import BootstrapTable from 'react-bootstrap-table-next'
 import ToolkitProvider from 'react-bootstrap-table2-toolkit'
 import moment from 'moment'
-import { db, Track, removeTrack, putTracks } from '../../db'
+import { db, Track, removeTrack, putTrack } from '../../db'
 import { initTrack, processAudio } from '../../audio'
 import { getPermission } from '../../fileHandlers'
 import Loader from '../../layout/loader'
 import { SearchBar } from './searchbar'
-import { Card, Container, Button, UncontrolledTooltip, Row } from 'reactstrap'
+import { Card, Container, Button, UncontrolledTooltip } from 'reactstrap'
 import { useLiveQuery } from 'dexie-react-hooks'
 
 export const Tracks = (props: { baseProps?: object; searchProps?: object }) => {
@@ -31,6 +31,7 @@ export const Tracks = (props: { baseProps?: object; searchProps?: object }) => {
   ) => {
     let trackArray = []
 
+    // show indicator if no tracks exist
     setProcessing(true)
 
     for await (const fileOrDirectoryHandle of handles) {
@@ -48,11 +49,12 @@ export const Tracks = (props: { baseProps?: object; searchProps?: object }) => {
       }
     }
 
-    await putTracks(trackArray)
+    const idTracks = []
+    for (const track of trackArray) idTracks.push(await putTrack(track))
     setProcessing(false)
-    setAnalyzing(trackArray)
+    setAnalyzing(idTracks)
 
-    for (const track of trackArray) await processAudio(track)
+    for (const track of idTracks) await processAudio(track)
   }
 
   // careful wtih DataTransferItemList: https://stackoverflow.com/questions/55658851/javascript-datatransfer-items-not-persisting-through-async-calls
@@ -86,22 +88,22 @@ export const Tracks = (props: { baseProps?: object; searchProps?: object }) => {
     if (ok) {
       // if the user approves access to a folder, we can process all files in that folder :)
       const siblingTracks = track.dirHandle
-        ? dirtyTracks.filter(t => t.dirHandle?.name == track.dirHandle?.name)
+        ? dirtyTracks.filter(t => t.id == track.id)
         : [track]
       setAnalyzing(siblingTracks)
       for (const sibling of siblingTracks) {
         await processAudio(sibling)
-        setAnalyzing(siblingTracks.filter(s => s.name !== sibling.name))
+        setAnalyzing(siblingTracks.filter(s => s.id !== sibling.id))
       }
     }
   }
 
-  const actions = (cell: void, row: { name: string }) => (
+  const actions = (cell: void, row: { id: number }) => (
     <>
       <div
         onClick={e => {
           e.preventDefault()
-          removeTrack(row.name)
+          removeTrack(row.id!)
         }}
         id='removeTrack'
         style={{ cursor: 'pointer' }}
@@ -153,6 +155,12 @@ export const Tracks = (props: { baseProps?: object; searchProps?: object }) => {
 
     return [
       {
+        dataField: 'id',
+        type: 'number',
+        hidden: true,
+        text: ''
+      },
+      {
         dataField: 'name',
         text: 'Track Name',
         sort: true,
@@ -180,8 +188,8 @@ export const Tracks = (props: { baseProps?: object; searchProps?: object }) => {
           }
         ) =>
           cell?.toFixed(0) ||
-          (dirtyState.dirtyTracks.some(t => t.name == row.name) &&
-          !dirtyState.analyzingTracks.some(a => a.name == row.name) ? (
+          (dirtyState.dirtyTracks.some(t => t.id == row.id) &&
+          !dirtyState.analyzingTracks.some(a => a.id == row.id) ? (
             getBpmButton(row)
           ) : (
             <Loader style={{ margin: 0 }} />
@@ -227,6 +235,7 @@ export const Tracks = (props: { baseProps?: object; searchProps?: object }) => {
       {
         dataField: 'actions',
         text: 'Actions',
+        isDummyField: true,
         sort: false,
         headerStyle,
         classes,
@@ -265,7 +274,7 @@ export const Tracks = (props: { baseProps?: object; searchProps?: object }) => {
         <Loader className='my-5' />
       ) : !tracks?.length ? null : (
         <ToolkitProvider
-          keyField='name'
+          keyField='id'
           data={tracks}
           columns={columnDefs}
           search
