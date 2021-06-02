@@ -1,6 +1,6 @@
 import Peaks, { PeaksOptions } from 'peaks.js'
 import { toast } from 'react-toastify'
-import { Track, updateMixState } from '../../db'
+import { Track, updateTrackState } from '../../db'
 import WaveformData from 'waveform-data'
 
 export const initPeaks = async ({
@@ -27,7 +27,7 @@ export const initPeaks = async ({
 
   const track1 = trackKey % 2
 
-  file = file || (await track.fileHandle.getFile())
+  file = file || (await track.fileHandle?.getFile())
   if (!file) throw new Error('Problem reaching file')
 
   // update the <audio> ref, this allows play/pause controls
@@ -65,12 +65,10 @@ export const initPeaks = async ({
           // @ts-ignore
           waveformData = wave.toJSON()
 
-          updateMixState({
-            [`track${trackKey}`]: {
-              ...track,
-              file,
-              waveformData
-            }
+          updateTrackState({
+            ...track,
+            file,
+            waveformData
           })
           resolve()
         }

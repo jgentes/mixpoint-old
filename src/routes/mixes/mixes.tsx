@@ -1,14 +1,24 @@
-import { Container, Breadcrumb, BreadcrumbItem } from 'reactstrap'
+import { useState } from 'react'
+import { Breadcrumb, BreadcrumbItem, Container } from 'reactstrap'
 import Toggle from 'react-toggle'
 import TrackForm from './trackform'
-import { db, mixState, updateMixState } from '../../db'
+import { db, MixState, updateMixState } from '../../db'
 import { useLiveQuery } from 'dexie-react-hooks'
 
 export const Mixes = () => {
+  const [points, setPoints] = useState<number[]>([])
   const tracks = [1, 2]
 
   // pull state from db to hyrdate component state
-  const state: mixState = useLiveQuery(() => db.state.get('mixState')) ?? {}
+  const state: MixState = useLiveQuery(() => db.state.get('mixState')) ?? {
+    tracks: []
+  }
+
+  const setPoint = (trackKey: number, time: number) => {
+    const pCopy = [...points]
+    pCopy[trackKey] = time
+    setPoints(pCopy)
+  }
 
   const bpmControl = (
     <div>
@@ -43,7 +53,7 @@ export const Mixes = () => {
 
         {/*
         <Button
-          onClick={() => addTrack([...tracks, Date.now()])}
+          onClick={() => putTrack([...tracks, Date.now()])}
           className='ml-auto align-self-center'
           color='primary'
           outline
@@ -54,9 +64,17 @@ export const Mixes = () => {
       </div>
 
       <div className='mb-5'>
-        {tracks?.map(trackKey => (
-          <TrackForm key={trackKey} trackKey={trackKey} mixState={state} />
-        ))}
+        {[1, 2].map(trackKey => {
+          return (
+            <div key={trackKey}>
+              <TrackForm
+                trackKey={trackKey}
+                trackState={state.tracks![trackKey - 1]}
+                setPoint={setPoint}
+              />
+            </div>
+          )
+        })}
       </div>
     </Container>
   )

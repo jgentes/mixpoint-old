@@ -1,4 +1,5 @@
 import Dexie from 'dexie'
+import WaveformData from 'waveform-data'
 import { toast } from 'react-toastify'
 
 // from https://dexie.org/docs/Typescript
@@ -7,12 +8,12 @@ class EditorDatabase extends Dexie {
   tracks: Dexie.Table<Track, number>
   mixes: Dexie.Table<Mix, number>
   sets: Dexie.Table<Set, number>
-  state: Dexie.Table<trackState | mixState | setState | undefined>
+  state: Dexie.Table<MixState | SetState>
 
   constructor () {
     super('EditorDatabase')
     this.version(1).stores({
-      tracks: '++id, name, bpm',
+      tracks: '++id, name, bpm, [name+size]',
       mixes: '++id, tracks',
       sets: '++id, mixes',
       state: ''
@@ -28,8 +29,8 @@ class EditorDatabase extends Dexie {
 // define tables
 interface Track {
   id?: number
-  name: string
-  fileHandle: FileSystemFileHandle
+  name?: string
+  fileHandle?: FileSystemFileHandle
   dirHandle?: FileSystemDirectoryHandle
   size?: number
   type?: string
@@ -40,9 +41,15 @@ interface Track {
   offset?: number
 }
 
+interface MixPoint {
+  times: number[]
+  effects: any
+}
+
 interface Mix {
   id?: number
   tracks: number[]
+  mixPoints: MixPoint[]
 }
 
 interface Set {
@@ -50,21 +57,24 @@ interface Set {
   mixes: number[]
 }
 
-interface trackState {}
+interface TrackState extends Track {
+  adjustedBpm?: number
+  file?: File
+  waveformData?: WaveformData
+}
 
-interface mixState {
-  [key: string]: any
+interface MixState {
+  tracks?: TrackState[]
   bpmSync?: boolean
 }
 
-interface setState {}
+interface SetState {}
 
 const db = new EditorDatabase()
 
 db.on('populate', function () {
-  // seed initial objects here because other methods are only updates to these objects
-  db.state.put({}, 'trackState')
-  db.state.put({}, 'mixState')
+  // seed initial state here because other methods are only updates to these objects
+  db.state.put({ tracks: [] }, 'mixState')
   db.state.put({}, 'setState')
 })
 
@@ -72,33 +82,38 @@ const errHandler = (err: Error) => {
   toast.error(`Oops, there was a problem: ${err.message}`)
 }
 
-const getTrackState = async (): Promise<trackState> =>
-  (await db.state.get('trackState')) ?? {}
-const getMixState = async (): Promise<mixState> =>
+const getMixState = async (): Promise<MixState> =>
   (await db.state.get('mixState')) ?? {}
-const getSetState = async (): Promise<setState> =>
+const getSetState = async (): Promise<SetState> =>
   (await db.state.get('setState')) ?? {}
 
-const updateTrackState = async (state: trackState) => {
-  getTrackState().then(
-    async (currentState: trackState) =>
-      await db.state.update('trackState', { ...currentState, ...state })
-  )
+const updateTrackState = async (state: TrackState) => {
+  getMixState().then(async (currentState: MixState) => {
+    const trackIndex = currentState.tracks!.findIndex(t => t.id == state.id)
+
+    if (trackIndex! >= 0) {
+      currentState.tracks![trackIndex!] = state
+    } else currentState.tracks?.push(state)
+    return await db.state.update('mixState', currentState)
+  })
 }
-const updateMixState = async (state: mixState) => {
+const updateMixState = async (state: MixState) => {
   getMixState().then(
-    async (currentState: mixState) =>
+    async (currentState: MixState) =>
       await db.state.update('mixState', { ...currentState, ...state })
   )
 }
-const updateSetState = async (state: setState) => {
+const updateSetState = async (state: SetState) => {
   getSetState().then(
-    async (currentState: setState) =>
+    async (currentState: SetState) =>
       await db.state.update('setState', { ...currentState, ...state })
   )
 }
 
 const putTrack = async (track: Track): Promise<Track> => {
+  const dup = await db.tracks.get({ name: track.name, size: track.size })
+  if (dup && dup.bpm) return dup
+
   track.lastModified = Date.now()
   const id = await db.tracks.put(track).catch(errHandler)
   track.id = id
@@ -120,17 +135,16 @@ const removeMix = async (id: number): Promise<void> =>
 export {
   db,
   Track,
-  trackState,
+  TrackState,
   Mix,
-  mixState,
+  MixState,
   Set,
-  setState,
+  SetState,
   putTrack,
   removeTrack,
   addMix,
   getMix,
   removeMix,
-  getTrackState,
   getMixState,
   getSetState,
   updateTrackState,

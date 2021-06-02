@@ -2,38 +2,34 @@ import { useEffect, useRef, useState } from 'react'
 import {
   Button,
   Card,
-  Col,
-  Row,
+  CardHeader,
+  CardBody,
   Input,
   InputGroup,
   InputGroupAddon,
   InputGroupTextProps,
-  Table,
-  CardBody,
-  CardTitle,
-  CardHeader,
-  UncontrolledTooltip,
-  UncontrolledCollapse,
   Nav,
   NavItem,
-  NavLink,
   TabPane
 } from 'reactstrap'
-import UncontrolledTabs from '../../layout/UncontrolledTabs'
+
 import { initTrack, processAudio } from '../../audio'
 import Loader from '../../layout/loader'
 import Slider, { SliderProps } from 'rc-slider'
 import { initPeaks } from './initPeaks'
 import { PeaksInstance } from 'peaks.js'
 import WaveformData from 'waveform-data'
-import { Track, db, mixState, updateMixState, addMix } from '../../db'
+import { Track, db, TrackState, updateTrackState, addMix } from '../../db'
+import UncontrolledTabs from '../../layout/UncontrolledTabs'
 
 const TrackForm = ({
   trackKey,
-  mixState
+  trackState,
+  setPoint
 }: {
   trackKey: number
-  mixState: mixState
+  trackState: TrackState
+  setPoint: Function
 }) => {
   interface SliderControlProps extends SliderProps {
     width: number
@@ -45,8 +41,8 @@ const TrackForm = ({
   const [waveform, setWaveform] = useState<PeaksInstance>()
   const [audioSrc, setAudioSrc] = useState('')
 
-  const track1 = !!(trackKey % 2)
-  const track = mixState[`track${trackKey}`] || {}
+  const track1 = trackKey == 1
+  const track = trackState || {}
   const zoomView = waveform?.views.getView('zoomview')
 
   useEffect(() => {
@@ -68,11 +64,9 @@ const TrackForm = ({
     updatePlaybackRate(bpm)
 
     // store custom bpm value in mixstate
-    await updateMixState({
-      [`track${trackKey}`]: {
-        ...track,
-        adjustedBpm: Number(bpm.toFixed(1))
-      }
+    await updateTrackState({
+      ...track,
+      adjustedBpm: Number(bpm.toFixed(1))
     })
   }
 
@@ -119,17 +113,12 @@ const TrackForm = ({
     } else setAnalyzing(false)
   }
 
-  const setMixPoint = async (time: number) => {
-    // create segment
-    console.log('MIXSTATE:', mixState)
-    console.log('hit:', time)
-
+  const selectTime = async (time: number) => {
     waveform?.player.seek(time)
     zoomView?.enableAutoScroll(false)
     waveform?.player.play()
 
-    const id = await addMix([mixState.track1.id, mixState.track2.id])
-    await updateMixState({ ...mixState, mix: { id } })
+    setPoint(trackKey, time)
 
     /*
     waveform?.segments.add({
@@ -139,6 +128,11 @@ const TrackForm = ({
       editable: true
     })
     */
+  }
+
+  const setMixPoint = async () => {
+    //const id = await addMix(mixState.tracks.map(t => t.id))
+    //await updateMixState({ ...mixState, mix: { id } })
   }
 
   const adjustedBpm = track.adjustedBpm && Number(track.adjustedBpm).toFixed(1)
@@ -274,7 +268,7 @@ const TrackForm = ({
             marks={sliderControl?.marks}
             step={null}
             included={false}
-            onAfterChange={time => setMixPoint(time)}
+            onAfterChange={time => selectTime(time)}
           />
         )}
       </div>
@@ -301,41 +295,34 @@ const TrackForm = ({
     />
   )
 
-  const midCard = (
+  const loader = analyzing ? <Loader className='my-5' /> : null
+
+  const MidCard = () => (
     <Card className='mb-3'>
       <UncontrolledTabs initialActiveTabId='users201a'>
         <CardHeader>
           <Nav tabs className='card-header-tabs'>
             <NavItem>
               <UncontrolledTabs.NavLink tabId='users201a'>
-                Users
+                MixPoint
               </UncontrolledTabs.NavLink>
             </NavItem>
             <NavItem>
               <UncontrolledTabs.NavLink tabId='settings201b'>
-                Settings
+                {track.name}
               </UncontrolledTabs.NavLink>
             </NavItem>
           </Nav>
         </CardHeader>
         <CardBody>
           <UncontrolledTabs.TabContent>
-            <TabPane tabId='users201a'>Testing</TabPane>
+            <TabPane tabId='users201a'>{'0:00'}</TabPane>
             <TabPane tabId='settings201b'>Settings</TabPane>
           </UncontrolledTabs.TabContent>
         </CardBody>
       </UncontrolledTabs>
     </Card>
   )
-
-  const midSection = (
-    <Row>
-      <Col xs={6}>{midCard}</Col>
-      <Col xs={6}>{midCard}</Col>
-    </Row>
-  )
-
-  const loader = analyzing ? <Loader className='my-5' /> : null
 
   return (
     <>
@@ -366,7 +353,7 @@ const TrackForm = ({
           <audio id={`audio_${trackKey}`} src={audioSrc} ref={audioElement} />
         </div>
       </Card>
-      {track1 && track.name && midSection}
+      <MidCard />
     </>
   )
 }
