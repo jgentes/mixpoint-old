@@ -297,11 +297,14 @@ const TrackForm = ({
 
   const loader = analyzing ? <Loader className='my-5' /> : null
 
-  const MidCard = () => (
-    <Card className='mb-3'>
+  const MixCard = () => (
+    <Card
+      className='mb-3 mr-3'
+      style={{ flexBasis: '85px', flexGrow: 1, flexShrink: 1 }}
+    >
       <UncontrolledTabs initialActiveTabId='users201a'>
         <CardHeader>
-          <Nav tabs className='card-header-tabs'>
+          <Nav pills className='mb-3'>
             <NavItem>
               <UncontrolledTabs.NavLink tabId='users201a'>
                 MixPoint
@@ -309,7 +312,7 @@ const TrackForm = ({
             </NavItem>
             <NavItem>
               <UncontrolledTabs.NavLink tabId='settings201b'>
-                {track.name}
+                Name
               </UncontrolledTabs.NavLink>
             </NavItem>
           </Nav>
@@ -325,8 +328,12 @@ const TrackForm = ({
   )
 
   return (
-    <>
-      <Card className='mb-3'>
+    <div className='d-flex'>
+      <MixCard />
+      <Card
+        className='mb-3'
+        style={{ flexBasis: 0, flexGrow: 8, flexShrink: 1 }}
+      >
         <div className='mx-3'>
           {track1 && trackHeader}
           <>{!track1 && track.name && slider}</>
@@ -353,8 +360,7 @@ const TrackForm = ({
           <audio id={`audio_${trackKey}`} src={audioSrc} ref={audioElement} />
         </div>
       </Card>
-      <MidCard />
-    </>
+    </div>
   )
 }
 

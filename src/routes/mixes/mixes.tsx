@@ -7,7 +7,6 @@ import { useLiveQuery } from 'dexie-react-hooks'
 
 export const Mixes = () => {
   const [points, setPoints] = useState<number[]>([])
-  const tracks = [1, 2]
 
   // pull state from db to hyrdate component state
   const state: MixState = useLiveQuery(() => db.state.get('mixState')) ?? {
