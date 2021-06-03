@@ -1,0 +1,31 @@
+@import '@blueprintjs/core/lib/scss/variables';
+
+/* to fix dropzone */
+.drop {
+  pointer-events: none;
+}
+
+.breadcrumb {
+  background-color: transparent !important;
+}
+
+/* changes for nav bar */
+.header-nav-text {
+  color: $gray2;
+}
+
+.bp4-tab-indicator-wrapper {
+  height: 56px !important;
+}
+
+.bp4-tab-indicator {
+  background-color: $blue3 !important;
+}
+
+.bp4-tab-list {
+  margin: 0 !important;
+}
+
+.navbar-shadow {
+  box-shadow: 0 0.125rem 0.25rem rgba(0, 0, 0, 0.075) !important;
+}
