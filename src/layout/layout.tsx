@@ -28,7 +28,7 @@ const AppLayout: React.FunctionComponent = props => (
   <>
     <Helmet>
       <meta charSet='utf-8' />
-      <title>DJ Set Editor</title>
+      <title>MixPoint</title>
       <meta
         name='description'
         content={'Multi-track audio editor designed for mixing dj sets'}

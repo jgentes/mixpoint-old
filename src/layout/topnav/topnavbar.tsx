@@ -1,46 +1,50 @@
-import { Link, NavLink as RRNavLink } from 'react-router-dom'
-import { NavLink, NavItem, Nav, Navbar } from 'reactstrap'
+import { Link, NavLink } from 'react-router-dom'
+import { Navbar, Tabs, Tab } from '@blueprintjs/core'
 
 import logo from 'url:../../assets/soundwave-640x450px.jpg'
 const navLinks = ['tracks', 'mixes', 'sets']
 
 export const TopNavbar = () => (
-  <Navbar
-    expand='sm'
-    light
-    color={'primary'}
-    className='bg-white pt-2 initial-loader bb-black-02 shadow-sm'
-  >
-    <div className='navbar-collapse-wrap container'>
-      <NavItem className='navbar-brand'>
+  <Navbar style={{ height: '70px', padding: '10px' }} className='navbar-shadow'>
+    <div style={{ width: '80%', margin: '0 auto' }}>
+      <Navbar.Group>
         <Link to='/'>
           <img
             src={logo}
             height='48px'
-            className='d-block'
-            alt='DJ Set Editor Logo'
+            alt='MixPoint Logo'
+            style={{ marginRight: '5px' }}
             id='headerLogo'
           />
         </Link>
-      </NavItem>
-      <h1 className='h5 mb-0 mr-auto ml-2 d-lg-block' title='DJ Set Editor'>
-        DJ Set Editor
-      </h1>
+        <div className='initial-loader__row initial-loader'>
+          <h1>MixPoint</h1>
+        </div>
+      </Navbar.Group>
 
-      <Nav className='nav-accent navbar-nav'>
-        {navLinks.map(target => (
-          <NavItem key={target}>
-            <NavLink
-              tag={RRNavLink}
-              exact
-              to={`/${target}`}
-              activeClassName='active'
-            >
-              {target.charAt(0).toUpperCase() + target.slice(1)}
-            </NavLink>
-          </NavItem>
-        ))}
-      </Nav>
+      <Navbar.Group align='right'>
+        <Tabs
+          animate={true}
+          id='navbar'
+          defaultSelectedTabId='mixes'
+          large={true}
+        >
+          {navLinks.map(target => (
+            <Tab
+              className='header-nav-text'
+              key={target}
+              id={target}
+              title={
+                <NavLink exact to={`/${target}`}>
+                  <span style={{ padding: '0 15px' }}>
+                    {target.charAt(0).toUpperCase() + target.slice(1)}
+                  </span>
+                </NavLink>
+              }
+            />
+          ))}
+        </Tabs>
+      </Navbar.Group>
     </div>
   </Navbar>
 )

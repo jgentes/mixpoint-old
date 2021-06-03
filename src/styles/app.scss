@@ -1,7 +1,12 @@
+/*
 @import 'bootstrap/scss/bootstrap.scss';
 @import './_bootstrap/_bootstrap.scss';
 @import './_bootstrap/_helpers.scss';
 @import './_plugins/plugins.scss';
 @import './airframe.scss';
+*/
+
+@import 'normalize.css/normalize.css';
+@import '@blueprintjs/core/lib/css/blueprint.css';
 @import './loader.scss';
-@import './custom.css';
+@import './custom.scss';

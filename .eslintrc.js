@@ -22,7 +22,13 @@ module.exports = {
     ecmaVersion: 12,
     sourceType: 'module'
   },
-  plugins: ['react', '@typescript-eslint', 'jest-dom', 'testing-library'],
+  plugins: [
+    'react',
+    '@typescript-eslint',
+    'jest-dom',
+    'testing-library',
+    '@blueprintjs'
+  ],
   rules: {
     'no-use-before-define': 'off',
     '@typescript-eslint/no-use-before-define': ['error'],
