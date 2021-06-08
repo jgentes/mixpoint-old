@@ -26,17 +26,12 @@ export const Mixes = () => {
     pCopy[trackKey] = time
     setPoints(pCopy)
   }
-  console.log('darkmode:', darkMode)
+
   const darkSwitch = (
     <div style={{ paddingTop: '10px', paddingRight: '5px' }}>
       <Switch
         checked={darkMode}
-        onChange={() => {
-          if (darkMode) {
-            document.body.classList.remove('bp4-dark')
-          } else document.body.classList.add('bp4-dark')
-          updateState(!darkMode, 'darkMode')
-        }}
+        onChange={() => updateState(!darkMode, 'darkMode')}
         labelElement={<span style={{ color: Colors.GRAY2 }}>Dark Mode</span>}
         innerLabel='OFF'
         innerLabelChecked='ON'
