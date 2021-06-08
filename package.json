@@ -66,7 +66,6 @@
     "react-helmet": "^6.1.0",
     "react-router-dom": "^5.0.1",
     "react-toastify": "^5.2.1",
-    "react-toggle": "^4.0.2",
     "reactstrap": "^8.0.0",
     "waveform-data": "bbc/waveform-data.js#c1003b9a4dfd782125f3b9a2dc4b9aa75d121224",
     "web-audio-beat-detector": "^8.1.1"

@@ -1,54 +1,73 @@
 import { useState } from 'react'
-import { Breadcrumb, BreadcrumbItem, Container } from 'reactstrap'
-import Toggle from 'react-toggle'
+import {
+  Breadcrumbs,
+  Breadcrumb,
+  BreadcrumbProps,
+  Switch
+} from '@blueprintjs/core'
 import TrackForm from './trackform'
-import { db, MixState, updateMixState } from '../../db'
+import { db, MixState, updateState } from '../../db'
 import { useLiveQuery } from 'dexie-react-hooks'
+import { Colors } from '@blueprintjs/core'
 
 export const Mixes = () => {
   const [points, setPoints] = useState<number[]>([])
 
-  // pull state from db to hyrdate component state
+  // pull state from db to hydrate component state
   const state: MixState = useLiveQuery(() => db.state.get('mixState')) ?? {
     tracks: []
   }
+
+  const darkMode =
+    useLiveQuery((): Promise<boolean> => db.state.get('darkMode')) ?? false
 
   const setPoint = (trackKey: number, time: number) => {
     const pCopy = [...points]
     pCopy[trackKey] = time
     setPoints(pCopy)
   }
-
-  const bpmControl = (
-    <div>
-      <Toggle
-        checked={!!state?.bpmSync || false}
-        size={1}
-        icons={{
-          checked: <i className='las la-check text-white' />,
-          unchecked: null
+  console.log('darkmode:', darkMode)
+  const darkSwitch = (
+    <div style={{ paddingTop: '10px', paddingRight: '5px' }}>
+      <Switch
+        checked={darkMode}
+        onChange={() => {
+          if (darkMode) {
+            document.body.classList.remove('bp4-dark')
+          } else document.body.classList.add('bp4-dark')
+          updateState(!darkMode, 'darkMode')
         }}
-        onChange={() => updateMixState({ bpmSync: true })}
+        labelElement={<span style={{ color: Colors.GRAY2 }}>Dark Mode</span>}
+        innerLabel='OFF'
+        innerLabelChecked='ON'
+        alignIndicator='right'
       />
-      <span className='mx-3' style={{ verticalAlign: 'top' }}>
-        BPM Sync
-      </span>
     </div>
   )
 
-  return (
-    <Container>
-      <div className='d-flex justify-content-between align-items-center'>
-        <Breadcrumb>
-          <BreadcrumbItem className='mt-1'>
-            <a href='/mixes'>Mixes</a>
-          </BreadcrumbItem>
-          <BreadcrumbItem className='mt-1' active>
-            Mix Editor
-          </BreadcrumbItem>
-        </Breadcrumb>
+  const crumbs = [
+    { text: 'Mixes', href: '/mixes' },
+    { text: 'Mix Editor', current: true }
+  ]
 
-        {bpmControl}
+  const renderCrumb = ({ text, ...restProps }: BreadcrumbProps) => (
+    <Breadcrumb {...restProps}>
+      <span style={{ fontSize: '14px' }}>{text}</span>
+    </Breadcrumb>
+  )
+
+  return (
+    <>
+      <div
+        style={{
+          display: 'flex',
+          justifyContent: 'space-between',
+          alignItems: 'center'
+        }}
+      >
+        <Breadcrumbs breadcrumbRenderer={renderCrumb} items={crumbs} />
+
+        {darkSwitch}
 
         {/*
         <Button
@@ -61,7 +80,6 @@ export const Mixes = () => {
         </Button>
         */}
       </div>
-
       <div className='mb-5'>
         {[1, 2].map(trackKey => {
           return (
@@ -75,6 +93,6 @@ export const Mixes = () => {
           )
         })}
       </div>
-    </Container>
+    </>
   )
 }

@@ -9,6 +9,8 @@ window.onerror = msg => toast.error(`Whoops! ${msg}`)
 window.onunhandledrejection = (e: PromiseRejectionEvent) =>
   toast.error(`Whoops! ${e.reason.message}`)
 
+const layoutStyle = { width: '80%', margin: '0 auto' }
+
 const favIcons = [
   {
     rel: 'icon',
@@ -38,9 +40,9 @@ const AppLayout: React.FunctionComponent = props => (
       ))}
     </Helmet>
 
-    <TopNavbar />
+    <TopNavbar layoutStyle={layoutStyle} />
 
-    {props.children}
+    <div style={{ ...layoutStyle, padding: '15px 10px' }}>{props.children}</div>
 
     <ToastContainer
       position='bottom-center'

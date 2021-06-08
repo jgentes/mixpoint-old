@@ -1,7 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
 import {
   Button,
-  Card,
   CardHeader,
   CardBody,
   Input,
@@ -13,6 +12,7 @@ import {
   TabPane
 } from 'reactstrap'
 
+import { Card, Elevation } from '@blueprintjs/core'
 import { initTrack, processAudio } from '../../audio'
 import Loader from '../../layout/loader'
 import Slider, { SliderProps } from 'rc-slider'
@@ -298,10 +298,7 @@ const TrackForm = ({
   const loader = analyzing ? <Loader className='my-5' /> : null
 
   const MixCard = () => (
-    <Card
-      className='mb-3 mr-3'
-      style={{ flexBasis: '85px', flexGrow: 1, flexShrink: 1 }}
-    >
+    <Card style={{ flexBasis: '85px', flexGrow: 1, flexShrink: 1 }}>
       <UncontrolledTabs initialActiveTabId='users201a'>
         <CardHeader>
           <Nav pills className='mb-3'>
@@ -328,13 +325,19 @@ const TrackForm = ({
   )
 
   return (
-    <div className='d-flex'>
+    <div style={{ display: 'flex', margin: '15px 0' }}>
       <MixCard />
       <Card
-        className='mb-3'
-        style={{ flexBasis: 0, flexGrow: 8, flexShrink: 1 }}
+        elevation={1}
+        style={{
+          flexBasis: 0,
+          flexGrow: 8,
+          flexShrink: 1,
+          marginLeft: '15px',
+          overflow: 'hidden'
+        }}
       >
-        <div className='mx-3'>
+        <div>
           {track1 && trackHeader}
           <>{!track1 && track.name && slider}</>
 

@@ -1,5 +1,10 @@
 @import '@blueprintjs/core/lib/scss/variables';
 
+/* dark mode */
+body.bp4-dark {
+  background-color: #30404d;
+}
+
 /* to fix dropzone */
 .drop {
   pointer-events: none;

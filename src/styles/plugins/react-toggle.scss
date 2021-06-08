@@ -1,0 +1,18 @@
+@import 'react-toggle/style.css';
+
+.react-toggle-track {
+  .fa {
+    font-size: 12px;
+  }
+}
+
+.react-toggle-track {
+  background-color: $gray2 !important;
+}
+.react-toggle-thumb {
+  border: 1px solid $gray2 !important;
+}
+
+.react-toggle--checked .react-toggle-track {
+  background-color: $green3 !important;
+}

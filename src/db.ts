@@ -4,14 +4,14 @@ import { toast } from 'react-toastify'
 
 // from https://dexie.org/docs/Typescript
 
-class EditorDatabase extends Dexie {
+class MixPointDb extends Dexie {
   tracks: Dexie.Table<Track, number>
   mixes: Dexie.Table<Mix, number>
   sets: Dexie.Table<Set, number>
-  state: Dexie.Table<MixState | SetState>
+  state: Dexie.Table<any>
 
   constructor () {
-    super('EditorDatabase')
+    super('MixPointDb')
     this.version(1).stores({
       tracks: '++id, name, bpm, [name+size]',
       mixes: '++id, tracks',
@@ -70,7 +70,7 @@ interface MixState {
 
 interface SetState {}
 
-const db = new EditorDatabase()
+const db = new MixPointDb()
 
 db.on('populate', function () {
   // seed initial state here because other methods are only updates to these objects
@@ -82,13 +82,11 @@ const errHandler = (err: Error) => {
   toast.error(`Oops, there was a problem: ${err.message}`)
 }
 
-const getMixState = async (): Promise<MixState> =>
-  (await db.state.get('mixState')) ?? {}
-const getSetState = async (): Promise<SetState> =>
-  (await db.state.get('setState')) ?? {}
+const getState = async (key: string) => (await db.state.get(key)) ?? {}
+const updateState = async (state: any, key: string) => db.state.put(state, key)
 
 const updateTrackState = async (state: TrackState) => {
-  getMixState().then(async (currentState: MixState) => {
+  getState('mixState').then(async (currentState: MixState) => {
     const trackIndex = currentState.tracks!.findIndex(t => t.id == state.id)
 
     if (trackIndex! >= 0) {
@@ -98,19 +96,20 @@ const updateTrackState = async (state: TrackState) => {
   })
 }
 const updateMixState = async (state: MixState) => {
-  getMixState().then(
+  getState('mixState').then(
     async (currentState: MixState) =>
       await db.state.update('mixState', { ...currentState, ...state })
   )
 }
 const updateSetState = async (state: SetState) => {
-  getSetState().then(
+  getState('mixState').then(
     async (currentState: SetState) =>
       await db.state.update('setState', { ...currentState, ...state })
   )
 }
 
 const putTrack = async (track: Track): Promise<Track> => {
+  // if below line changes, potentially remove [name+size] index
   const dup = await db.tracks.get({ name: track.name, size: track.size })
   if (dup && dup.bpm) return dup
 
@@ -123,8 +122,11 @@ const putTrack = async (track: Track): Promise<Track> => {
 const removeTrack = async (id: number): Promise<void> =>
   await db.tracks.delete(id).catch(errHandler)
 
-const addMix = async (tracks: number[]): Promise<number> =>
-  await db.mixes.add({ tracks }).catch(errHandler)
+const addMix = async (
+  tracks: number[],
+  mixPoints: MixPoint[]
+): Promise<number> =>
+  await db.mixes.add({ tracks, mixPoints }).catch(errHandler)
 
 const getMix = async (id: number): Promise<Mix | undefined> =>
   await db.mixes.get(id).catch(errHandler)
@@ -145,8 +147,8 @@ export {
   addMix,
   getMix,
   removeMix,
-  getMixState,
-  getSetState,
+  getState,
+  updateState,
   updateTrackState,
   updateMixState,
   updateSetState

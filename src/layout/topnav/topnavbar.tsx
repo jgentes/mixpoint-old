@@ -1,12 +1,15 @@
 import { Link, NavLink } from 'react-router-dom'
 import { Navbar, Tabs, Tab } from '@blueprintjs/core'
 
-import logo from 'url:../../assets/soundwave-640x450px.jpg'
+import logo from 'url:../../assets/soundwave-596x419.png'
 const navLinks = ['tracks', 'mixes', 'sets']
 
-export const TopNavbar = () => (
-  <Navbar style={{ height: '70px', padding: '10px' }} className='navbar-shadow'>
-    <div style={{ width: '80%', margin: '0 auto' }}>
+export const TopNavbar = (props: { layoutStyle: object }) => (
+  <Navbar
+    style={{ height: '70px', padding: '10px 0' }}
+    className='navbar-shadow'
+  >
+    <div style={props.layoutStyle}>
       <Navbar.Group>
         <Link to='/'>
           <img

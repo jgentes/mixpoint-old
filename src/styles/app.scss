@@ -10,3 +10,9 @@
 @import '@blueprintjs/core/lib/css/blueprint.css';
 @import './loader.scss';
 @import './custom.scss';
+
+// plugins
+@import './plugins/rc-slider.scss';
+@import './plugins/line-awesome.scss';
+@import './plugins/react-dropzone.scss';
+@import './plugins/react-bootstrap-table.scss';
