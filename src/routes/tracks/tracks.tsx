@@ -4,8 +4,8 @@ import { db, Track, removeTrack, putTrack, useLiveQuery } from '../../db'
 import { initTrack, processAudio } from '../../audio'
 import { getPermission } from '../../fileHandlers'
 import Loader from '../../layout/loader'
-import { SearchBar } from './searchbar'
-import { Card, Container, UncontrolledTooltip } from 'reactstrap'
+import { resizeEffect } from '../../utils'
+import { Container } from 'reactstrap'
 import { Button } from '@blueprintjs/core'
 import { Cross, DoubleCaretVertical } from '@blueprintjs/icons'
 import { Cell, Column, ColumnHeaderCell, Table } from '@blueprintjs/table'
@@ -15,6 +15,7 @@ export const Tracks = (props: { baseProps?: object; searchProps?: object }) => {
   const [processing, setProcessing] = useState(false) // show progress if no table
   const [analyzingTracks, setAnalyzing] = useState<Track[]>([])
   const [dirtyTracks, setDirty] = useState<Track[]>([])
+  const [width] = resizeEffect('trackTable')
 
   // monitor db for track updates
   const tracks: Track[] | null = useLiveQuery(() => db.tracks.toArray()) ?? null
@@ -136,11 +137,24 @@ export const Tracks = (props: { baseProps?: object; searchProps?: object }) => {
       )
     }
 
+    const docWidth =
+      (width || document.getElementById('trackTable').clientWidth || 1000) - 30 // row header
+
+    const colWidths = {
+      name: 0.35,
+      bpm: 0.1,
+      duration: 0.1,
+      mixes: 0.1,
+      sets: 0.1,
+      lastModified: 0.15,
+      actions: 0.1
+    }
+
     return [
       {
         key: 'name',
         name: 'Track Name',
-        width: 500,
+        width: docWidth * colWidths.name,
         formatter: (i: number) => {
           // remove suffix (ie. .mp3)
           return (
@@ -153,7 +167,7 @@ export const Tracks = (props: { baseProps?: object; searchProps?: object }) => {
       {
         key: 'bpm',
         name: 'BPM',
-        width: 100,
+        width: docWidth * colWidths.bpm,
         formatter: (i: number) => (
           <Cell>
             {tracks![i].bpm?.toFixed(0) ||
@@ -169,7 +183,7 @@ export const Tracks = (props: { baseProps?: object; searchProps?: object }) => {
       {
         key: 'duration',
         name: 'Duration',
-        width: 100,
+        width: docWidth * colWidths.duration,
         formatter: (i: number) =>
           tracks![i].duration ? (
             <Cell>{formatMinutes(tracks![i].duration! / 60)}</Cell>
@@ -180,19 +194,19 @@ export const Tracks = (props: { baseProps?: object; searchProps?: object }) => {
       {
         key: 'mixes',
         name: 'Mixes',
-        width: 75,
+        width: docWidth * colWidths.mixes,
         formatter: (i: number) => <Cell></Cell>
       },
       {
         key: 'sets',
         name: 'Sets',
-        width: 75,
+        width: docWidth * colWidths.sets,
         formatter: (i: number) => <Cell></Cell>
       },
       {
         key: 'lastModified',
         name: 'Updated',
-        width: 150,
+        width: docWidth * colWidths.lastModified,
         formatter: (i: number) => (
           <Cell>{moment(tracks![i].lastModified).fromNow()}</Cell>
         )
@@ -200,7 +214,7 @@ export const Tracks = (props: { baseProps?: object; searchProps?: object }) => {
       {
         key: 'actions',
         name: 'Remove',
-        width: 80,
+        width: docWidth * colWidths.actions,
         formatter: actions
       }
     ]
@@ -255,7 +269,7 @@ export const Tracks = (props: { baseProps?: object; searchProps?: object }) => {
       {!tracks || processing ? (
         <Loader className='my-5' />
       ) : !tracks?.length ? null : (
-        <>
+        <div id='trackTable'>
           <div className='d-flex mb-2 align-items-baseline'>
             {!dirtyTracks.length ? null : (
               <div className='ml-auto'>
@@ -289,20 +303,28 @@ export const Tracks = (props: { baseProps?: object; searchProps?: object }) => {
           <Table
             numRows={tracks.length}
             columnWidths={columnDefs.map(c => c.width)}
-            //defaultSorted={[{ dataField: 'name', order: 'asc' }]}
           >
             {columnDefs.map(c => (
               <Column
                 id={c.name}
-                key={c.name}
+                key={c.key}
                 cellRenderer={c.formatter}
                 columnHeaderCellRenderer={() => (
                   <ColumnHeaderCell
                     name={c.name}
+                    nameRenderer={() => (
+                      <div
+                        style={{
+                          textAlign: c.key == 'actions' ? 'center' : 'left'
+                        }}
+                      >
+                        {c.name}
+                      </div>
+                    )}
                     menuIcon={
                       <Button
                         icon={<DoubleCaretVertical title='Sort' />}
-                        id={`${c.name}-sort`}
+                        id={`${c.key}-sort`}
                         minimal={true}
                         small={true}
                         onClick={e => {
@@ -326,7 +348,7 @@ export const Tracks = (props: { baseProps?: object; searchProps?: object }) => {
               />
             ))}
           </Table>
-        </>
+        </div>
       )}
     </Container>
   )

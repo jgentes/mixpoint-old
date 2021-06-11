@@ -1,13 +1,4 @@
-import { useEffect, useRef, useState, ReactElement } from 'react'
-import {
-  CardHeader,
-  CardBody,
-  InputGroupTextProps,
-  Nav,
-  NavItem,
-  TabPane
-} from 'reactstrap'
-
+import { useEffect, useRef, useState } from 'react'
 import { Button, Card, NumericInput } from '@blueprintjs/core'
 import { initTrack, processAudio } from '../../audio'
 import Loader from '../../layout/loader'
