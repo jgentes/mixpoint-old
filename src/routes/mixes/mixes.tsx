@@ -6,20 +6,17 @@ import {
   Switch
 } from '@blueprintjs/core'
 import TrackForm from './trackform'
-import { db, MixState, updateState } from '../../db'
-import { useLiveQuery } from 'dexie-react-hooks'
+import { db, MixState, useLiveQuery } from '../../db'
+
 import { Colors } from '@blueprintjs/core'
 
 export const Mixes = () => {
   const [points, setPoints] = useState<number[]>([])
 
   // pull state from db to hydrate component state
-  const state: MixState = useLiveQuery(() => db.state.get('mixState')) ?? {
-    tracks: []
-  }
+  const state: MixState = useLiveQuery(() => db.mixState.get(0)) ?? {}
 
-  const darkMode =
-    useLiveQuery((): Promise<boolean> => db.state.get('darkMode')) ?? false
+  const darkMode = document.body.classList.contains('bp4-dark')
 
   const setPoint = (trackKey: number, time: number) => {
     const pCopy = [...points]
@@ -30,8 +27,8 @@ export const Mixes = () => {
   const darkSwitch = (
     <div style={{ paddingTop: '10px', paddingRight: '5px' }}>
       <Switch
-        checked={darkMode}
-        onChange={() => updateState(!darkMode, 'darkMode')}
+        checked={darkMode || false}
+        onChange={() => db.appState.put(!darkMode, 'darkMode')}
         labelElement={<span style={{ color: Colors.GRAY2 }}>Dark Mode</span>}
         innerLabel='OFF'
         innerLabelChecked='ON'
@@ -76,14 +73,10 @@ export const Mixes = () => {
         */}
       </div>
       <div className='mb-5'>
-        {[1, 2].map(trackKey => {
+        {[0, 1].map(trackKey => {
           return (
             <div key={trackKey}>
-              <TrackForm
-                trackKey={trackKey}
-                trackState={state.tracks![trackKey - 1]}
-                setPoint={setPoint}
-              />
+              <TrackForm trackKey={trackKey} setPoint={setPoint} />
             </div>
           )
         })}

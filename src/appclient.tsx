@@ -9,8 +9,8 @@ const basePath = process.env.BASE_PATH || '/'
 
 const AppClient = () => {
   const darkMode =
-    useLiveQuery((): Promise<boolean> => db.state.get('darkMode')) ?? false
-  console.log({ darkMode })
+    useLiveQuery((): Promise<boolean> => db.appState.get('darkMode')) ?? false
+
   if (darkMode) {
     document.body.classList.add('bp4-dark')
   } else document.body.classList.remove('bp4-dark')

@@ -1,14 +1,14 @@
 import { useEffect, useState } from 'react'
-import BootstrapTable from 'react-bootstrap-table-next'
-import ToolkitProvider from 'react-bootstrap-table2-toolkit'
 import moment from 'moment'
-import { db, Track, removeTrack, putTrack } from '../../db'
+import { db, Track, removeTrack, putTrack, useLiveQuery } from '../../db'
 import { initTrack, processAudio } from '../../audio'
 import { getPermission } from '../../fileHandlers'
 import Loader from '../../layout/loader'
 import { SearchBar } from './searchbar'
-import { Card, Container, Button, UncontrolledTooltip } from 'reactstrap'
-import { useLiveQuery } from 'dexie-react-hooks'
+import { Card, Container, UncontrolledTooltip } from 'reactstrap'
+import { Button } from '@blueprintjs/core'
+import { Cross, DoubleCaretVertical } from '@blueprintjs/icons'
+import { Cell, Column, ColumnHeaderCell, Table } from '@blueprintjs/table'
 
 export const Tracks = (props: { baseProps?: object; searchProps?: object }) => {
   const [isOver, setIsOver] = useState(false) // for dropzone
@@ -18,6 +18,8 @@ export const Tracks = (props: { baseProps?: object; searchProps?: object }) => {
 
   // monitor db for track updates
   const tracks: Track[] | null = useLiveQuery(() => db.tracks.toArray()) ?? null
+  let trackSort: string =
+    useLiveQuery(() => db.appState.get('trackSort')) || 'name'
 
   // if we see any tracks that haven't been processed, process them, or
   // if we haven't had user activation, show button to resume processing
@@ -98,39 +100,20 @@ export const Tracks = (props: { baseProps?: object; searchProps?: object }) => {
     }
   }
 
-  const actions = (cell: void, row: { id: number }) => (
-    <>
-      <div
-        onClick={e => {
-          e.preventDefault()
-          removeTrack(row.id!)
-        }}
+  const actions = (i: number) => (
+    <Cell style={{ textAlign: 'center' }}>
+      <Button
+        icon={<Cross title='Remove Track' />}
         id='removeTrack'
-        style={{ cursor: 'pointer' }}
-      >
-        <i className='las la-15em la-times-circle text-danger'></i>
-      </div>
-      <UncontrolledTooltip placement='left' target='removeTrack'>
-        Remove Track
-      </UncontrolledTooltip>
-    </>
-  )
-
-  const sortCaret = (order: 'desc' | 'asc' | undefined) => (
-    <i
-      className={`las la-fw text-muted ${
-        order ? `la-sort-${order}` : `la-sort`
-      }`}
-    ></i>
+        minimal={true}
+        small={true}
+        intent='danger'
+        onClick={() => removeTrack(tracks![i].id!)}
+      />
+    </Cell>
   )
 
   const createColumnDefinitions = () => {
-    const classes = 'text-center'
-    const headerStyle = {
-      color: '#333',
-      textAlign: 'center' as const
-    }
-
     const formatMinutes = (mins: number) => {
       return moment()
         .startOf('day')
@@ -155,96 +138,95 @@ export const Tracks = (props: { baseProps?: object; searchProps?: object }) => {
 
     return [
       {
-        dataField: 'id',
-        type: 'number',
-        hidden: true,
-        text: ''
+        key: 'name',
+        name: 'Track Name',
+        width: 500,
+        formatter: (i: number) => {
+          // remove suffix (ie. .mp3)
+          return (
+            <Cell wrapText={true}>
+              {tracks![i].name?.replace(/\.[^/.]+$/, '')}
+            </Cell>
+          )
+        }
       },
       {
-        dataField: 'name',
-        text: 'Track Name',
-        sort: true,
-        headerStyle: {
-          color: '#333',
-          textAlign: 'left' as const
-        },
-        formatter: (cell: string) => cell.replace(/\.[^/.]+$/, ''), // remove suffix (ie. .mp3)
-        sortCaret
+        key: 'bpm',
+        name: 'BPM',
+        width: 100,
+        formatter: (i: number) => (
+          <Cell>
+            {tracks![i].bpm?.toFixed(0) ||
+              (dirtyTracks.some(t => t.id == tracks![i].id) &&
+              !analyzingTracks.some(a => a.id == tracks![i].id) ? (
+                getBpmButton(tracks![i])
+              ) : (
+                <Loader style={{ margin: 0 }} />
+              ))}
+          </Cell>
+        )
       },
       {
-        dataField: 'bpm',
-        text: 'BPM',
-        sort: true,
-        headerStyle,
-        classes,
-        sortCaret,
-        formatter: (
-          cell: number | undefined,
-          row: any,
-          rowIndex: number,
-          dirtyState: {
-            dirtyTracks: Track[]
-            analyzingTracks: Track[]
-          }
-        ) =>
-          cell?.toFixed(0) ||
-          (dirtyState.dirtyTracks.some(t => t.id == row.id) &&
-          !dirtyState.analyzingTracks.some(a => a.id == row.id) ? (
-            getBpmButton(row)
+        key: 'duration',
+        name: 'Duration',
+        width: 100,
+        formatter: (i: number) =>
+          tracks![i].duration ? (
+            <Cell>{formatMinutes(tracks![i].duration! / 60)}</Cell>
           ) : (
-            <Loader style={{ margin: 0 }} />
-          )),
-        formatExtraData: { dirtyTracks, analyzingTracks }
+            <Cell />
+          )
       },
       {
-        dataField: 'duration',
-        text: 'Duration',
-        sort: true,
-        headerStyle,
-        classes,
-        sortCaret,
-        formatter: (cell: number | undefined) =>
-          cell ? formatMinutes(cell / 60) : <></>
+        key: 'mixes',
+        name: 'Mixes',
+        width: 75,
+        formatter: (i: number) => <Cell></Cell>
       },
       {
-        dataField: 'mixes',
-        text: 'Mixes',
-        sort: true,
-        headerStyle,
-        classes,
-        sortCaret
+        key: 'sets',
+        name: 'Sets',
+        width: 75,
+        formatter: (i: number) => <Cell></Cell>
       },
       {
-        dataField: 'sets',
-        text: 'Sets',
-        sort: true,
-        headerStyle,
-        classes,
-        sortCaret
+        key: 'lastModified',
+        name: 'Updated',
+        width: 150,
+        formatter: (i: number) => (
+          <Cell>{moment(tracks![i].lastModified).fromNow()}</Cell>
+        )
       },
       {
-        dataField: 'lastModified',
-        text: 'Updated',
-        sort: true,
-        headerStyle,
-        classes,
-        sortCaret,
-        style: { minWidth: '140px', fontSize: 'small' },
-        formatter: (cell: moment.MomentInput) => moment(cell).fromNow()
-      },
-      {
-        dataField: 'actions',
-        text: 'Actions',
-        isDummyField: true,
-        sort: false,
-        headerStyle,
-        classes,
+        key: 'actions',
+        name: 'Remove',
+        width: 80,
         formatter: actions
       }
     ]
   }
 
   const columnDefs = createColumnDefinitions()
+
+  const sortColumns = (sortKey: string) => {
+    const rev = /reverse/.test(sortKey)
+    const key = sortKey.split('-')[0]
+
+    // ugly function that handles various sorts for strings vs numbers
+    const sortFunc = (a, b) => {
+      return key == 'name'
+        ? rev
+          ? b[key].localeCompare(a[key])
+          : a[key].localeCompare(b[key])
+        : rev
+        ? b[key] - a[key]
+        : a[key] - b[key]
+    }
+
+    tracks?.sort(sortFunc)
+  }
+
+  sortColumns(trackSort)
 
   return (
     <Container>
@@ -273,59 +255,78 @@ export const Tracks = (props: { baseProps?: object; searchProps?: object }) => {
       {!tracks || processing ? (
         <Loader className='my-5' />
       ) : !tracks?.length ? null : (
-        <ToolkitProvider
-          keyField='id'
-          data={tracks}
-          columns={columnDefs}
-          search
-        >
-          {props => (
-            <>
-              <div className='d-flex mb-2 align-items-baseline'>
+        <>
+          <div className='d-flex mb-2 align-items-baseline'>
+            {!dirtyTracks.length ? null : (
+              <div className='ml-auto'>
                 <div>
-                  <SearchBar {...props.searchProps} />
-                </div>
-                {!dirtyTracks.length ? null : (
-                  <div className='ml-auto'>
-                    <div>
-                      <i
-                        className='las la-exclamation-circle la-2x text-danger mr-1'
-                        style={{ verticalAlign: 'middle' }}
-                      />
-                      <span className='text-danger align-middle fs-15'>
-                        {`BPM needed for ${dirtyTracks.length} Track${
-                          tracks.length === 1 ? '' : 's'
-                        }`}
-                      </span>
-                    </div>
-                  </div>
-                )}
-                <div className='ml-auto'>
-                  <Button
-                    color='primary'
-                    size='sm'
-                    className='mr-2 text-white py-0 fs-15'
-                    disabled={true}
-                  >
-                    {tracks.length}
-                  </Button>
-                  <span className='text-black-06 align-middle fs-15'>{`Track${
-                    tracks.length === 1 ? '' : 's'
-                  }`}</span>
+                  <i
+                    className='las la-exclamation-circle la-2x text-danger mr-1'
+                    style={{ verticalAlign: 'middle' }}
+                  />
+                  <span className='text-danger align-middle fs-15'>
+                    {`BPM needed for ${dirtyTracks.length} Track${
+                      tracks.length === 1 ? '' : 's'
+                    }`}
+                  </span>
                 </div>
               </div>
-              <Card className='mb-3 p-0 bt-0'>
-                <BootstrapTable
-                  classes='table-responsive-lg mb-0'
-                  bordered={false}
-                  hover
-                  defaultSorted={[{ dataField: 'name', order: 'asc' }]}
-                  {...props.baseProps}
-                />
-              </Card>
-            </>
-          )}
-        </ToolkitProvider>
+            )}
+            <div className='ml-auto'>
+              <Button
+                color='primary'
+                size='sm'
+                className='mr-2 text-white py-0 fs-15'
+                disabled={true}
+              >
+                {tracks.length}
+              </Button>
+              <span className='text-black-06 align-middle fs-15'>{`Track${
+                tracks.length === 1 ? '' : 's'
+              }`}</span>
+            </div>
+          </div>
+          <Table
+            numRows={tracks.length}
+            columnWidths={columnDefs.map(c => c.width)}
+            //defaultSorted={[{ dataField: 'name', order: 'asc' }]}
+          >
+            {columnDefs.map(c => (
+              <Column
+                id={c.name}
+                key={c.name}
+                cellRenderer={c.formatter}
+                columnHeaderCellRenderer={() => (
+                  <ColumnHeaderCell
+                    name={c.name}
+                    menuIcon={
+                      <Button
+                        icon={<DoubleCaretVertical title='Sort' />}
+                        id={`${c.name}-sort`}
+                        minimal={true}
+                        small={true}
+                        onClick={e => {
+                          const rev = /reverse/.test(trackSort)
+                          const key = trackSort.split('-')[0]
+                          const sortKey =
+                            trackSort.split('-')[0] == c.key
+                              ? rev
+                                ? key
+                                : `${key}-reverse`
+                              : c.key
+
+                          db.appState.put(sortKey, 'trackSort')
+                          e.stopPropagation()
+                        }}
+                      />
+                    }
+                    menuRenderer={() => <></>}
+                  />
+                )}
+              />
+            ))}
+          </Table>
+        </>
       )}
     </Container>
   )

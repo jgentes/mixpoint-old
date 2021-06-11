@@ -1,6 +1,6 @@
 import Peaks, { PeaksOptions } from 'peaks.js'
 import { toast } from 'react-toastify'
-import { Track, updateTrackState } from '../../db'
+import { Track, db } from '../../db'
 import WaveformData from 'waveform-data'
 
 export const initPeaks = async ({
@@ -65,11 +65,13 @@ export const initPeaks = async ({
           // @ts-ignore
           waveformData = wave.toJSON()
 
-          updateTrackState({
-            ...track,
-            file,
-            waveformData
-          })
+          db.trackState.put(
+            {
+              file,
+              waveformData
+            },
+            trackKey
+          )
           resolve()
         }
       )

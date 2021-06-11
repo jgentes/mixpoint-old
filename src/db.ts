@@ -1,4 +1,5 @@
 import Dexie from 'dexie'
+import { useLiveQuery } from 'dexie-react-hooks'
 import WaveformData from 'waveform-data'
 import { toast } from 'react-toastify'
 
@@ -8,7 +9,10 @@ class MixPointDb extends Dexie {
   tracks: Dexie.Table<Track, number>
   mixes: Dexie.Table<Mix, number>
   sets: Dexie.Table<Set, number>
-  state: Dexie.Table<any>
+  trackState: Dexie.Table<TrackState>
+  mixState: Dexie.Table<MixState>
+  setState: Dexie.Table<SetState>
+  appState: Dexie.Table<any>
 
   constructor () {
     super('MixPointDb')
@@ -16,13 +20,19 @@ class MixPointDb extends Dexie {
       tracks: '++id, name, bpm, [name+size]',
       mixes: '++id, tracks',
       sets: '++id, mixes',
-      state: ''
+      trackState: '++id',
+      mixState: '++id',
+      setState: '++id',
+      appState: ''
     })
 
     this.tracks = this.table('tracks')
     this.mixes = this.table('mixes')
     this.sets = this.table('sets')
-    this.state = this.table('state')
+    this.trackState = this.table('trackState')
+    this.mixState = this.table('mixState')
+    this.setState = this.table('setState')
+    this.appState = this.table('appState')
   }
 }
 
@@ -41,71 +51,41 @@ interface Track {
   offset?: number
 }
 
+interface TrackState {
+  trackId?: number
+  adjustedBpm?: number
+  file?: File | undefined
+  waveformData?: WaveformData | undefined
+}
+
+interface Mix {
+  id?: number
+  trackIds: number[]
+  mixPoints: MixPoint[]
+}
+interface MixState {
+  mixId?: number
+  bpmSync?: boolean
+}
+
+interface Set {
+  id?: number
+  mixIds: number[]
+}
+
+interface SetState {
+  setId?: number
+}
+
 interface MixPoint {
   times: number[]
   effects: any
 }
 
-interface Mix {
-  id?: number
-  tracks: number[]
-  mixPoints: MixPoint[]
-}
-
-interface Set {
-  id?: number
-  mixes: number[]
-}
-
-interface TrackState extends Track {
-  adjustedBpm?: number
-  file?: File
-  waveformData?: WaveformData
-}
-
-interface MixState {
-  tracks?: TrackState[]
-  bpmSync?: boolean
-}
-
-interface SetState {}
-
 const db = new MixPointDb()
-
-db.on('populate', function () {
-  // seed initial state here because other methods are only updates to these objects
-  db.state.put({ tracks: [] }, 'mixState')
-  db.state.put({}, 'setState')
-})
 
 const errHandler = (err: Error) => {
   toast.error(`Oops, there was a problem: ${err.message}`)
-}
-
-const getState = async (key: string) => (await db.state.get(key)) ?? {}
-const updateState = async (state: any, key: string) => db.state.put(state, key)
-
-const updateTrackState = async (state: TrackState) => {
-  getState('mixState').then(async (currentState: MixState) => {
-    const trackIndex = currentState.tracks!.findIndex(t => t.id == state.id)
-
-    if (trackIndex! >= 0) {
-      currentState.tracks![trackIndex!] = state
-    } else currentState.tracks?.push(state)
-    return await db.state.update('mixState', currentState)
-  })
-}
-const updateMixState = async (state: MixState) => {
-  getState('mixState').then(
-    async (currentState: MixState) =>
-      await db.state.update('mixState', { ...currentState, ...state })
-  )
-}
-const updateSetState = async (state: SetState) => {
-  getState('mixState').then(
-    async (currentState: SetState) =>
-      await db.state.update('setState', { ...currentState, ...state })
-  )
 }
 
 const putTrack = async (track: Track): Promise<Track> => {
@@ -123,10 +103,10 @@ const removeTrack = async (id: number): Promise<void> =>
   await db.tracks.delete(id).catch(errHandler)
 
 const addMix = async (
-  tracks: number[],
+  trackIds: number[],
   mixPoints: MixPoint[]
 ): Promise<number> =>
-  await db.mixes.add({ tracks, mixPoints }).catch(errHandler)
+  await db.mixes.add({ trackIds, mixPoints }).catch(errHandler)
 
 const getMix = async (id: number): Promise<Mix | undefined> =>
   await db.mixes.get(id).catch(errHandler)
@@ -147,9 +127,5 @@ export {
   addMix,
   getMix,
   removeMix,
-  getState,
-  updateState,
-  updateTrackState,
-  updateMixState,
-  updateSetState
+  useLiveQuery
 }

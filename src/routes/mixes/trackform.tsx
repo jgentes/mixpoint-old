@@ -1,34 +1,27 @@
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useRef, useState, ReactElement } from 'react'
 import {
-  Button,
   CardHeader,
   CardBody,
-  Input,
-  InputGroup,
-  InputGroupAddon,
   InputGroupTextProps,
   Nav,
   NavItem,
   TabPane
 } from 'reactstrap'
 
-import { Card, Elevation } from '@blueprintjs/core'
+import { Button, Card, NumericInput } from '@blueprintjs/core'
 import { initTrack, processAudio } from '../../audio'
 import Loader from '../../layout/loader'
 import Slider, { SliderProps } from 'rc-slider'
 import { initPeaks } from './initPeaks'
 import { PeaksInstance } from 'peaks.js'
 import WaveformData from 'waveform-data'
-import { Track, db, TrackState, updateTrackState, addMix } from '../../db'
-import UncontrolledTabs from '../../layout/UncontrolledTabs'
+import { Track, db, TrackState, useLiveQuery } from '../../db'
 
 const TrackForm = ({
   trackKey,
-  trackState,
   setPoint
 }: {
   trackKey: number
-  trackState: TrackState
   setPoint: Function
 }) => {
   interface SliderControlProps extends SliderProps {
@@ -41,15 +34,20 @@ const TrackForm = ({
   const [waveform, setWaveform] = useState<PeaksInstance>()
   const [audioSrc, setAudioSrc] = useState('')
 
-  const track1 = trackKey == 1
-  const track = trackState || {}
+  const track1 = trackKey == 0
+  const trackState: TrackState =
+    useLiveQuery(() => db.trackState.get(trackKey)) || {}
+  const track: Track =
+    (trackState?.trackId &&
+      useLiveQuery(() => db.tracks.get(trackState.trackId!))) ||
+    {}
   const zoomView = waveform?.views.getView('zoomview')
 
   useEffect(() => {
-    // pass waveformData here as a separate argument because it only
-    // exists in mixState, not on the Track schema
-    if (track.waveformData) getPeaks(track, track.file, track.waveformData)
-  }, [track])
+    console.log('USEFEFECT:', trackState)
+    if (trackState.waveformData)
+      getPeaks(track, trackState.file, trackState.waveformData)
+  }, [trackState])
 
   const updatePlaybackRate = (bpm: number) => {
     // update play speed to new bpm
@@ -59,13 +57,12 @@ const TrackForm = ({
 
   const adjustBpm = async (bpm?: number) => {
     // get bpm from the user input field or mixState or current track
-    bpm = Number(bpm || track.bpm)
+    bpm = bpm ?? Number(track.bpm)
 
     updatePlaybackRate(bpm)
 
     // store custom bpm value in mixstate
-    await updateTrackState({
-      ...track,
+    await db.trackState.update(trackKey, {
       adjustedBpm: Number(bpm.toFixed(1))
     })
   }
@@ -142,17 +139,24 @@ const TrackForm = ({
   const alignment = track1 ? 'align-self-sm-start' : 'align-self-sm-end'
 
   const bpmControl = (
-    <div className={alignment}>
-      <InputGroup size='sm' style={{ width: bpmDiff ? '140px' : '110px' }}>
-        <Input
-          type='text'
-          className={`${!track.bpm ? 'text-gray-500' : ''}`}
-          disabled={!track.bpm}
-          onChange={(e: InputGroupTextProps) => adjustBpm(e.target.value)}
-          value={adjustedBpm || track.bpm?.toFixed(1) || 0}
-          id={`bpmInput_${trackKey}`}
-        />
-        <InputGroupAddon addonType='append'>
+    <div
+      className={alignment}
+      style={{ display: 'inline-flex', flexBasis: bpmDiff ? '168px' : '120px' }}
+    >
+      <NumericInput
+        disabled={!track.bpm}
+        onValueChange={(_v: number, value: string) => {
+          console.log(_v, value)
+          adjustBpm(Number(value))
+        }}
+        value={adjustedBpm || track.bpm?.toFixed(1) || 0}
+        id={`bpmInput_${trackKey}`}
+        allowNumericCharactersOnly={false}
+        asyncControl={true}
+        buttonPosition={'left'}
+        fill={true}
+        minorStepSize={0.1}
+        rightElement={
           <Button
             color='primary'
             disabled={!bpmDiff}
@@ -161,8 +165,8 @@ const TrackForm = ({
           >
             {bpmDiff ? 'Reset ' : ''}BPM
           </Button>
-        </InputGroupAddon>
-      </InputGroup>
+        }
+      />
     </div>
   )
 
@@ -179,7 +183,6 @@ const TrackForm = ({
       <Button
         color='light'
         title='Play'
-        size='sm'
         className='b-black-02 my-auto'
         onClick={() => {
           zoomView?.enableAutoScroll(true)
@@ -192,7 +195,6 @@ const TrackForm = ({
       <Button
         color='light'
         title='Pause'
-        size='sm'
         className='b-black-02 mx-2 my-auto'
         onClick={() => {
           waveform?.player.pause()
@@ -206,7 +208,7 @@ const TrackForm = ({
   )
 
   const trackHeader = (
-    <div className='d-flex justify-content-between my-3'>
+    <div style={{ display: 'flex', justifyContent: 'space-between' }}>
       <div
         style={{
           textOverflow: 'ellipsis',
@@ -224,6 +226,7 @@ const TrackForm = ({
         >
           <i className='las la-eject la-15em text-warning' />
         </Button>
+
         <div
           style={{
             display: 'inline',
@@ -238,10 +241,7 @@ const TrackForm = ({
           </span>
         </div>
       </div>
-      <div className='d-flex'>
-        {playerControl}
-        {bpmControl}
-      </div>
+      {bpmControl}
     </div>
   )
 
@@ -299,28 +299,7 @@ const TrackForm = ({
 
   const MixCard = () => (
     <Card style={{ flexBasis: '85px', flexGrow: 1, flexShrink: 1 }}>
-      <UncontrolledTabs initialActiveTabId='users201a'>
-        <CardHeader>
-          <Nav pills className='mb-3'>
-            <NavItem>
-              <UncontrolledTabs.NavLink tabId='users201a'>
-                MixPoint
-              </UncontrolledTabs.NavLink>
-            </NavItem>
-            <NavItem>
-              <UncontrolledTabs.NavLink tabId='settings201b'>
-                Name
-              </UncontrolledTabs.NavLink>
-            </NavItem>
-          </Nav>
-        </CardHeader>
-        <CardBody>
-          <UncontrolledTabs.TabContent>
-            <TabPane tabId='users201a'>{'0:00'}</TabPane>
-            <TabPane tabId='settings201b'>Settings</TabPane>
-          </UncontrolledTabs.TabContent>
-        </CardBody>
-      </UncontrolledTabs>
+      {playerControl}
     </Card>
   )
 

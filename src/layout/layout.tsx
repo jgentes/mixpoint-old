@@ -9,7 +9,7 @@ window.onerror = msg => toast.error(`Whoops! ${msg}`)
 window.onunhandledrejection = (e: PromiseRejectionEvent) =>
   toast.error(`Whoops! ${e.reason.message}`)
 
-const layoutStyle = { width: '80%', margin: '0 auto' }
+const layoutStyle = { width: '90%', margin: '0 auto' }
 
 const favIcons = [
   {
