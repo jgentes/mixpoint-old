@@ -5,9 +5,8 @@ import { initTrack, processAudio } from '../../audio'
 import { getPermission } from '../../fileHandlers'
 import Loader from '../../layout/loader'
 import { resizeEffect } from '../../utils'
-import { Container } from 'reactstrap'
-import { Button } from '@blueprintjs/core'
-import { Cross, DoubleCaretVertical } from '@blueprintjs/icons'
+import { Button, Card, Tag, InputGroup } from '@blueprintjs/core'
+import { Cross, DoubleCaretVertical, Search } from '@blueprintjs/icons'
 import { Cell, Column, ColumnHeaderCell, Table } from '@blueprintjs/table'
 
 export const Tracks = (props: { baseProps?: object; searchProps?: object }) => {
@@ -16,9 +15,10 @@ export const Tracks = (props: { baseProps?: object; searchProps?: object }) => {
   const [analyzingTracks, setAnalyzing] = useState<Track[]>([])
   const [dirtyTracks, setDirty] = useState<Track[]>([])
   const [width] = resizeEffect('trackTable')
+  const [searchVal, setSearch] = useState('')
 
   // monitor db for track updates
-  const tracks: Track[] | null = useLiveQuery(() => db.tracks.toArray()) ?? null
+  let tracks: Track[] | null = useLiveQuery(() => db.tracks.toArray()) ?? null
   let trackSort: string =
     useLiveQuery(() => db.appState.get('trackSort')) || 'name'
 
@@ -138,7 +138,7 @@ export const Tracks = (props: { baseProps?: object; searchProps?: object }) => {
     }
 
     const docWidth =
-      (width || document.getElementById('trackTable').clientWidth || 1000) - 30 // row header
+      (width || document.getElementById('trackTable')?.clientWidth || 1000) - 30 // row header
 
     const colWidths = {
       name: 0.35,
@@ -241,10 +241,13 @@ export const Tracks = (props: { baseProps?: object; searchProps?: object }) => {
   }
 
   sortColumns(trackSort)
+  if (searchVal && tracks)
+    tracks = tracks.filter(t => t.name?.includes(searchVal))
 
   return (
-    <Container>
-      <div className='mt-4 mb-4 text-black-06'>
+    <>
+      {/* DropZone */}
+      <div style={{ margin: '10px 0' }} className='text-black-06'>
         <div
           onClick={browseFile}
           className={`dropzone ${isOver ? 'dropzone--active' : ''}`}
@@ -266,40 +269,44 @@ export const Tracks = (props: { baseProps?: object; searchProps?: object }) => {
         </div>
       </div>
 
-      {!tracks || processing ? (
-        <Loader className='my-5' />
-      ) : !tracks?.length ? null : (
-        <div id='trackTable'>
-          <div className='d-flex mb-2 align-items-baseline'>
-            {!dirtyTracks.length ? null : (
-              <div className='ml-auto'>
-                <div>
-                  <i
-                    className='las la-exclamation-circle la-2x text-danger mr-1'
-                    style={{ verticalAlign: 'middle' }}
-                  />
-                  <span className='text-danger align-middle fs-15'>
-                    {`BPM needed for ${dirtyTracks.length} Track${
-                      tracks.length === 1 ? '' : 's'
-                    }`}
-                  </span>
-                </div>
-              </div>
-            )}
-            <div className='ml-auto'>
-              <Button
-                color='primary'
-                size='sm'
-                className='mr-2 text-white py-0 fs-15'
-                disabled={true}
-              >
-                {tracks.length}
-              </Button>
-              <span className='text-black-06 align-middle fs-15'>{`Track${
-                tracks.length === 1 ? '' : 's'
-              }`}</span>
+      {/* Table search and info bar */}
+      <Card
+        elevation={1}
+        style={{ display: 'flex', justifyContent: 'space-between' }}
+      >
+        <InputGroup
+          leftIcon={<Search />}
+          onChange={e => setSearch(e.target.value)}
+          placeholder='Search tracks..'
+          value={searchVal}
+        ></InputGroup>
+        {dirtyTracks.length ? null : (
+          <div>
+            <div>
+              <i
+                className='las la-exclamation-circle la-2x text-danger mr-1'
+                style={{ verticalAlign: 'middle' }}
+              />
+              <span className='text-danger align-middle fs-15'>
+                {`BPM needed for ${dirtyTracks.length} Track${
+                  tracks?.length === 1 ? '' : 's'
+                }`}
+              </span>
             </div>
           </div>
+        )}
+        <div>
+          <Tag intent='primary' style={{ margin: '0 5px' }}>
+            {tracks?.length}
+          </Tag>
+          {`Track${tracks?.length === 1 ? '' : 's'}`}
+        </div>
+      </Card>
+      {!tracks || processing ? (
+        <Loader style={{ margin: '0 15px' }} />
+      ) : !tracks?.length ? null : (
+        <div id='trackTable'>
+          {/* Track Table */}
           <Table
             numRows={tracks.length}
             columnWidths={columnDefs.map(c => c.width)}
@@ -350,6 +357,6 @@ export const Tracks = (props: { baseProps?: object; searchProps?: object }) => {
           </Table>
         </div>
       )}
-    </Container>
+    </>
   )
 }
