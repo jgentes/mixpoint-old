@@ -125,8 +125,9 @@ export const Tracks = (props: { baseProps?: object; searchProps?: object }) => {
     const getBpmButton = (row: Track) => {
       return (
         <Button
-          color='outline-primary'
-          size='sm'
+          intent='primary'
+          small={true}
+          minimal={true}
           onClick={e => {
             e.preventDefault()
             analyzeTrack(row)
@@ -175,7 +176,7 @@ export const Tracks = (props: { baseProps?: object; searchProps?: object }) => {
               !analyzingTracks.some(a => a.id == tracks![i].id) ? (
                 getBpmButton(tracks![i])
               ) : (
-                <Loader style={{ margin: 0 }} />
+                <Loader style={{ margin: 0, height: '20px' }} />
               ))}
           </Cell>
         )
@@ -283,10 +284,10 @@ export const Tracks = (props: { baseProps?: object; searchProps?: object }) => {
         <InputGroup
           leftIcon={<Search />}
           onChange={e => setSearch(e.target.value)}
-          placeholder='Search tracks..'
+          placeholder='Search'
           value={searchVal}
         ></InputGroup>
-        {dirtyTracks.length ? null : (
+        {!dirtyTracks.length ? null : (
           <div style={{ alignSelf: 'center' }}>
             <Issue style={{ marginRight: '5px' }} />
             {`BPM needed for ${dirtyTracks.length} Track${
@@ -295,14 +296,14 @@ export const Tracks = (props: { baseProps?: object; searchProps?: object }) => {
           </div>
         )}
         <div style={{ alignSelf: 'center' }}>
-          <Tag intent='primary' style={{ margin: '0 5px' }}>
+          <Tag intent='primary'>
             {tracks?.length}
+            {` Track${tracks?.length === 1 ? '' : 's'}`}
           </Tag>
-          {`Track${tracks?.length === 1 ? '' : 's'}`}
         </div>
       </Card>
       {!tracks || processing ? (
-        <Loader style={{ margin: '0 15px' }} />
+        <Loader style={{ margin: '50px auto' }} />
       ) : !tracks?.length ? null : (
         <div id='trackTable'>
           {/* Track Table */}
