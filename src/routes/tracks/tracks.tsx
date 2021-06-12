@@ -6,7 +6,7 @@ import { getPermission } from '../../fileHandlers'
 import Loader from '../../layout/loader'
 import { resizeEffect } from '../../utils'
 import { Button, Card, Tag, InputGroup } from '@blueprintjs/core'
-import { Cross, DoubleCaretVertical, Search } from '@blueprintjs/icons'
+import { Cross, DoubleCaretVertical, Search, Issue } from '@blueprintjs/icons'
 import { Cell, Column, ColumnHeaderCell, Table } from '@blueprintjs/table'
 
 export const Tracks = (props: { baseProps?: object; searchProps?: object }) => {
@@ -242,7 +242,9 @@ export const Tracks = (props: { baseProps?: object; searchProps?: object }) => {
 
   sortColumns(trackSort)
   if (searchVal && tracks)
-    tracks = tracks.filter(t => t.name?.includes(searchVal))
+    tracks = tracks.filter(t =>
+      t.name?.toLowerCase().includes(searchVal.toLowerCase())
+    )
 
   return (
     <>
@@ -272,7 +274,11 @@ export const Tracks = (props: { baseProps?: object; searchProps?: object }) => {
       {/* Table search and info bar */}
       <Card
         elevation={1}
-        style={{ display: 'flex', justifyContent: 'space-between' }}
+        style={{
+          display: 'flex',
+          justifyContent: 'space-between',
+          padding: '10px'
+        }}
       >
         <InputGroup
           leftIcon={<Search />}
@@ -281,21 +287,14 @@ export const Tracks = (props: { baseProps?: object; searchProps?: object }) => {
           value={searchVal}
         ></InputGroup>
         {dirtyTracks.length ? null : (
-          <div>
-            <div>
-              <i
-                className='las la-exclamation-circle la-2x text-danger mr-1'
-                style={{ verticalAlign: 'middle' }}
-              />
-              <span className='text-danger align-middle fs-15'>
-                {`BPM needed for ${dirtyTracks.length} Track${
-                  tracks?.length === 1 ? '' : 's'
-                }`}
-              </span>
-            </div>
+          <div style={{ alignSelf: 'center' }}>
+            <Issue style={{ marginRight: '5px' }} />
+            {`BPM needed for ${dirtyTracks.length} Track${
+              tracks?.length === 1 ? '' : 's'
+            }`}
           </div>
         )}
-        <div>
+        <div style={{ alignSelf: 'center' }}>
           <Tag intent='primary' style={{ margin: '0 5px' }}>
             {tracks?.length}
           </Tag>
