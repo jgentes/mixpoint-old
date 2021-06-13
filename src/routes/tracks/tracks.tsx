@@ -1,15 +1,15 @@
 import { useEffect, useState } from 'react'
-import moment from 'moment'
-import { db, Track, removeTrack, putTrack, useLiveQuery } from '../../db'
+import { db, Track, putTrack, removeTrack, useLiveQuery } from '../../db'
 import { initTrack, processAudio } from '../../audio'
-import { getPermission } from '../../fileHandlers'
+import moment from 'moment'
 import Loader from '../../layout/loader'
+import { getPermission } from '../../fileHandlers'
 import { resizeEffect } from '../../utils'
 import { Button, Card, Tag, InputGroup } from '@blueprintjs/core'
 import { Cross, DoubleCaretVertical, Search, Issue } from '@blueprintjs/icons'
 import { Cell, Column, ColumnHeaderCell, Table } from '@blueprintjs/table'
 
-export const Tracks = (props: { baseProps?: object; searchProps?: object }) => {
+export const Tracks = ({ hideDropzone }: { hideDropzone: boolean }) => {
   const [isOver, setIsOver] = useState(false) // for dropzone
   const [processing, setProcessing] = useState(false) // show progress if no table
   const [analyzingTracks, setAnalyzing] = useState<Track[]>([])
@@ -91,8 +91,9 @@ export const Tracks = (props: { baseProps?: object; searchProps?: object }) => {
     if (ok) {
       // if the user approves access to a folder, we can process all files in that folder :)
       const siblingTracks = track.dirHandle
-        ? dirtyTracks.filter(t => t.id == track.id)
+        ? dirtyTracks.filter(t => t.dirHandle?.name == track.dirHandle!.name)
         : [track]
+      console.log('sib:', siblingTracks)
       setAnalyzing(siblingTracks)
       for (const sibling of siblingTracks) {
         await processAudio(sibling)
@@ -250,112 +251,117 @@ export const Tracks = (props: { baseProps?: object; searchProps?: object }) => {
   return (
     <>
       {/* DropZone */}
-      <div style={{ margin: '10px 0' }} className='text-black-06'>
-        <div
-          onClick={browseFile}
-          className={`dropzone ${isOver ? 'dropzone--active' : ''}`}
-          onDrop={e => {
-            e.preventDefault()
-            filesDropped(e.dataTransfer.items)
-          }}
-          onDragOver={e => e.preventDefault()}
-          onDragEnter={() => setIsOver(true)}
-          onDragLeave={() => setIsOver(false)}
-        >
-          <i className='las la-cloud-upload-alt la-fw la-3x drop'></i>
-          <h5 className='mt-0 drop'>Add Tracks</h5>
-          <div className='drop'>
-            Drag a file or <strong>folder</strong> here or{' '}
-            <span className='text-primary'>browse</span> for a file to add.
-            Folders are preferred.
+      {hideDropzone ? null : (
+        <div style={{ margin: '10px 0' }} className='text-black-06'>
+          <div
+            onClick={browseFile}
+            className={`dropzone ${isOver ? 'dropzone--active' : ''}`}
+            onDrop={e => {
+              e.preventDefault()
+              filesDropped(e.dataTransfer.items)
+            }}
+            onDragOver={e => e.preventDefault()}
+            onDragEnter={() => setIsOver(true)}
+            onDragLeave={() => setIsOver(false)}
+          >
+            <i className='las la-cloud-upload-alt la-fw la-3x drop'></i>
+            <h5 className='mt-0 drop'>Add Tracks</h5>
+            <div className='drop'>
+              Drag a file or <strong>folder</strong> here or{' '}
+              <span className='text-primary'>browse</span> for a file to add.
+              Folders are preferred.
+            </div>
           </div>
         </div>
-      </div>
-
-      {/* Table search and info bar */}
-      <Card
-        elevation={1}
-        style={{
-          display: 'flex',
-          justifyContent: 'space-between',
-          padding: '10px'
-        }}
-      >
-        <InputGroup
-          leftIcon={<Search />}
-          onChange={e => setSearch(e.target.value)}
-          placeholder='Search'
-          value={searchVal}
-        ></InputGroup>
-        {!dirtyTracks.length ? null : (
-          <div style={{ alignSelf: 'center' }}>
-            <Issue style={{ marginRight: '5px' }} />
-            {`BPM needed for ${dirtyTracks.length} Track${
-              tracks?.length === 1 ? '' : 's'
-            }`}
-          </div>
-        )}
-        <div style={{ alignSelf: 'center' }}>
-          <Tag intent='primary'>
-            {tracks?.length}
-            {` Track${tracks?.length === 1 ? '' : 's'}`}
-          </Tag>
-        </div>
-      </Card>
+      )}
       {!tracks || processing ? (
         <Loader style={{ margin: '50px auto' }} />
-      ) : !tracks?.length ? null : (
-        <div id='trackTable'>
-          {/* Track Table */}
-          <Table
-            numRows={tracks.length}
-            columnWidths={columnDefs.map(c => c.width)}
+      ) : (
+        <>
+          {/* Table search and info bar */}
+          <Card
+            elevation={1}
+            style={{
+              display: 'flex',
+              justifyContent: 'space-between',
+              padding: '10px'
+            }}
           >
-            {columnDefs.map(c => (
-              <Column
-                id={c.name}
-                key={c.key}
-                cellRenderer={c.formatter}
-                columnHeaderCellRenderer={() => (
-                  <ColumnHeaderCell
-                    name={c.name}
-                    nameRenderer={() => (
-                      <div
-                        style={{
-                          textAlign: c.key == 'actions' ? 'center' : 'left'
-                        }}
-                      >
-                        {c.name}
-                      </div>
-                    )}
-                    menuIcon={
-                      <Button
-                        icon={<DoubleCaretVertical title='Sort' />}
-                        id={`${c.key}-sort`}
-                        minimal={true}
-                        small={true}
-                        onClick={e => {
-                          const rev = /reverse/.test(trackSort)
-                          const key = trackSort.split('-')[0]
-                          const sortKey =
-                            trackSort.split('-')[0] == c.key
-                              ? rev
-                                ? key
-                                : `${key}-reverse`
-                              : c.key
+            <InputGroup
+              leftIcon={<Search />}
+              onChange={e => setSearch(e.target.value)}
+              placeholder='Search'
+              value={searchVal}
+            ></InputGroup>
+            {!dirtyTracks.length ? null : (
+              <div style={{ alignSelf: 'center' }}>
+                <Issue style={{ marginRight: '5px' }} />
+                {`BPM needed for ${dirtyTracks.length} Track${
+                  tracks?.length === 1 ? '' : 's'
+                }`}
+              </div>
+            )}
+            <div style={{ alignSelf: 'center' }}>
+              <Tag intent='primary'>
+                {tracks?.length}
+                {` Track${tracks?.length === 1 ? '' : 's'}`}
+              </Tag>
+            </div>
+          </Card>
+          {!tracks?.length ? null : (
+            <div id='trackTable'>
+              {/* Track Table */}
+              <Table
+                numRows={tracks.length}
+                columnWidths={columnDefs.map(c => c.width)}
+              >
+                {columnDefs.map(c => (
+                  <Column
+                    id={c.name}
+                    key={c.key}
+                    cellRenderer={c.formatter}
+                    columnHeaderCellRenderer={() => (
+                      <ColumnHeaderCell
+                        name={c.name}
+                        nameRenderer={() => (
+                          <div
+                            style={{
+                              textAlign: c.key == 'actions' ? 'center' : 'left'
+                            }}
+                          >
+                            {c.name}
+                          </div>
+                        )}
+                        menuIcon={
+                          <Button
+                            icon={<DoubleCaretVertical title='Sort' />}
+                            id={`${c.key}-sort`}
+                            minimal={true}
+                            small={true}
+                            onClick={e => {
+                              const rev = /reverse/.test(trackSort)
+                              const key = trackSort.split('-')[0]
+                              const sortKey =
+                                trackSort.split('-')[0] == c.key
+                                  ? rev
+                                    ? key
+                                    : `${key}-reverse`
+                                  : c.key
 
-                          db.appState.put(sortKey, 'trackSort')
-                          e.stopPropagation()
-                        }}
+                              db.appState.put(sortKey, 'trackSort')
+                              e.stopPropagation()
+                            }}
+                          />
+                        }
+                        menuRenderer={() => <></>}
                       />
-                    }
-                    menuRenderer={() => <></>}
+                    )}
                   />
-                )}
-              />
-            ))}
-          </Table>
-        </div>
+                ))}
+              </Table>
+            </div>
+          )}
+        </>
       )}
     </>
   )

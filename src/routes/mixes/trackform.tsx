@@ -1,10 +1,10 @@
 import { useEffect, useRef, useState } from 'react'
-import { Button, Card, NumericInput } from '@blueprintjs/core'
-import { initTrack, processAudio } from '../../audio'
+import { Button, Card, NumericInput, Dialog } from '@blueprintjs/core'
 import Loader from '../../layout/loader'
 import Slider, { SliderProps } from 'rc-slider'
 import { initPeaks } from './initPeaks'
 import { PeaksInstance } from 'peaks.js'
+import { Tracks } from '../tracks/tracks'
 import WaveformData from 'waveform-data'
 import { Track, db, TrackState, useLiveQuery } from '../../db'
 
@@ -24,6 +24,7 @@ const TrackForm = ({
   const [analyzing, setAnalyzing] = useState(false)
   const [waveform, setWaveform] = useState<PeaksInstance>()
   const [audioSrc, setAudioSrc] = useState('')
+  const [tableState, openTable] = useState(false)
 
   const track1 = trackKey == 0
   const trackState: TrackState =
@@ -76,6 +77,8 @@ const TrackForm = ({
   }
 
   const audioChange = async () => {
+    openTable(true)
+    /*
     if (!track.name) setAnalyzing(true)
 
     let fileHandle
@@ -99,6 +102,7 @@ const TrackForm = ({
     if (newTrack) {
       await getPeaks(newTrack)
     } else setAnalyzing(false)
+    */
   }
 
   const selectTime = async (time: number) => {
@@ -123,7 +127,8 @@ const TrackForm = ({
     //await updateMixState({ ...mixState, mix: { id } })
   }
 
-  const adjustedBpm = track.adjustedBpm && Number(track.adjustedBpm).toFixed(1)
+  const adjustedBpm =
+    trackState.adjustedBpm && Number(trackState.adjustedBpm).toFixed(1)
 
   const bpmDiff = adjustedBpm && adjustedBpm !== track.bpm?.toFixed(1)
 
@@ -210,9 +215,9 @@ const TrackForm = ({
         <Button
           color='light'
           title='Load Track'
-          size='sm'
+          small={true}
           className='b-black-02'
-          onClick={audioChange}
+          onClick={() => openTable(true)}
           id={`loadButton_${trackKey}`}
         >
           <i className='las la-eject la-15em text-warning' />
@@ -295,45 +300,54 @@ const TrackForm = ({
   )
 
   return (
-    <div style={{ display: 'flex', margin: '15px 0' }}>
-      <MixCard />
-      <Card
-        elevation={1}
-        style={{
-          flexBasis: 0,
-          flexGrow: 8,
-          flexShrink: 1,
-          marginLeft: '15px',
-          overflow: 'hidden'
-        }}
-      >
-        <div>
-          {track1 && trackHeader}
-          <>{!track1 && track.name && slider}</>
+    <>
+      <div style={{ display: 'flex', margin: '15px 0' }}>
+        <MixCard />
+        <Card
+          elevation={1}
+          style={{
+            flexBasis: 0,
+            flexGrow: 8,
+            flexShrink: 1,
+            marginLeft: '15px',
+            overflow: 'hidden'
+          }}
+        >
+          <div>
+            {track1 && trackHeader}
+            <>{!track1 && track.name && slider}</>
 
-          <div id={`peaks-container_${trackKey}`}>
-            {track1 ? (
-              <>
-                {overview}
-                {loader}
-                {zoomview}
-              </>
-            ) : (
-              <>
-                {zoomview}
-                {loader}
-                {overview}
-              </>
-            )}
+            <div id={`peaks-container_${trackKey}`}>
+              {track1 ? (
+                <>
+                  {overview}
+                  {loader}
+                  {zoomview}
+                </>
+              ) : (
+                <>
+                  {zoomview}
+                  {loader}
+                  {overview}
+                </>
+              )}
+            </div>
+
+            <>{track1 && track.name && slider}</>
+            {!track1 && trackHeader}
+
+            <audio id={`audio_${trackKey}`} src={audioSrc} ref={audioElement} />
           </div>
-
-          <>{track1 && track.name && slider}</>
-          {!track1 && trackHeader}
-
-          <audio id={`audio_${trackKey}`} src={audioSrc} ref={audioElement} />
-        </div>
-      </Card>
-    </div>
+        </Card>
+      </div>
+      <Dialog
+        isOpen={tableState}
+        onClose={() => openTable(false)}
+        style={{ width: '80%' }}
+      >
+        <Tracks hideDropzone={true} />
+      </Dialog>
+    </>
   )
 }
 
