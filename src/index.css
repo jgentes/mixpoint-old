@@ -61,7 +61,7 @@
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   -webkit-text-stroke-width: thin;
-  -webkit-text-stroke-color: #888;
+  -webkit-text-stroke-color: rgb(255 255 255 / 35%);
 }
 
 .initial-loader svg#loader-circle {

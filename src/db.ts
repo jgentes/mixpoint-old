@@ -1,7 +1,7 @@
 import Dexie from 'dexie'
 import { useLiveQuery } from 'dexie-react-hooks'
 import WaveformData from 'waveform-data'
-import { toast } from 'react-toastify'
+import { Toaster } from './layout/toaster'
 
 // from https://dexie.org/docs/Typescript
 
@@ -20,7 +20,7 @@ class MixPointDb extends Dexie {
       tracks: '++id, name, bpm, [name+size]',
       mixes: '++id, tracks',
       sets: '++id, mixes',
-      trackState: '++id',
+      trackState: 'trackKey',
       mixState: '++id',
       setState: '++id',
       appState: ''
@@ -38,7 +38,7 @@ class MixPointDb extends Dexie {
 
 // define tables
 interface Track {
-  id?: number
+  id: number
   name?: string
   fileHandle?: FileSystemFileHandle
   dirHandle?: FileSystemDirectoryHandle
@@ -51,8 +51,10 @@ interface Track {
   offset?: number
 }
 
+/* TrackState should not contain mix state */
 interface TrackState {
-  trackId?: number
+  trackKey: number
+  trackId: number
   adjustedBpm?: number
   file?: File | undefined
   waveformData?: WaveformData | undefined
@@ -85,7 +87,10 @@ interface MixPoint {
 const db = new MixPointDb()
 
 const errHandler = (err: Error) => {
-  toast.error(`Oops, there was a problem: ${err.message}`)
+  Toaster.show({
+    message: `Oops, there was a problem: ${err.message}`,
+    intent: 'danger'
+  })
 }
 
 const putTrack = async (track: Track): Promise<Track> => {

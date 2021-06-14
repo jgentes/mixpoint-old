@@ -1,22 +1,23 @@
-import { toast } from 'react-toastify'
-import { useState, useEffect } from 'react'
+import { Toaster } from './layout/toaster'
 
 export const success = (trackName?: string, customMessage?: string) => {
-  toast.success(
-    customMessage ? (
+  Toaster.show({
+    intent: 'success',
+    message: customMessage ? (
       <>{customMessage}</>
     ) : (
       <>
         Analyzed <strong>{trackName}</strong>
       </>
     ),
-    { autoClose: 3000 }
-  )
+    timeout: 3000
+  })
 }
 
 export const failure = (trackName?: string, customMessage?: string) => {
-  toast.error(
-    customMessage ? (
+  Toaster.show({
+    intent: 'danger',
+    message: customMessage ? (
       <>{customMessage}</>
     ) : (
       <>
@@ -24,8 +25,8 @@ export const failure = (trackName?: string, customMessage?: string) => {
         <strong>{trackName || `the track`}</strong>
       </>
     ),
-    { autoClose: 4000 }
-  )
+    timeout: 4000
+  })
 }
 
 export const debounce = (fn: any, ms: number) => {
@@ -37,27 +38,4 @@ export const debounce = (fn: any, ms: number) => {
       fn.apply(this, arguments)
     }, ms)
   }
-}
-
-export const resizeEffect = (id: string) => {
-  const width = id
-    ? document.getElementById(id)?.clientWidth
-    : window.innerWidth
-  const height = id
-    ? document.getElementById(id)?.clientHeight
-    : window.innerHeight
-  const [dimensions, setDimensions] = useState([width, height])
-
-  useEffect(() => {
-    const debouncedResizeHandler = debounce(() => {
-      setDimensions([
-        id ? document.getElementById(id)?.clientWidth : window.innerWidth,
-        id ? document.getElementById(id)?.clientHeight : window.innerHeight
-      ])
-    }, 100) // 100ms
-    window.addEventListener('resize', debouncedResizeHandler)
-    return () => window.removeEventListener('resize', debouncedResizeHandler)
-  }, [])
-
-  return dimensions
 }

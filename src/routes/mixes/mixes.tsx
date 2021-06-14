@@ -6,15 +6,12 @@ import {
   Switch
 } from '@blueprintjs/core'
 import TrackForm from './trackform'
-import { db, MixState, useLiveQuery } from '../../db'
+import { db } from '../../db'
 
 import { Colors } from '@blueprintjs/core'
 
 export const Mixes = () => {
   const [points, setPoints] = useState<number[]>([])
-
-  // pull state from db to hydrate component state
-  const state: MixState = useLiveQuery(() => db.mixState.get(0)) ?? {}
 
   const darkMode = document.body.classList.contains('bp4-dark')
 
@@ -60,17 +57,6 @@ export const Mixes = () => {
         <Breadcrumbs breadcrumbRenderer={renderCrumb} items={crumbs} />
 
         {darkSwitch}
-
-        {/*
-        <Button
-          onClick={() => putTrack([...tracks, Date.now()])}
-          className='ml-auto align-self-center'
-          color='primary'
-          outline
-        >
-          Add Track
-        </Button>
-        */}
       </div>
       <div className='mb-5'>
         {[0, 1].map(trackKey => {

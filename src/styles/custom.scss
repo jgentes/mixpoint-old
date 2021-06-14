@@ -5,6 +5,24 @@ body.bp4-dark {
   background-color: #30404d;
 }
 
+/* track table */
+.bp4-dialog {
+  background: #fff;
+}
+
+table tr td button.tr-hover {
+  opacity: 0;
+  float: right;
+}
+
+table tr:hover td button.tr-hover {
+  opacity: 1;
+}
+
+table tr td button .bp4-active {
+  opacity: 1 !important;
+}
+
 /* to fix dropzone */
 .drop {
   pointer-events: none;

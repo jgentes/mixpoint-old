@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
 import { Button, Card, NumericInput, Dialog } from '@blueprintjs/core'
+import { Play, Pause, Eject } from '@blueprintjs/icons'
 import Loader from '../../layout/loader'
 import Slider, { SliderProps } from 'rc-slider'
 import { initPeaks } from './initPeaks'
@@ -25,42 +26,47 @@ const TrackForm = ({
   const [waveform, setWaveform] = useState<PeaksInstance>()
   const [audioSrc, setAudioSrc] = useState('')
   const [tableState, openTable] = useState(false)
+  const [track, setTrack] = useState({})
 
   const track1 = trackKey == 0
-  const trackState: TrackState =
-    useLiveQuery(() => db.trackState.get(trackKey)) || {}
-  const track: Track =
-    (trackState?.trackId &&
-      useLiveQuery(() => db.tracks.get(trackState.trackId!))) ||
-    {}
   const zoomView = waveform?.views.getView('zoomview')
+  const trackState: TrackState =
+    useLiveQuery(() => db.trackState.get({ trackKey })) || {}
 
   useEffect(() => {
-    console.log('USEFEFECT:', trackState)
+    const getTrackData = async () =>
+      setTrack((await db.tracks.get(trackState.trackId!)) || {})
+    if (trackState.trackId) getTrackData()
+
     if (trackState.waveformData)
-      getPeaks(track, trackState.file, trackState.waveformData)
+      getPeaks(track, trackKey, trackState.file, trackState.waveformData)
   }, [trackState])
 
+  console.log('rerender', trackState, track)
   const updatePlaybackRate = (bpm: number) => {
     // update play speed to new bpm
-    const playbackRate = bpm / (track.bpm || bpm)
+    const playbackRate = bpm / (track?.bpm || bpm)
     if (audioElement.current) audioElement.current.playbackRate = playbackRate
   }
 
   const adjustBpm = async (bpm?: number) => {
     // get bpm from the user input field or mixState or current track
-    bpm = bpm ?? Number(track.bpm)
+    bpm = bpm ?? Number(track?.bpm)
 
     updatePlaybackRate(bpm)
 
     // store custom bpm value in mixstate
-    await db.trackState.update(trackKey, {
-      adjustedBpm: Number(bpm.toFixed(1))
-    })
+    await db.trackState.update(
+      { trackKey },
+      {
+        adjustedBpm: Number(bpm.toFixed(1))
+      }
+    )
   }
 
   const getPeaks = async (
     track: Track,
+    trackKey: number,
     file?: File,
     waveformData?: WaveformData
   ) => {
@@ -130,22 +136,22 @@ const TrackForm = ({
   const adjustedBpm =
     trackState.adjustedBpm && Number(trackState.adjustedBpm).toFixed(1)
 
-  const bpmDiff = adjustedBpm && adjustedBpm !== track.bpm?.toFixed(1)
+  const bpmDiff = adjustedBpm && adjustedBpm !== track?.bpm?.toFixed(1)
 
   const alignment = track1 ? 'align-self-sm-start' : 'align-self-sm-end'
 
   const bpmControl = (
     <div
       className={alignment}
-      style={{ display: 'inline-flex', flexBasis: bpmDiff ? '168px' : '120px' }}
+      style={{ display: 'inline-flex', flexBasis: bpmDiff ? '168px' : '130px' }}
     >
       <NumericInput
-        disabled={!track.bpm}
+        disabled={!track?.bpm}
         onValueChange={(_v: number, value: string) => {
           console.log(_v, value)
           adjustBpm(Number(value))
         }}
-        value={adjustedBpm || track.bpm?.toFixed(1) || 0}
+        value={adjustedBpm || track?.bpm?.toFixed(1) || 0}
         id={`bpmInput_${trackKey}`}
         allowNumericCharactersOnly={false}
         asyncControl={true}
@@ -156,7 +162,7 @@ const TrackForm = ({
           <Button
             color='primary'
             disabled={!bpmDiff}
-            onClick={() => adjustBpm(track.bpm || 1)}
+            onClick={() => adjustBpm(track?.bpm || 1)}
             id={`bpmButton_${trackKey}`}
           >
             {bpmDiff ? 'Reset ' : ''}BPM
@@ -166,7 +172,7 @@ const TrackForm = ({
     </div>
   )
 
-  const playerControl = !track.name ? null : (
+  const playerControl = !track?.name ? null : (
     <div
       style={{
         position: 'relative',
@@ -179,27 +185,23 @@ const TrackForm = ({
       <Button
         color='light'
         title='Play'
-        className='b-black-02 my-auto'
+        icon={<Play />}
         onClick={() => {
           zoomView?.enableAutoScroll(true)
           waveform?.player.play()
         }}
         id={`playButton_${trackKey}`}
-      >
-        <i className='las la-play text-success' />
-      </Button>
+      ></Button>
       <Button
         color='light'
         title='Pause'
-        className='b-black-02 mx-2 my-auto'
+        icon={<Pause />}
         onClick={() => {
           waveform?.player.pause()
           zoomView?.enableAutoScroll(true)
         }}
         id={`pauseButton_${trackKey}`}
-      >
-        <i className='las la-pause text-danger' />
-      </Button>
+      ></Button>
     </div>
   )
 
@@ -216,12 +218,10 @@ const TrackForm = ({
           color='light'
           title='Load Track'
           small={true}
-          className='b-black-02'
+          icon={<Eject />}
           onClick={() => openTable(true)}
           id={`loadButton_${trackKey}`}
-        >
-          <i className='las la-eject la-15em text-warning' />
-        </Button>
+        ></Button>
 
         <div
           style={{
@@ -233,7 +233,7 @@ const TrackForm = ({
           <span className='h5'>
             {analyzing
               ? 'Loading..'
-              : track.name?.replace(/\.[^/.]+$/, '') || 'No Track Loaded..'}
+              : track?.name?.replace(/\.[^/.]+$/, '') || 'No Track Loaded..'}
           </span>
         </div>
       </div>
@@ -275,7 +275,7 @@ const TrackForm = ({
     <div
       id={`zoomview-container_${trackKey}`}
       style={{
-        height: track.name ? '150px' : '0px',
+        height: track?.name ? '150px' : '0px',
         visibility: analyzing ? 'hidden' : 'visible'
       }}
     />
@@ -285,7 +285,7 @@ const TrackForm = ({
     <div
       id={`overview-container_${trackKey}`}
       style={{
-        height: track.name ? '40px' : '0px',
+        height: track?.name ? '40px' : '0px',
         visibility: analyzing ? 'hidden' : 'visible'
       }}
     />
@@ -315,7 +315,7 @@ const TrackForm = ({
         >
           <div>
             {track1 && trackHeader}
-            <>{!track1 && track.name && slider}</>
+            <>{!track1 && track?.name && slider}</>
 
             <div id={`peaks-container_${trackKey}`}>
               {track1 ? (
@@ -333,7 +333,7 @@ const TrackForm = ({
               )}
             </div>
 
-            <>{track1 && track.name && slider}</>
+            <>{track1 && track?.name && slider}</>
             {!track1 && trackHeader}
 
             <audio id={`audio_${trackKey}`} src={audioSrc} ref={audioElement} />
@@ -345,7 +345,12 @@ const TrackForm = ({
         onClose={() => openTable(false)}
         style={{ width: '80%' }}
       >
-        <Tracks hideDropzone={true} />
+        <Tracks
+          trackKey={trackKey}
+          hideDropzone={true}
+          openTable={openTable}
+          getPeaks={getPeaks}
+        />
       </Dialog>
     </>
   )

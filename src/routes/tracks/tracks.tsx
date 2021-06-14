@@ -4,17 +4,39 @@ import { initTrack, processAudio } from '../../audio'
 import moment from 'moment'
 import Loader from '../../layout/loader'
 import { getPermission } from '../../fileHandlers'
-import { resizeEffect } from '../../utils'
-import { Button, Card, Tag, InputGroup } from '@blueprintjs/core'
-import { Cross, DoubleCaretVertical, Search, Issue } from '@blueprintjs/icons'
-import { Cell, Column, ColumnHeaderCell, Table } from '@blueprintjs/table'
+import {
+  Button,
+  Card,
+  InputGroup,
+  HTMLTable,
+  Popover,
+  Classes,
+  H4
+} from '@blueprintjs/core'
+import {
+  Cross,
+  DoubleCaretVertical,
+  Search,
+  Issue,
+  Plus,
+  Insert
+} from '@blueprintjs/icons'
 
-export const Tracks = ({ hideDropzone }: { hideDropzone: boolean }) => {
+export const Tracks = ({
+  hideDropzone,
+  trackKey,
+  openTable,
+  getPeaks
+}: {
+  hideDropzone: boolean
+  trackKey: number
+  openTable: Function
+  getPeaks: Function
+}) => {
   const [isOver, setIsOver] = useState(false) // for dropzone
   const [processing, setProcessing] = useState(false) // show progress if no table
   const [analyzingTracks, setAnalyzing] = useState<Track[]>([])
   const [dirtyTracks, setDirty] = useState<Track[]>([])
-  const [width] = resizeEffect('trackTable')
   const [searchVal, setSearch] = useState('')
 
   // monitor db for track updates
@@ -93,7 +115,7 @@ export const Tracks = ({ hideDropzone }: { hideDropzone: boolean }) => {
       const siblingTracks = track.dirHandle
         ? dirtyTracks.filter(t => t.dirHandle?.name == track.dirHandle!.name)
         : [track]
-      console.log('sib:', siblingTracks)
+
       setAnalyzing(siblingTracks)
       for (const sibling of siblingTracks) {
         await processAudio(sibling)
@@ -102,17 +124,22 @@ export const Tracks = ({ hideDropzone }: { hideDropzone: boolean }) => {
     }
   }
 
-  const actions = (i: number) => (
-    <Cell style={{ textAlign: 'center' }}>
+  const addTrackToMix = (track: Track, i: number) => {
+    getPeaks({ track, trackKey: i })
+    openTable(false)
+  }
+
+  const actions = (t: Track) => (
+    <div style={{ textAlign: 'center' }}>
       <Button
         icon={<Cross title='Remove Track' />}
         id='removeTrack'
         minimal={true}
         small={true}
         intent='danger'
-        onClick={() => removeTrack(tracks![i].id!)}
+        onClick={() => removeTrack(t.id!)}
       />
-    </Cell>
+    </div>
   )
 
   const createColumnDefinitions = () => {
@@ -139,90 +166,150 @@ export const Tracks = ({ hideDropzone }: { hideDropzone: boolean }) => {
       )
     }
 
-    const docWidth =
-      (width || document.getElementById('trackTable')?.clientWidth || 1000) - 30 // row header
-
-    const colWidths = {
-      name: 0.35,
-      bpm: 0.1,
-      duration: 0.1,
-      mixes: 0.1,
-      sets: 0.1,
-      lastModified: 0.15,
-      actions: 0.1
-    }
+    const AddToMixButton = ({ track }: { track: Track }) => (
+      <Button
+        outlined={true}
+        small={true}
+        intent='primary'
+        className='tr-hover'
+        onClick={() => addTrackToMix(track, trackKey)}
+      >
+        Add to Mix
+      </Button>
+    )
 
     return [
       {
         key: 'name',
         name: 'Track Name',
-        width: docWidth * colWidths.name,
-        formatter: (i: number) => {
+        minWidth: '300px',
+        width: '50%',
+        formatter: (t: Track) => {
           // remove suffix (ie. .mp3)
           return (
-            <Cell wrapText={true}>
-              {tracks![i].name?.replace(/\.[^/.]+$/, '')}
-            </Cell>
+            <>
+              {t.name?.replace(/\.[^/.]+$/, '')}
+              {hideDropzone ? (
+                <AddToMixButton track={t} />
+              ) : (
+                <Popover
+                  interactionKind='click'
+                  popoverClassName={Classes.POPOVER_CONTENT_SIZING}
+                  autoFocus={false}
+                  content={
+                    <div
+                      style={{
+                        display: 'flex',
+                        justifyContent: 'space-between'
+                      }}
+                    >
+                      <Button
+                        className={Classes.POPOVER_DISMISS}
+                        intent='primary'
+                        style={{ marginRight: 10 }}
+                        onClick={() => addTrackToMix(t, 0)}
+                      >
+                        Track 1
+                      </Button>
+                      <Button
+                        intent='primary'
+                        className={Classes.POPOVER_DISMISS}
+                        onClick={() => addTrackToMix(t, 1)}
+                      >
+                        Track 2
+                      </Button>
+                    </div>
+                  }
+                >
+                  <AddToMixButton track={t} />
+                </Popover>
+              )}
+            </>
           )
         }
       },
       {
         key: 'bpm',
         name: 'BPM',
-        width: docWidth * colWidths.bpm,
-        formatter: (i: number) => (
-          <Cell>
-            {tracks![i].bpm?.toFixed(0) ||
-              (dirtyTracks.some(t => t.id == tracks![i].id) &&
-              !analyzingTracks.some(a => a.id == tracks![i].id) ? (
-                getBpmButton(tracks![i])
-              ) : (
-                <Loader style={{ margin: 0, height: '20px' }} />
-              ))}
-          </Cell>
-        )
+        width: '80px',
+        formatter: (t: Track) =>
+          t.bpm?.toFixed(0) ||
+          (dirtyTracks.some(dt => dt.id == t.id) &&
+          !analyzingTracks.some(a => a.id == t.id) ? (
+            getBpmButton(t)
+          ) : (
+            <Loader style={{ margin: 0, height: '20px' }} />
+          ))
       },
       {
         key: 'duration',
         name: 'Duration',
-        width: docWidth * colWidths.duration,
-        formatter: (i: number) =>
-          tracks![i].duration ? (
-            <Cell>{formatMinutes(tracks![i].duration! / 60)}</Cell>
-          ) : (
-            <Cell />
-          )
+        width: '105px',
+        formatter: (t: Track) =>
+          t.duration ? formatMinutes(t.duration! / 60) : null
       },
       {
         key: 'mixes',
         name: 'Mixes',
-        width: docWidth * colWidths.mixes,
-        formatter: (i: number) => <Cell></Cell>
+        width: '85px',
+        formatter: (t: Track) => null
       },
       {
         key: 'sets',
         name: 'Sets',
-        width: docWidth * colWidths.sets,
-        formatter: (i: number) => <Cell></Cell>
+        width: '75px',
+        formatter: (t: Track) => null
       },
       {
         key: 'lastModified',
         name: 'Updated',
-        width: docWidth * colWidths.lastModified,
-        formatter: (i: number) => (
-          <Cell>{moment(tracks![i].lastModified).fromNow()}</Cell>
-        )
+        width: '140px',
+        formatter: (t: Track) => moment(t.lastModified).fromNow()
       },
       {
         key: 'actions',
         name: 'Remove',
-        width: docWidth * colWidths.actions,
+        width: '75px',
         formatter: actions
       }
     ]
   }
 
   const columnDefs = createColumnDefinitions()
+
+  const tableHeaders = columnDefs.map(c => (
+    <th
+      key={c.key}
+      style={{
+        textAlign: c.key == 'actions' ? 'center' : 'left',
+        minWidth: c.minWidth || c.width,
+        width: c.width
+      }}
+    >
+      {c.name}
+      {c.key == 'actions' ? null : (
+        <Button
+          icon={<DoubleCaretVertical title='Sort' />}
+          id={`${c.key}-sort`}
+          minimal={true}
+          small={true}
+          onClick={e => {
+            const rev = /reverse/.test(trackSort)
+            const key = trackSort.split('-')[0]
+            const sortKey =
+              trackSort.split('-')[0] == c.key
+                ? rev
+                  ? key
+                  : `${key}-reverse`
+                : c.key
+
+            db.appState.put(sortKey, 'trackSort')
+            e.stopPropagation()
+          }}
+        />
+      )}
+    </th>
+  ))
 
   const sortColumns = (sortKey: string) => {
     const rev = /reverse/.test(sortKey)
@@ -264,8 +351,12 @@ export const Tracks = ({ hideDropzone }: { hideDropzone: boolean }) => {
             onDragEnter={() => setIsOver(true)}
             onDragLeave={() => setIsOver(false)}
           >
-            <i className='las la-cloud-upload-alt la-fw la-3x drop'></i>
-            <h5 className='mt-0 drop'>Add Tracks</h5>
+            <Insert
+              size={26}
+              className='drop'
+              style={{ marginBottom: '10px' }}
+            />
+            <H4 className='drop'>Add Tracks</H4>
             <div className='drop'>
               Drag a file or <strong>folder</strong> here or{' '}
               <span className='text-primary'>browse</span> for a file to add.
@@ -302,63 +393,39 @@ export const Tracks = ({ hideDropzone }: { hideDropzone: boolean }) => {
               </div>
             )}
             <div style={{ alignSelf: 'center' }}>
-              <Tag intent='primary'>
-                {tracks?.length}
-                {` Track${tracks?.length === 1 ? '' : 's'}`}
-              </Tag>
+              <Button
+                intent='primary'
+                small={true}
+                onClick={browseFile}
+                icon={<Plus />}
+              >
+                Add Track
+              </Button>
             </div>
           </Card>
           {!tracks?.length ? null : (
             <div id='trackTable'>
               {/* Track Table */}
-              <Table
-                numRows={tracks.length}
-                columnWidths={columnDefs.map(c => c.width)}
+              <HTMLTable
+                bordered={true}
+                condensed={true}
+                interactive={true}
+                striped={true}
+                style={{ width: '100%', tableLayout: 'fixed' }}
               >
-                {columnDefs.map(c => (
-                  <Column
-                    id={c.name}
-                    key={c.key}
-                    cellRenderer={c.formatter}
-                    columnHeaderCellRenderer={() => (
-                      <ColumnHeaderCell
-                        name={c.name}
-                        nameRenderer={() => (
-                          <div
-                            style={{
-                              textAlign: c.key == 'actions' ? 'center' : 'left'
-                            }}
-                          >
-                            {c.name}
-                          </div>
-                        )}
-                        menuIcon={
-                          <Button
-                            icon={<DoubleCaretVertical title='Sort' />}
-                            id={`${c.key}-sort`}
-                            minimal={true}
-                            small={true}
-                            onClick={e => {
-                              const rev = /reverse/.test(trackSort)
-                              const key = trackSort.split('-')[0]
-                              const sortKey =
-                                trackSort.split('-')[0] == c.key
-                                  ? rev
-                                    ? key
-                                    : `${key}-reverse`
-                                  : c.key
-
-                              db.appState.put(sortKey, 'trackSort')
-                              e.stopPropagation()
-                            }}
-                          />
-                        }
-                        menuRenderer={() => <></>}
-                      />
-                    )}
-                  />
-                ))}
-              </Table>
+                <thead>
+                  <tr>{tableHeaders}</tr>
+                </thead>
+                <tbody>
+                  {tracks.map((t, i) => (
+                    <tr key={i}>
+                      {columnDefs.map(c => (
+                        <td key={c.key}>{c.formatter(t)}</td>
+                      ))}
+                    </tr>
+                  ))}
+                </tbody>
+              </HTMLTable>
             </div>
           )}
         </>
