@@ -1,7 +1,8 @@
 import { Track } from './db'
 
-const _getFile = async (track: Track): Promise<File | null> => {
+const _getFile = async (track: Track): Promise<File | undefined> => {
   let handle = track.dirHandle || track.fileHandle
+  console.log({ handle })
   let file = null,
     perms
 
@@ -22,7 +23,7 @@ const _getFile = async (track: Track): Promise<File | null> => {
  *  will prompt the user if necessary (user must have interacted with the page first!)
  *  otherwise returns null
  */
-const getPermission = async (track: Track): Promise<File | null> => {
+const getPermission = async (track: Track): Promise<File | undefined> => {
   // first check perms
   // directory handle is preferred over file handle
   let file = await _getFile(track)

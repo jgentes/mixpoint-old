@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
-import { Button, Card, NumericInput, Dialog } from '@blueprintjs/core'
+import { Button, Card, NumericInput, Dialog, H5 } from '@blueprintjs/core'
 import { Play, Pause, Eject } from '@blueprintjs/icons'
 import Loader from '../../layout/loader'
 import Slider, { SliderProps } from 'rc-slider'
@@ -27,6 +27,7 @@ const TrackForm = ({
   const [audioSrc, setAudioSrc] = useState('')
   const [tableState, openTable] = useState(false)
   const [track, setTrack] = useState({})
+  const [bpmTimer, setBpmTimer] = useState<number>()
 
   const track1 = trackKey == 0
   const zoomView = waveform?.views.getView('zoomview')
@@ -42,7 +43,6 @@ const TrackForm = ({
       getPeaks(track, trackKey, trackState.file, trackState.waveformData)
   }, [trackState])
 
-  console.log('rerender', trackState, track)
   const updatePlaybackRate = (bpm: number) => {
     // update play speed to new bpm
     const playbackRate = bpm / (track?.bpm || bpm)
@@ -82,35 +82,6 @@ const TrackForm = ({
     })
   }
 
-  const audioChange = async () => {
-    openTable(true)
-    /*
-    if (!track.name) setAnalyzing(true)
-
-    let fileHandle
-    try {
-      ;[fileHandle] = await window.showOpenFilePicker()
-      setAnalyzing(true)
-    } catch (e) {
-      return setAnalyzing(false)
-    }
-
-    // release resources from previous peak rendering
-    if (waveform) waveform?.destroy()
-
-    // do not lose the directory handle if it exists
-    const dbTrack = await db.tracks.get({ name: fileHandle.name })
-
-    const newTrack = await processAudio(
-      await initTrack(fileHandle, dbTrack?.dirHandle)
-    )
-
-    if (newTrack) {
-      await getPeaks(newTrack)
-    } else setAnalyzing(false)
-    */
-  }
-
   const selectTime = async (time: number) => {
     waveform?.player.seek(time)
     zoomView?.enableAutoScroll(false)
@@ -143,19 +114,26 @@ const TrackForm = ({
   const bpmControl = (
     <div
       className={alignment}
-      style={{ display: 'inline-flex', flexBasis: bpmDiff ? '168px' : '130px' }}
+      style={{
+        display: 'inline-flex',
+        flexBasis: bpmDiff ? '136px' : '100px',
+        flexShrink: 0
+      }}
     >
       <NumericInput
         disabled={!track?.bpm}
-        onValueChange={(_v: number, value: string) => {
-          console.log(_v, value)
-          adjustBpm(Number(value))
+        onValueChange={(val: number) => {
+          if (val) {
+            if (bpmTimer) window.clearTimeout(bpmTimer)
+            const debounce = window.setTimeout(() => adjustBpm(val), 1000)
+            setBpmTimer(debounce)
+          }
         }}
         value={adjustedBpm || track?.bpm?.toFixed(1) || 0}
         id={`bpmInput_${trackKey}`}
         allowNumericCharactersOnly={false}
         asyncControl={true}
-        buttonPosition={'left'}
+        buttonPosition='none'
         fill={true}
         minorStepSize={0.1}
         rightElement={
@@ -206,7 +184,13 @@ const TrackForm = ({
   )
 
   const trackHeader = (
-    <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+    <div
+      style={{
+        display: 'flex',
+        justifyContent: 'space-between',
+        marginBottom: '5px'
+      }}
+    >
       <div
         style={{
           textOverflow: 'ellipsis',
@@ -215,27 +199,18 @@ const TrackForm = ({
         }}
       >
         <Button
-          color='light'
-          title='Load Track'
           small={true}
-          icon={<Eject />}
+          icon={<Eject title='Load Track' />}
           onClick={() => openTable(true)}
           id={`loadButton_${trackKey}`}
+          style={{ marginRight: '8px' }}
         ></Button>
 
-        <div
-          style={{
-            display: 'inline',
-            verticalAlign: 'middle'
-          }}
-          className='pl-3'
-        >
-          <span className='h5'>
-            {analyzing
-              ? 'Loading..'
-              : track?.name?.replace(/\.[^/.]+$/, '') || 'No Track Loaded..'}
-          </span>
-        </div>
+        <H5 style={{ display: 'inline', verticalAlign: 'text-bottom' }}>
+          {analyzing
+            ? 'Loading..'
+            : track?.name?.replace(/\.[^/.]+$/, '') || 'No Track Loaded..'}
+        </H5>
       </div>
       {bpmControl}
     </div>

@@ -1,5 +1,6 @@
 import Peaks, { PeaksOptions } from 'peaks.js'
 import { Track, db } from '../../db'
+import { getPermission } from '../../fileHandlers'
 import WaveformData from 'waveform-data'
 
 export const initPeaks = async ({
@@ -21,13 +22,12 @@ export const initPeaks = async ({
   setWaveform: Function
   setAnalyzing: Function
 }) => {
-  console.log('INITPEAKS')
   if (!track) throw Error('No track to initialize')
   setAnalyzing(true)
 
   const track1 = trackKey % 2
 
-  file = file || (await track.fileHandle?.getFile())
+  file = file || (await getPermission(track))
   if (!file) throw Error('Problem reaching file')
 
   // update the <audio> ref, this allows play/pause controls

@@ -28,14 +28,3 @@ export const failure = (trackName?: string, customMessage?: string) => {
     timeout: 4000
   })
 }
-
-export const debounce = (fn: any, ms: number) => {
-  let timer: number | undefined
-  return _ => {
-    window.clearTimeout(timer)
-    timer = window.setTimeout(_ => {
-      timer = undefined
-      fn.apply(this, arguments)
-    }, ms)
-  }
-}

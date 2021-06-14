@@ -124,8 +124,8 @@ export const Tracks = ({
     }
   }
 
-  const addTrackToMix = (track: Track, i: number) => {
-    getPeaks({ track, trackKey: i })
+  const addTrackToMix = (track: Track, trackKey: number) => {
+    getPeaks(track, trackKey)
     openTable(false)
   }
 
