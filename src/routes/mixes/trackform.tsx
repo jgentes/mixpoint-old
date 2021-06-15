@@ -234,7 +234,7 @@ const TrackForm = ({
       <div
         style={{
           width: `${sliderControl?.width}px`,
-          paddingTop: track1 ? '10px' : '30px',
+          paddingTop: track1 ? '10px' : '20px',
           paddingBottom: track1 ? '20px' : '10px'
         }}
       >
@@ -246,6 +246,8 @@ const TrackForm = ({
             step={null}
             included={false}
             onAfterChange={time => selectTime(time)}
+            dotStyle={{ borderColor: '#1e8bc3' }}
+            activeDotStyle={{ borderColor: '#cc1d1d' }}
           />
         )}
       </div>

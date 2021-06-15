@@ -147,7 +147,7 @@ export const initPeaks = async ({
       new Date(secs * 1000).toISOString().substr(15, 6)
     const markFormatter = (point: number) =>
       track1 ? (
-        <div style={{ marginTop: '-45px' }}>{timeFormat(point)}</div>
+        <div style={{ marginTop: '-35px' }}>{timeFormat(point)}</div>
       ) : (
         timeFormat(point)
       )
