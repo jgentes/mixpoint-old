@@ -211,7 +211,12 @@ const TrackForm = ({
           style={{ marginRight: '8px' }}
         ></Button>
 
-        <H5 style={{ display: 'inline', verticalAlign: 'text-bottom' }}>
+        <H5
+          style={{
+            display: 'inline',
+            verticalAlign: track1 ? 'text-bottom' : 'middle'
+          }}
+        >
           {analyzing
             ? 'Loading..'
             : track?.name?.replace(/\.[^/.]+$/, '') || 'No Track Loaded..'}
