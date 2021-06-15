@@ -2,7 +2,7 @@ import { Track } from './db'
 
 const _getFile = async (track: Track): Promise<File | undefined> => {
   let handle = track.dirHandle || track.fileHandle
-  console.log({ handle })
+
   let file = null,
     perms
 

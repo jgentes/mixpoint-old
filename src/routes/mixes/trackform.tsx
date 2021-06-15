@@ -26,7 +26,7 @@ const TrackForm = ({
   const [waveform, setWaveform] = useState<PeaksInstance>()
   const [audioSrc, setAudioSrc] = useState('')
   const [tableState, openTable] = useState(false)
-  const [track, setTrack] = useState({})
+  const [track, setTrack] = useState<Track>()
   const [bpmTimer, setBpmTimer] = useState<number>()
 
   const track1 = trackKey == 0
@@ -35,12 +35,16 @@ const TrackForm = ({
     useLiveQuery(() => db.trackState.get({ trackKey })) || {}
 
   useEffect(() => {
-    const getTrackData = async () =>
-      setTrack((await db.tracks.get(trackState.trackId!)) || {})
-    if (trackState.trackId) getTrackData()
+    let getTrack
+    const getTrackData = async () => {
+      getTrack = await db.tracks.get(trackState.trackId!)
+      setTrack(getTrack)
 
-    if (trackState.waveformData)
-      getPeaks(track, trackKey, trackState.file, trackState.waveformData)
+      if (getTrack && trackState.waveformData)
+        getPeaks(getTrack, trackKey, trackState.file, trackState.waveformData)
+    }
+
+    if (trackState.trackId) getTrackData()
   }, [trackState])
 
   const updatePlaybackRate = (bpm: number) => {
@@ -188,7 +192,8 @@ const TrackForm = ({
       style={{
         display: 'flex',
         justifyContent: 'space-between',
-        marginBottom: '5px'
+        marginBottom: track1 ? '5px' : 0,
+        marginTop: track1 ? 0 : '5px'
       }}
     >
       <div
@@ -227,9 +232,10 @@ const TrackForm = ({
       id={`slider_${trackKey}`}
     >
       <div
-        className={track1 ? 'pb-3 pt-5' : 'pb-5 pt-3'}
         style={{
-          width: `${sliderControl?.width}px`
+          width: `${sliderControl?.width}px`,
+          paddingTop: track1 ? '10px' : '30px',
+          paddingBottom: track1 ? '20px' : '10px'
         }}
       >
         {!sliderControl?.max ? null : (
@@ -250,7 +256,7 @@ const TrackForm = ({
     <div
       id={`zoomview-container_${trackKey}`}
       style={{
-        height: track?.name ? '150px' : '0px',
+        height: '150px',
         visibility: analyzing ? 'hidden' : 'visible'
       }}
     />
@@ -260,7 +266,7 @@ const TrackForm = ({
     <div
       id={`overview-container_${trackKey}`}
       style={{
-        height: track?.name ? '40px' : '0px',
+        height: '40px',
         visibility: analyzing ? 'hidden' : 'visible'
       }}
     />

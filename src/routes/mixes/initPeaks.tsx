@@ -40,7 +40,7 @@ export const initPeaks = async ({
       overview: document.getElementById(`overview-container_${trackKey}`),
       zoomview: document.getElementById(`zoomview-container_${trackKey}`)
     },
-    mediaElement: document.getElementById(`audio_${trackKey}`) ?? undefined,
+    mediaElement: document.getElementById(`audio_${trackKey}`)!,
     pointMarkerColor: 'rgba(30, 139, 195, 1)',
     zoomLevels: [64, 128, 256, 512],
     emitCueEvents: true // for mouse drag listener
