@@ -53,8 +53,8 @@ interface Track {
 
 /* TrackState should not contain mix state */
 interface TrackState {
-  trackKey: number
-  trackId: number
+  trackKey?: number
+  trackId?: number
   adjustedBpm?: number
   file?: File | undefined
   waveformData?: WaveformData | undefined

@@ -1,5 +1,12 @@
 import { useEffect, useRef, useState } from 'react'
-import { Button, Card, NumericInput, Dialog, H5 } from '@blueprintjs/core'
+import {
+  Button,
+  ButtonGroup,
+  Card,
+  NumericInput,
+  Dialog,
+  H5
+} from '@blueprintjs/core'
 import { Play, Pause, Eject } from '@blueprintjs/icons'
 import Loader from '../../layout/loader'
 import Slider, { SliderProps } from 'rc-slider'
@@ -113,11 +120,8 @@ const TrackForm = ({
 
   const bpmDiff = adjustedBpm && adjustedBpm !== track?.bpm?.toFixed(1)
 
-  const alignment = track1 ? 'align-self-sm-start' : 'align-self-sm-end'
-
   const bpmControl = (
     <div
-      className={alignment}
       style={{
         display: 'inline-flex',
         flexBasis: bpmDiff ? '136px' : '100px',
@@ -155,36 +159,34 @@ const TrackForm = ({
   )
 
   const playerControl = !track?.name ? null : (
-    <div
+    <ButtonGroup
+      fill={true}
       style={{
-        position: 'relative',
-        zIndex: 999,
-        minWidth: '81px',
         visibility: analyzing ? 'hidden' : 'visible'
       }}
-      className={alignment}
     >
       <Button
-        color='light'
-        title='Play'
-        icon={<Play />}
-        onClick={() => {
-          zoomView?.enableAutoScroll(true)
-          waveform?.player.play()
-        }}
-        id={`playButton_${trackKey}`}
-      ></Button>
-      <Button
-        color='light'
-        title='Pause'
         icon={<Pause />}
         onClick={() => {
           waveform?.player.pause()
           zoomView?.enableAutoScroll(true)
         }}
         id={`pauseButton_${trackKey}`}
-      ></Button>
-    </div>
+      >
+        Pause
+      </Button>
+
+      <Button
+        icon={<Play />}
+        onClick={() => {
+          zoomView?.enableAutoScroll(true)
+          waveform?.player.play()
+        }}
+        id={`playButton_${trackKey}`}
+      >
+        Play
+      </Button>
+    </ButtonGroup>
   )
 
   const trackHeader = (
@@ -193,7 +195,7 @@ const TrackForm = ({
         display: 'flex',
         justifyContent: 'space-between',
         marginBottom: track1 ? '5px' : 0,
-        marginTop: track1 ? 0 : '5px'
+        marginTop: track1 ? 0 : '10px'
       }}
     >
       <div
@@ -245,14 +247,14 @@ const TrackForm = ({
       >
         {!sliderControl?.max ? null : (
           <Slider
-            min={sliderControl?.min}
-            max={sliderControl?.max}
-            marks={sliderControl?.marks}
+            min={sliderControl.min || 0}
+            max={sliderControl.max}
+            marks={sliderControl.marks || {}}
             step={null}
             included={false}
             onAfterChange={time => selectTime(time)}
             dotStyle={{ borderColor: '#1e8bc3' }}
-            activeDotStyle={{ borderColor: '#cc1d1d' }}
+            handleStyle={{ borderColor: '#cc1d1d' }}
           />
         )}
       </div>
@@ -269,34 +271,31 @@ const TrackForm = ({
     />
   )
 
-  const overview = (
-    <div
-      id={`overview-container_${trackKey}`}
-      style={{
-        height: '40px',
-        visibility: analyzing ? 'hidden' : 'visible'
-      }}
-    />
-  )
+  const loader = analyzing ? <Loader style={{ margin: '15px 0' }} /> : null
 
-  const loader = analyzing ? <Loader className='my-5' /> : null
-
-  const MixCard = () => (
-    <Card style={{ flexBasis: '85px', flexGrow: 1, flexShrink: 1 }}>
-      {playerControl}
-    </Card>
+  const TracksDialog = () => (
+    <Dialog
+      isOpen={tableState}
+      onClose={() => openTable(false)}
+      style={{ width: '80%' }}
+    >
+      <Tracks
+        trackKey={trackKey}
+        hideDropzone={true}
+        openTable={openTable}
+        getPeaks={getPeaks}
+      />
+    </Dialog>
   )
 
   return (
     <>
       <div style={{ display: 'flex', margin: '15px 0' }}>
-        <MixCard />
+        <Card style={{ flex: '0 0 250px' }}>{playerControl}</Card>
         <Card
           elevation={1}
           style={{
-            flexBasis: 0,
-            flexGrow: 8,
-            flexShrink: 1,
+            flex: 'auto',
             marginLeft: '15px',
             overflow: 'hidden'
           }}
@@ -308,7 +307,6 @@ const TrackForm = ({
             <div id={`peaks-container_${trackKey}`}>
               {track1 ? (
                 <>
-                  {overview}
                   {loader}
                   {zoomview}
                 </>
@@ -316,7 +314,6 @@ const TrackForm = ({
                 <>
                   {zoomview}
                   {loader}
-                  {overview}
                 </>
               )}
             </div>
@@ -328,18 +325,7 @@ const TrackForm = ({
           </div>
         </Card>
       </div>
-      <Dialog
-        isOpen={tableState}
-        onClose={() => openTable(false)}
-        style={{ width: '80%' }}
-      >
-        <Tracks
-          trackKey={trackKey}
-          hideDropzone={true}
-          openTable={openTable}
-          getPeaks={getPeaks}
-        />
-      </Dialog>
+      <TracksDialog />
     </>
   )
 }

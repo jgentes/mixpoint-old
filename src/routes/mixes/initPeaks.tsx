@@ -42,6 +42,18 @@ export const initPeaks = async ({
     },
     mediaElement: document.getElementById(`audio_${trackKey}`)!,
     pointMarkerColor: 'rgba(30, 139, 195, 1)',
+    overviewHighlightColor: '#1e8bc3',
+    overviewHighlightOffset: 5,
+    zoomWaveformColor: {
+      linearGradientStart: 45,
+      linearGradientEnd: 58,
+      linearGradientColorStops: ['#D8B945', '#DD9045']
+    },
+    overviewWaveformColor: {
+      linearGradientStart: 45,
+      linearGradientEnd: 58,
+      linearGradientColorStops: ['#E2E2E2', '#CCCCCC']
+    },
     zoomLevels: [64, 128, 256, 512],
     emitCueEvents: true // for mouse drag listener
   }
@@ -93,13 +105,6 @@ export const initPeaks = async ({
 
     // destroy the overview so that it doesn't receive the beat markers
     waveform.views.destroyOverview()
-
-    zoomView?.setWaveformColor({
-      linearGradientStart: 45,
-      linearGradientEnd: 58,
-      linearGradientColorStops: ['#D8B945', '#DD9045']
-    })
-
     waveform.zoom.setZoom(3) // 512
     zoomView?.showPlayheadTime(true)
 
