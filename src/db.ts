@@ -1,34 +1,44 @@
 import Dexie from 'dexie'
+import { useLiveQuery } from 'dexie-react-hooks'
 import WaveformData from 'waveform-data'
-import { toast } from 'react-toastify'
+import { Toaster } from './layout/toaster'
 
 // from https://dexie.org/docs/Typescript
 
-class EditorDatabase extends Dexie {
+class MixPointDb extends Dexie {
   tracks: Dexie.Table<Track, number>
   mixes: Dexie.Table<Mix, number>
   sets: Dexie.Table<Set, number>
-  state: Dexie.Table<MixState | SetState>
+  trackState: Dexie.Table<TrackState>
+  mixState: Dexie.Table<MixState>
+  setState: Dexie.Table<SetState>
+  appState: Dexie.Table<any>
 
   constructor () {
-    super('EditorDatabase')
+    super('MixPointDb')
     this.version(1).stores({
       tracks: '++id, name, bpm, [name+size]',
       mixes: '++id, tracks',
       sets: '++id, mixes',
-      state: ''
+      trackState: 'trackKey',
+      mixState: '++id',
+      setState: '++id',
+      appState: ''
     })
 
     this.tracks = this.table('tracks')
     this.mixes = this.table('mixes')
     this.sets = this.table('sets')
-    this.state = this.table('state')
+    this.trackState = this.table('trackState')
+    this.mixState = this.table('mixState')
+    this.setState = this.table('setState')
+    this.appState = this.table('appState')
   }
 }
 
 // define tables
 interface Track {
-  id?: number
+  id: number
   name?: string
   fileHandle?: FileSystemFileHandle
   dirHandle?: FileSystemDirectoryHandle
@@ -41,76 +51,51 @@ interface Track {
   offset?: number
 }
 
+/* TrackState should not contain mix state */
+interface TrackState {
+  trackKey?: number
+  trackId?: number
+  adjustedBpm?: number
+  file?: File | undefined
+  waveformData?: WaveformData | undefined
+  mixPoint?: number
+}
+
+interface Mix {
+  id?: number
+  trackIds: number[]
+  mixPoints: MixPoint[]
+}
+interface MixState {
+  mixId?: number
+  bpmSync?: boolean
+}
+
+interface Set {
+  id?: number
+  mixIds: number[]
+}
+
+interface SetState {
+  setId?: number
+}
+
 interface MixPoint {
   times: number[]
   effects: any
 }
 
-interface Mix {
-  id?: number
-  tracks: number[]
-  mixPoints: MixPoint[]
-}
-
-interface Set {
-  id?: number
-  mixes: number[]
-}
-
-interface TrackState extends Track {
-  adjustedBpm?: number
-  file?: File
-  waveformData?: WaveformData
-}
-
-interface MixState {
-  tracks?: TrackState[]
-  bpmSync?: boolean
-}
-
-interface SetState {}
-
-const db = new EditorDatabase()
-
-db.on('populate', function () {
-  // seed initial state here because other methods are only updates to these objects
-  db.state.put({ tracks: [] }, 'mixState')
-  db.state.put({}, 'setState')
-})
+const db = new MixPointDb()
 
 const errHandler = (err: Error) => {
-  toast.error(`Oops, there was a problem: ${err.message}`)
-}
-
-const getMixState = async (): Promise<MixState> =>
-  (await db.state.get('mixState')) ?? {}
-const getSetState = async (): Promise<SetState> =>
-  (await db.state.get('setState')) ?? {}
-
-const updateTrackState = async (state: TrackState) => {
-  getMixState().then(async (currentState: MixState) => {
-    const trackIndex = currentState.tracks!.findIndex(t => t.id == state.id)
-
-    if (trackIndex! >= 0) {
-      currentState.tracks![trackIndex!] = state
-    } else currentState.tracks?.push(state)
-    return await db.state.update('mixState', currentState)
+  Toaster.show({
+    message: `Oops, there was a problem: ${err.message}`,
+    intent: 'danger'
   })
-}
-const updateMixState = async (state: MixState) => {
-  getMixState().then(
-    async (currentState: MixState) =>
-      await db.state.update('mixState', { ...currentState, ...state })
-  )
-}
-const updateSetState = async (state: SetState) => {
-  getSetState().then(
-    async (currentState: SetState) =>
-      await db.state.update('setState', { ...currentState, ...state })
-  )
 }
 
 const putTrack = async (track: Track): Promise<Track> => {
+  // if below line changes, potentially remove [name+size] index
   const dup = await db.tracks.get({ name: track.name, size: track.size })
   if (dup && dup.bpm) return dup
 
@@ -123,8 +108,11 @@ const putTrack = async (track: Track): Promise<Track> => {
 const removeTrack = async (id: number): Promise<void> =>
   await db.tracks.delete(id).catch(errHandler)
 
-const addMix = async (tracks: number[]): Promise<number> =>
-  await db.mixes.add({ tracks }).catch(errHandler)
+const addMix = async (
+  trackIds: number[],
+  mixPoints: MixPoint[]
+): Promise<number> =>
+  await db.mixes.add({ trackIds, mixPoints }).catch(errHandler)
 
 const getMix = async (id: number): Promise<Mix | undefined> =>
   await db.mixes.get(id).catch(errHandler)
@@ -145,9 +133,5 @@ export {
   addMix,
   getMix,
   removeMix,
-  getMixState,
-  getSetState,
-  updateTrackState,
-  updateMixState,
-  updateSetState
+  useLiveQuery
 }

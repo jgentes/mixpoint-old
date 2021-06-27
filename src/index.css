@@ -4,6 +4,11 @@
   }
 }
 
+.body {
+  font-family: -apple-system, 'Helvetica Neue', Helvetica, 'Segoe UI', Arial,
+    sans-serif;
+}
+
 .initial-loader-wrap {
   top: 0;
   left: 0;
@@ -12,8 +17,6 @@
   display: flex;
   justify-content: center;
   align-items: center;
-  font-family: -apple-system, 'Helvetica Neue', Helvetica, 'Segoe UI', Arial,
-    sans-serif;
   font-size: 12px;
   position: fixed;
   z-index: 99999;
@@ -26,7 +29,7 @@
 }
 
 .initial-loader {
-  min-width: 240px;
+  min-width: 190px;
   color: #212529;
   line-height: 1.5;
 }
@@ -49,15 +52,16 @@
   line-height: 1.2;
   background: linear-gradient(
     60deg,
-    hsl(0, 75%, 50%) 25%,
-    hsl(260, 75%, 50%) 45%,
-    hsl(200, 75%, 50%) 75%,
+    hsl(0, 75%, 50%) 5%,
+    hsl(260, 75%, 50%) 35%,
+    hsl(200, 75%, 50%) 65%,
     hsl(220, 75%, 50%) 95%
   );
-  text-shadow: 0.5px -0.6vw #fff4;
   color: #fff;
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
+  -webkit-text-stroke-width: thin;
+  -webkit-text-stroke-color: rgb(255 255 255 / 35%);
 }
 
 .initial-loader svg#loader-circle {

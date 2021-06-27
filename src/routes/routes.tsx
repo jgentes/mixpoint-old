@@ -15,7 +15,7 @@ export const RoutedContent = (): JSX.Element => {
       <Route component={Tracks} path='/tracks' />
 
       {/*    404    */}
-      <Redirect to='/pages/error-404' />
+      <Redirect to='/' />
     </Switch>
   )
 }

@@ -1,23 +1,48 @@
 import { useEffect, useState } from 'react'
-import BootstrapTable from 'react-bootstrap-table-next'
-import ToolkitProvider from 'react-bootstrap-table2-toolkit'
-import moment from 'moment'
-import { db, Track, removeTrack, putTrack } from '../../db'
+import { db, Track, putTrack, removeTrack, useLiveQuery } from '../../db'
 import { initTrack, processAudio } from '../../audio'
-import { getPermission } from '../../fileHandlers'
+import moment from 'moment'
 import Loader from '../../layout/loader'
-import { SearchBar } from './searchbar'
-import { Card, Container, Button, UncontrolledTooltip } from 'reactstrap'
-import { useLiveQuery } from 'dexie-react-hooks'
+import { getPermission } from '../../fileHandlers'
+import {
+  Button,
+  Card,
+  InputGroup,
+  HTMLTable,
+  Popover,
+  Classes,
+  H4
+} from '@blueprintjs/core'
+import {
+  Cross,
+  DoubleCaretVertical,
+  Search,
+  Issue,
+  Plus,
+  Insert
+} from '@blueprintjs/icons'
 
-export const Tracks = (props: { baseProps?: object; searchProps?: object }) => {
+export const Tracks = ({
+  hideDropzone,
+  trackKey,
+  openTable,
+  getPeaks
+}: {
+  hideDropzone: boolean
+  trackKey: number
+  openTable: Function
+  getPeaks: Function
+}) => {
   const [isOver, setIsOver] = useState(false) // for dropzone
   const [processing, setProcessing] = useState(false) // show progress if no table
   const [analyzingTracks, setAnalyzing] = useState<Track[]>([])
   const [dirtyTracks, setDirty] = useState<Track[]>([])
+  const [searchVal, setSearch] = useState('')
 
   // monitor db for track updates
-  const tracks: Track[] | null = useLiveQuery(() => db.tracks.toArray()) ?? null
+  let tracks: Track[] | null = useLiveQuery(() => db.tracks.toArray()) ?? null
+  let trackSort: string =
+    useLiveQuery(() => db.appState.get('trackSort')) || 'name'
 
   // if we see any tracks that haven't been processed, process them, or
   // if we haven't had user activation, show button to resume processing
@@ -88,8 +113,9 @@ export const Tracks = (props: { baseProps?: object; searchProps?: object }) => {
     if (ok) {
       // if the user approves access to a folder, we can process all files in that folder :)
       const siblingTracks = track.dirHandle
-        ? dirtyTracks.filter(t => t.id == track.id)
+        ? dirtyTracks.filter(t => t.dirHandle?.name == track.dirHandle!.name)
         : [track]
+
       setAnalyzing(siblingTracks)
       for (const sibling of siblingTracks) {
         await processAudio(sibling)
@@ -98,39 +124,25 @@ export const Tracks = (props: { baseProps?: object; searchProps?: object }) => {
     }
   }
 
-  const actions = (cell: void, row: { id: number }) => (
-    <>
-      <div
-        onClick={e => {
-          e.preventDefault()
-          removeTrack(row.id!)
-        }}
-        id='removeTrack'
-        style={{ cursor: 'pointer' }}
-      >
-        <i className='las la-15em la-times-circle text-danger'></i>
-      </div>
-      <UncontrolledTooltip placement='left' target='removeTrack'>
-        Remove Track
-      </UncontrolledTooltip>
-    </>
-  )
+  const addTrackToMix = (track: Track, trackKey: number) => {
+    getPeaks(track, trackKey)
+    openTable(false)
+  }
 
-  const sortCaret = (order: 'desc' | 'asc' | undefined) => (
-    <i
-      className={`las la-fw text-muted ${
-        order ? `la-sort-${order}` : `la-sort`
-      }`}
-    ></i>
+  const actions = (t: Track) => (
+    <div style={{ textAlign: 'center' }}>
+      <Button
+        icon={<Cross title='Remove Track' />}
+        id='removeTrack'
+        minimal={true}
+        small={true}
+        intent='danger'
+        onClick={() => removeTrack(t.id!)}
+      />
+    </div>
   )
 
   const createColumnDefinitions = () => {
-    const classes = 'text-center'
-    const headerStyle = {
-      color: '#333',
-      textAlign: 'center' as const
-    }
-
     const formatMinutes = (mins: number) => {
       return moment()
         .startOf('day')
@@ -141,8 +153,9 @@ export const Tracks = (props: { baseProps?: object; searchProps?: object }) => {
     const getBpmButton = (row: Track) => {
       return (
         <Button
-          color='outline-primary'
-          size='sm'
+          intent='primary'
+          small={true}
+          minimal={true}
           onClick={e => {
             e.preventDefault()
             analyzeTrack(row)
@@ -153,92 +166,110 @@ export const Tracks = (props: { baseProps?: object; searchProps?: object }) => {
       )
     }
 
+    const AddToMixButton = ({ track }: { track: Track }) => (
+      <Button
+        outlined={true}
+        small={true}
+        intent='primary'
+        className='tr-hover'
+        onClick={() => addTrackToMix(track, trackKey)}
+      >
+        Add to Mix
+      </Button>
+    )
+
     return [
       {
-        dataField: 'id',
-        type: 'number',
-        hidden: true,
-        text: ''
+        key: 'name',
+        name: 'Track Name',
+        minWidth: '300px',
+        width: '50%',
+        formatter: (t: Track) => {
+          // remove suffix (ie. .mp3)
+          return (
+            <>
+              {t.name?.replace(/\.[^/.]+$/, '')}
+              {hideDropzone ? (
+                <AddToMixButton track={t} />
+              ) : (
+                <Popover
+                  interactionKind='click'
+                  popoverClassName={Classes.POPOVER_CONTENT_SIZING}
+                  autoFocus={false}
+                  content={
+                    <div
+                      style={{
+                        display: 'flex',
+                        justifyContent: 'space-between'
+                      }}
+                    >
+                      <Button
+                        className={Classes.POPOVER_DISMISS}
+                        intent='primary'
+                        style={{ marginRight: 10 }}
+                        onClick={() => addTrackToMix(t, 0)}
+                      >
+                        Track 1
+                      </Button>
+                      <Button
+                        intent='primary'
+                        className={Classes.POPOVER_DISMISS}
+                        onClick={() => addTrackToMix(t, 1)}
+                      >
+                        Track 2
+                      </Button>
+                    </div>
+                  }
+                >
+                  <AddToMixButton track={t} />
+                </Popover>
+              )}
+            </>
+          )
+        }
       },
       {
-        dataField: 'name',
-        text: 'Track Name',
-        sort: true,
-        headerStyle: {
-          color: '#333',
-          textAlign: 'left' as const
-        },
-        formatter: (cell: string) => cell.replace(/\.[^/.]+$/, ''), // remove suffix (ie. .mp3)
-        sortCaret
-      },
-      {
-        dataField: 'bpm',
-        text: 'BPM',
-        sort: true,
-        headerStyle,
-        classes,
-        sortCaret,
-        formatter: (
-          cell: number | undefined,
-          row: any,
-          rowIndex: number,
-          dirtyState: {
-            dirtyTracks: Track[]
-            analyzingTracks: Track[]
-          }
-        ) =>
-          cell?.toFixed(0) ||
-          (dirtyState.dirtyTracks.some(t => t.id == row.id) &&
-          !dirtyState.analyzingTracks.some(a => a.id == row.id) ? (
-            getBpmButton(row)
+        key: 'bpm',
+        name: 'BPM',
+        width: '80px',
+        formatter: (t: Track) =>
+          t.bpm?.toFixed(0) ||
+          (dirtyTracks.some(dt => dt.id == t.id) &&
+          !analyzingTracks.some(a => a.id == t.id) ? (
+            getBpmButton(t)
           ) : (
-            <Loader style={{ margin: 0 }} />
-          )),
-        formatExtraData: { dirtyTracks, analyzingTracks }
+            <Loader style={{ margin: 0, height: '20px' }} />
+          ))
       },
       {
-        dataField: 'duration',
-        text: 'Duration',
-        sort: true,
-        headerStyle,
-        classes,
-        sortCaret,
-        formatter: (cell: number | undefined) =>
-          cell ? formatMinutes(cell / 60) : <></>
+        key: 'duration',
+        name: 'Duration',
+        width: '105px',
+        formatter: (t: Track) =>
+          t.duration ? formatMinutes(t.duration! / 60) : null
       },
       {
-        dataField: 'mixes',
-        text: 'Mixes',
-        sort: true,
-        headerStyle,
-        classes,
-        sortCaret
+        key: 'mixes',
+        name: 'Mixes',
+        width: '85px',
+        formatter: (t: Track) => null
       },
       {
-        dataField: 'sets',
-        text: 'Sets',
-        sort: true,
-        headerStyle,
-        classes,
-        sortCaret
+        key: 'sets',
+        name: 'Sets',
+        width: '75px',
+        formatter: (t: Track) => null
       },
       {
-        dataField: 'lastModified',
-        text: 'Updated',
-        sort: true,
-        headerStyle,
-        classes,
-        sortCaret,
-        style: { minWidth: '140px', fontSize: 'small' },
-        formatter: (cell: moment.MomentInput) => moment(cell).fromNow()
+        key: 'lastModified',
+        name: 'Updated',
+        width: '140px',
+        formatter: (t: Track) => moment(t.lastModified).fromNow()
       },
       {
-        dataField: 'actions',
-        text: 'Actions',
-        isDummyField: true,
-        sort: false,
-        headerStyle,
-        classes,
+        key: 'actions',
+        name: 'Remove',
+        width: '75px',
         formatter: actions
       }
     ]
@@ -246,87 +277,159 @@ export const Tracks = (props: { baseProps?: object; searchProps?: object }) => {
 
   const columnDefs = createColumnDefinitions()
 
-  return (
-    <Container>
-      <div className='mt-4 mb-4 text-black-06'>
-        <div
-          onClick={browseFile}
-          className={`dropzone ${isOver ? 'dropzone--active' : ''}`}
-          onDrop={e => {
-            e.preventDefault()
-            filesDropped(e.dataTransfer.items)
+  const tableHeaders = columnDefs.map(c => (
+    <th
+      key={c.key}
+      style={{
+        textAlign: c.key == 'actions' ? 'center' : 'left',
+        minWidth: c.minWidth || c.width,
+        width: c.width
+      }}
+    >
+      {c.name}
+      {c.key == 'actions' ? null : (
+        <Button
+          icon={<DoubleCaretVertical title='Sort' />}
+          id={`${c.key}-sort`}
+          minimal={true}
+          small={true}
+          onClick={e => {
+            const rev = /reverse/.test(trackSort)
+            const key = trackSort.split('-')[0]
+            const sortKey =
+              trackSort.split('-')[0] == c.key
+                ? rev
+                  ? key
+                  : `${key}-reverse`
+                : c.key
+
+            db.appState.put(sortKey, 'trackSort')
+            e.stopPropagation()
           }}
-          onDragOver={e => e.preventDefault()}
-          onDragEnter={() => setIsOver(true)}
-          onDragLeave={() => setIsOver(false)}
-        >
-          <i className='las la-cloud-upload-alt la-fw la-3x drop'></i>
-          <h5 className='mt-0 drop'>Add Tracks</h5>
-          <div className='drop'>
-            Drag a file or <strong>folder</strong> here or{' '}
-            <span className='text-primary'>browse</span> for a file to add.
-            Folders are preferred.
+        />
+      )}
+    </th>
+  ))
+
+  const sortColumns = (sortKey: string) => {
+    const rev = /reverse/.test(sortKey)
+    const key = sortKey.split('-')[0]
+
+    // ugly function that handles various sorts for strings vs numbers
+    const sortFunc = (a, b) => {
+      return key == 'name'
+        ? rev
+          ? b[key].localeCompare(a[key])
+          : a[key].localeCompare(b[key])
+        : rev
+        ? b[key] - a[key]
+        : a[key] - b[key]
+    }
+
+    tracks?.sort(sortFunc)
+  }
+
+  sortColumns(trackSort)
+  if (searchVal && tracks)
+    tracks = tracks.filter(t =>
+      t.name?.toLowerCase().includes(searchVal.toLowerCase())
+    )
+
+  return (
+    <>
+      {/* DropZone */}
+      {hideDropzone ? null : (
+        <div style={{ margin: '10px 0' }} className='text-black-06'>
+          <div
+            onClick={browseFile}
+            className={`dropzone ${isOver ? 'dropzone--active' : ''}`}
+            onDrop={e => {
+              e.preventDefault()
+              filesDropped(e.dataTransfer.items)
+            }}
+            onDragOver={e => e.preventDefault()}
+            onDragEnter={() => setIsOver(true)}
+            onDragLeave={() => setIsOver(false)}
+          >
+            <Insert
+              size={26}
+              className='drop'
+              style={{ marginBottom: '10px' }}
+            />
+            <H4 className='drop'>Add Tracks</H4>
+            <div className='drop'>
+              Drag a file or <strong>folder</strong> here or{' '}
+              <span className='text-primary'>browse</span> for a file to add.
+              Folders are preferred.
+            </div>
           </div>
         </div>
-      </div>
-
-      {!tracks || processing ? (
-        <Loader className='my-5' />
-      ) : !tracks?.length ? null : (
-        <ToolkitProvider
-          keyField='id'
-          data={tracks}
-          columns={columnDefs}
-          search
-        >
-          {props => (
-            <>
-              <div className='d-flex mb-2 align-items-baseline'>
-                <div>
-                  <SearchBar {...props.searchProps} />
-                </div>
-                {!dirtyTracks.length ? null : (
-                  <div className='ml-auto'>
-                    <div>
-                      <i
-                        className='las la-exclamation-circle la-2x text-danger mr-1'
-                        style={{ verticalAlign: 'middle' }}
-                      />
-                      <span className='text-danger align-middle fs-15'>
-                        {`BPM needed for ${dirtyTracks.length} Track${
-                          tracks.length === 1 ? '' : 's'
-                        }`}
-                      </span>
-                    </div>
-                  </div>
-                )}
-                <div className='ml-auto'>
-                  <Button
-                    color='primary'
-                    size='sm'
-                    className='mr-2 text-white py-0 fs-15'
-                    disabled={true}
-                  >
-                    {tracks.length}
-                  </Button>
-                  <span className='text-black-06 align-middle fs-15'>{`Track${
-                    tracks.length === 1 ? '' : 's'
-                  }`}</span>
-                </div>
-              </div>
-              <Card className='mb-3 p-0 bt-0'>
-                <BootstrapTable
-                  classes='table-responsive-lg mb-0'
-                  bordered={false}
-                  hover
-                  defaultSorted={[{ dataField: 'name', order: 'asc' }]}
-                  {...props.baseProps}
-                />
-              </Card>
-            </>
-          )}
-        </ToolkitProvider>
       )}
-    </Container>
+      {!tracks || processing ? (
+        <Loader style={{ margin: '50px auto' }} />
+      ) : (
+        <>
+          {/* Table search and info bar */}
+          <Card
+            elevation={1}
+            style={{
+              display: 'flex',
+              justifyContent: 'space-between',
+              padding: '10px'
+            }}
+          >
+            <InputGroup
+              leftIcon={<Search />}
+              onChange={e => setSearch(e.target.value)}
+              placeholder='Search'
+              value={searchVal}
+            ></InputGroup>
+            {!dirtyTracks.length ? null : (
+              <div style={{ alignSelf: 'center' }}>
+                <Issue style={{ marginRight: '5px' }} />
+                {`BPM needed for ${dirtyTracks.length} Track${
+                  tracks?.length === 1 ? '' : 's'
+                }`}
+              </div>
+            )}
+            <div style={{ alignSelf: 'center' }}>
+              <Button
+                intent='primary'
+                small={true}
+                onClick={browseFile}
+                icon={<Plus />}
+              >
+                Add Track
+              </Button>
+            </div>
+          </Card>
+          {!tracks?.length ? null : (
+            <div id='trackTable'>
+              {/* Track Table */}
+              <HTMLTable
+                bordered={true}
+                condensed={true}
+                interactive={true}
+                striped={true}
+                style={{ width: '100%', tableLayout: 'fixed' }}
+              >
+                <thead>
+                  <tr>{tableHeaders}</tr>
+                </thead>
+                <tbody>
+                  {tracks.map((t, i) => (
+                    <tr key={i}>
+                      {columnDefs.map(c => (
+                        <td key={c.key}>{c.formatter(t)}</td>
+                      ))}
+                    </tr>
+                  ))}
+                </tbody>
+              </HTMLTable>
+            </div>
+          )}
+        </>
+      )}
+    </>
   )
 }

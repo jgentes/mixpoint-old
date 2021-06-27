@@ -1,77 +1,115 @@
 import { useEffect, useRef, useState } from 'react'
 import {
   Button,
+  ButtonGroup,
   Card,
-  CardHeader,
-  CardBody,
-  Input,
+  NumericInput,
   InputGroup,
-  InputGroupAddon,
-  InputGroupTextProps,
-  Nav,
-  NavItem,
-  TabPane
-} from 'reactstrap'
-
-import { initTrack, processAudio } from '../../audio'
+  Dialog,
+  H5
+} from '@blueprintjs/core'
+import { Play, Pause, Undo, Eject, Time } from '@blueprintjs/icons'
 import Loader from '../../layout/loader'
 import Slider, { SliderProps } from 'rc-slider'
 import { initPeaks } from './initPeaks'
 import { PeaksInstance } from 'peaks.js'
+import { Tracks } from '../tracks/tracks'
 import WaveformData from 'waveform-data'
-import { Track, db, TrackState, updateTrackState, addMix } from '../../db'
-import UncontrolledTabs from '../../layout/UncontrolledTabs'
+import { Track, db, TrackState, useLiveQuery } from '../../db'
+import { Events } from '../../utils'
 
-const TrackForm = ({
-  trackKey,
-  trackState,
-  setPoint
-}: {
-  trackKey: number
-  trackState: TrackState
-  setPoint: Function
-}) => {
+const TrackForm = ({ trackKey }: { trackKey: number }) => {
   interface SliderControlProps extends SliderProps {
     width: number
   }
 
-  const audioElement = useRef<HTMLAudioElement>(null)
   const [sliderControl, setSliderControl] = useState<SliderControlProps>()
+  const [playing, setPlaying] = useState(false)
   const [analyzing, setAnalyzing] = useState(false)
   const [waveform, setWaveform] = useState<PeaksInstance>()
   const [audioSrc, setAudioSrc] = useState('')
+  const [tableState, openTable] = useState(false)
+  const [track, setTrack] = useState<Track>()
+  const [bpmTimer, setBpmTimer] = useState<number>()
 
-  const track1 = trackKey == 1
-  const track = trackState || {}
+  const audioElement = useRef<HTMLAudioElement>(null)
+
+  const track1 = trackKey == 0
   const zoomView = waveform?.views.getView('zoomview')
+  const trackState: TrackState =
+    useLiveQuery(() => db.trackState.get({ trackKey })) || {}
+  const { trackId, mixPoint } = trackState
+
+  const audioEffect = (detail: { tracks: number[]; effect: string }) => {
+    if (!detail.tracks.includes(trackState.trackId!)) return
+
+    setPlaying(detail.effect == 'play')
+
+    switch (detail.effect) {
+      case 'play':
+        zoomView?.enableAutoScroll(true)
+        audioElement.current?.play()
+        break
+      case 'pause':
+        audioElement.current?.pause()
+        zoomView?.enableAutoScroll(true)
+        break
+      case 'stop':
+        audioElement.current?.pause()
+        waveform?.player.seek(mixPoint || 0)
+        zoomView?.enableAutoScroll(true)
+    }
+  }
 
   useEffect(() => {
-    // pass waveformData here as a separate argument because it only
-    // exists in mixState, not on the Track schema
-    if (track.waveformData) getPeaks(track, track.file, track.waveformData)
-  }, [track])
+    let getTrack
+    const getTrackData = async () => {
+      if (!trackState.trackId) return
+
+      if (trackState.trackId !== track?.id) {
+        getTrack = await db.tracks.get(trackState.trackId!)
+        setTrack(getTrack)
+
+        if (getTrack && trackState.waveformData && !waveform)
+          getPeaks(getTrack, trackKey, trackState.file, trackState.waveformData)
+      }
+
+      // add event listeners
+      Events.on('audio', audioEffect)
+
+      // listener cleanup
+      return function cleanup () {
+        Events.remove('audio', audioEffect)
+      }
+    }
+
+    getTrackData()
+  }, [trackState])
 
   const updatePlaybackRate = (bpm: number) => {
     // update play speed to new bpm
-    const playbackRate = bpm / (track.bpm || bpm)
+    const playbackRate = bpm / (track?.bpm || bpm)
     if (audioElement.current) audioElement.current.playbackRate = playbackRate
   }
 
   const adjustBpm = async (bpm?: number) => {
     // get bpm from the user input field or mixState or current track
-    bpm = Number(bpm || track.bpm)
+    bpm = bpm ?? Number(track?.bpm)
 
     updatePlaybackRate(bpm)
 
-    // store custom bpm value in mixstate
-    await updateTrackState({
-      ...track,
-      adjustedBpm: Number(bpm.toFixed(1))
-    })
+    // store custom bpm value in trackstate
+    await db.trackState.update(
+      { trackKey },
+      {
+        adjustedBpm: Number(bpm.toFixed(1))
+      }
+    )
   }
 
   const getPeaks = async (
     track: Track,
+    trackKey: number,
     file?: File,
     waveformData?: WaveformData
   ) => {
@@ -87,38 +125,21 @@ const TrackForm = ({
     })
   }
 
-  const audioChange = async () => {
-    if (!track.name) setAnalyzing(true)
-
-    let fileHandle
-    try {
-      ;[fileHandle] = await window.showOpenFilePicker()
-      setAnalyzing(true)
-    } catch (e) {
-      return setAnalyzing(false)
-    }
-
-    // release resources from previous peak rendering
-    if (waveform) waveform?.destroy()
-
-    // do not lose the directory handle if it exists
-    const dbTrack = await db.tracks.get({ name: fileHandle.name })
-
-    const newTrack = await processAudio(
-      await initTrack(fileHandle, dbTrack?.dirHandle)
+  const selectTime = async (time: number) => {
+    await db.trackState.update(
+      { trackKey },
+      {
+        mixPoint: time
+      }
     )
 
-    if (newTrack) {
-      await getPeaks(newTrack)
-    } else setAnalyzing(false)
-  }
-
-  const selectTime = async (time: number) => {
     waveform?.player.seek(time)
     zoomView?.enableAutoScroll(false)
-    waveform?.player.play()
 
-    setPoint(trackKey, time)
+    Events.dispatch('audio', {
+      effect: 'play',
+      tracks: [trackId]
+    })
 
     /*
     waveform?.segments.add({
@@ -135,78 +156,101 @@ const TrackForm = ({
     //await updateMixState({ ...mixState, mix: { id } })
   }
 
-  const adjustedBpm = track.adjustedBpm && Number(track.adjustedBpm).toFixed(1)
+  const timeFormat = (secs: number) =>
+    new Date(secs * 1000).toISOString().substr(15, 6)
 
-  const bpmDiff = adjustedBpm && adjustedBpm !== track.bpm?.toFixed(1)
+  const adjustedBpm =
+    trackState.adjustedBpm && Number(trackState.adjustedBpm).toFixed(1)
 
-  const alignment = track1 ? 'align-self-sm-start' : 'align-self-sm-end'
+  const bpmDiff = adjustedBpm && adjustedBpm !== track?.bpm?.toFixed(1)
 
   const bpmControl = (
-    <div className={alignment}>
-      <InputGroup size='sm' style={{ width: bpmDiff ? '140px' : '110px' }}>
-        <Input
-          type='text'
-          className={`${!track.bpm ? 'text-gray-500' : ''}`}
-          disabled={!track.bpm}
-          onChange={(e: InputGroupTextProps) => adjustBpm(e.target.value)}
-          value={adjustedBpm || track.bpm?.toFixed(1) || 0}
-          id={`bpmInput_${trackKey}`}
-        />
-        <InputGroupAddon addonType='append'>
+    <div
+      style={{
+        display: 'inline-flex',
+        flexBasis: bpmDiff ? '136px' : '100px',
+        flexShrink: 0
+      }}
+    >
+      <NumericInput
+        disabled={!track?.bpm}
+        onValueChange={(val: number) => {
+          if (val) {
+            if (bpmTimer) window.clearTimeout(bpmTimer)
+            const debounce = window.setTimeout(() => adjustBpm(val), 1000)
+            setBpmTimer(debounce)
+          }
+        }}
+        value={adjustedBpm || track?.bpm?.toFixed(1) || 0}
+        id={`bpmInput_${trackKey}`}
+        allowNumericCharactersOnly={false}
+        asyncControl={true}
+        buttonPosition='none'
+        fill={true}
+        minorStepSize={0.1}
+        rightElement={
           <Button
             color='primary'
             disabled={!bpmDiff}
-            onClick={() => adjustBpm(track.bpm || 1)}
+            onClick={() => adjustBpm(track?.bpm || 1)}
             id={`bpmButton_${trackKey}`}
           >
             {bpmDiff ? 'Reset ' : ''}BPM
           </Button>
-        </InputGroupAddon>
-      </InputGroup>
+        }
+      />
     </div>
   )
 
-  const playerControl = !track.name ? null : (
-    <div
-      style={{
-        position: 'relative',
-        zIndex: 999,
-        minWidth: '81px',
-        visibility: analyzing ? 'hidden' : 'visible'
-      }}
-      className={alignment}
-    >
-      <Button
-        color='light'
-        title='Play'
-        size='sm'
-        className='b-black-02 my-auto'
-        onClick={() => {
-          zoomView?.enableAutoScroll(true)
-          waveform?.player.play()
+  const playerControl = !track?.name ? null : (
+    <>
+      <ButtonGroup
+        fill={true}
+        style={{
+          visibility: analyzing ? 'hidden' : 'visible'
         }}
-        id={`playButton_${trackKey}`}
       >
-        <i className='las la-play text-success' />
-      </Button>
-      <Button
-        color='light'
-        title='Pause'
-        size='sm'
-        className='b-black-02 mx-2 my-auto'
-        onClick={() => {
-          waveform?.player.pause()
-          zoomView?.enableAutoScroll(true)
-        }}
-        id={`pauseButton_${trackKey}`}
-      >
-        <i className='las la-pause text-danger' />
-      </Button>
-    </div>
+        <Button
+          icon={<Undo />}
+          onClick={() => {
+            Events.dispatch('audio', { effect: 'stop', tracks: [trackId] })
+          }}
+          id={`stopButton_${trackKey}`}
+        >
+          Stop
+        </Button>
+
+        <Button
+          icon={playing ? <Pause /> : <Play />}
+          onClick={() => {
+            Events.dispatch('audio', {
+              effect: playing ? 'pause' : 'play',
+              tracks: [trackId]
+            })
+          }}
+          id={`playButton_${trackKey}`}
+        >
+          {playing ? 'Pause' : 'Play'}
+        </Button>
+      </ButtonGroup>
+      <InputGroup
+        large={true}
+        asyncControl={true}
+        leftIcon={<Time />}
+        value={timeFormat(mixPoint || 0)}
+      />
+    </>
   )
 
   const trackHeader = (
-    <div className='d-flex justify-content-between my-3'>
+    <div
+      style={{
+        display: 'flex',
+        justifyContent: 'space-between',
+        marginBottom: track1 ? '5px' : 0,
+        marginTop: track1 ? 0 : '10px'
+      }}
+    >
       <div
         style={{
           textOverflow: 'ellipsis',
@@ -215,33 +259,25 @@ const TrackForm = ({
         }}
       >
         <Button
-          color='light'
-          title='Load Track'
-          size='sm'
-          className='b-black-02'
-          onClick={audioChange}
+          small={true}
+          icon={<Eject title='Load Track' />}
+          onClick={() => openTable(true)}
           id={`loadButton_${trackKey}`}
-        >
-          <i className='las la-eject la-15em text-warning' />
-        </Button>
-        <div
+          style={{ marginRight: '8px' }}
+        ></Button>
+
+        <H5
           style={{
             display: 'inline',
-            verticalAlign: 'middle'
+            verticalAlign: track1 ? 'text-bottom' : 'middle'
           }}
-          className='pl-3'
         >
-          <span className='h5'>
-            {analyzing
-              ? 'Loading..'
-              : track.name?.replace(/\.[^/.]+$/, '') || 'No Track Loaded..'}
-          </span>
-        </div>
+          {analyzing
+            ? 'Loading..'
+            : track?.name?.replace(/\.[^/.]+$/, '') || 'No Track Loaded..'}
+        </H5>
       </div>
-      <div className='d-flex'>
-        {playerControl}
-        {bpmControl}
-      </div>
+      {bpmControl}
     </div>
   )
 
@@ -256,19 +292,22 @@ const TrackForm = ({
       id={`slider_${trackKey}`}
     >
       <div
-        className={track1 ? 'pb-3 pt-5' : 'pb-5 pt-3'}
         style={{
-          width: `${sliderControl?.width}px`
+          width: `${sliderControl?.width}px`,
+          paddingTop: track1 ? '10px' : '20px',
+          paddingBottom: track1 ? '20px' : '10px'
         }}
       >
         {!sliderControl?.max ? null : (
           <Slider
-            min={sliderControl?.min}
-            max={sliderControl?.max}
-            marks={sliderControl?.marks}
+            min={sliderControl.min || 0}
+            max={sliderControl.max}
+            marks={sliderControl.marks || {}}
             step={null}
             included={false}
             onAfterChange={time => selectTime(time)}
+            dotStyle={{ borderColor: '#1e8bc3' }}
+            handleStyle={{ borderColor: '#cc1d1d' }}
           />
         )}
       </div>
@@ -279,88 +318,68 @@ const TrackForm = ({
     <div
       id={`zoomview-container_${trackKey}`}
       style={{
-        height: track.name ? '150px' : '0px',
+        height: '150px',
         visibility: analyzing ? 'hidden' : 'visible'
       }}
     />
   )
 
-  const overview = (
-    <div
-      id={`overview-container_${trackKey}`}
-      style={{
-        height: track.name ? '40px' : '0px',
-        visibility: analyzing ? 'hidden' : 'visible'
-      }}
-    />
-  )
+  const loader = analyzing ? <Loader style={{ margin: '15px 0' }} /> : null
 
-  const loader = analyzing ? <Loader className='my-5' /> : null
-
-  const MixCard = () => (
-    <Card
-      className='mb-3 mr-3'
-      style={{ flexBasis: '85px', flexGrow: 1, flexShrink: 1 }}
+  const TracksDialog = () => (
+    <Dialog
+      isOpen={tableState}
+      onClose={() => openTable(false)}
+      style={{ width: '80%' }}
     >
-      <UncontrolledTabs initialActiveTabId='users201a'>
-        <CardHeader>
-          <Nav pills className='mb-3'>
-            <NavItem>
-              <UncontrolledTabs.NavLink tabId='users201a'>
-                MixPoint
-              </UncontrolledTabs.NavLink>
-            </NavItem>
-            <NavItem>
-              <UncontrolledTabs.NavLink tabId='settings201b'>
-                Name
-              </UncontrolledTabs.NavLink>
-            </NavItem>
-          </Nav>
-        </CardHeader>
-        <CardBody>
-          <UncontrolledTabs.TabContent>
-            <TabPane tabId='users201a'>{'0:00'}</TabPane>
-            <TabPane tabId='settings201b'>Settings</TabPane>
-          </UncontrolledTabs.TabContent>
-        </CardBody>
-      </UncontrolledTabs>
-    </Card>
+      <Tracks
+        trackKey={trackKey}
+        hideDropzone={true}
+        openTable={openTable}
+        getPeaks={getPeaks}
+      />
+    </Dialog>
   )
 
   return (
-    <div className='d-flex'>
-      <MixCard />
-      <Card
-        className='mb-3'
-        style={{ flexBasis: 0, flexGrow: 8, flexShrink: 1 }}
-      >
-        <div className='mx-3'>
-          {track1 && trackHeader}
-          <>{!track1 && track.name && slider}</>
+    <>
+      <div style={{ display: 'flex', margin: '15px 0' }}>
+        <Card style={{ flex: '0 0 250px' }}>{playerControl}</Card>
+        <Card
+          elevation={1}
+          style={{
+            flex: 'auto',
+            marginLeft: '15px',
+            overflow: 'hidden'
+          }}
+        >
+          <div>
+            {track1 && trackHeader}
+            <>{!track1 && track?.name && slider}</>
 
-          <div id={`peaks-container_${trackKey}`}>
-            {track1 ? (
-              <>
-                {overview}
-                {loader}
-                {zoomview}
-              </>
-            ) : (
-              <>
-                {zoomview}
-                {loader}
-                {overview}
-              </>
-            )}
+            <div id={`peaks-container_${trackKey}`}>
+              {track1 ? (
+                <>
+                  {loader}
+                  {zoomview}
+                </>
+              ) : (
+                <>
+                  {zoomview}
+                  {loader}
+                </>
+              )}
+            </div>
+
+            <>{track1 && track?.name && slider}</>
+            {!track1 && trackHeader}
+
+            <audio id={`audio_${trackKey}`} src={audioSrc} ref={audioElement} />
           </div>
-
-          <>{track1 && track.name && slider}</>
-          {!track1 && trackHeader}
-
-          <audio id={`audio_${trackKey}`} src={audioSrc} ref={audioElement} />
-        </div>
-      </Card>
-    </div>
+        </Card>
+      </div>
+      <TracksDialog />
+    </>
   )
 }
 

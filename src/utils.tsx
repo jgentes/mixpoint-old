@@ -1,21 +1,23 @@
-import { toast } from 'react-toastify'
+import { Toaster } from './layout/toaster'
 
 export const success = (trackName?: string, customMessage?: string) => {
-  toast.success(
-    customMessage ? (
+  Toaster.show({
+    intent: 'success',
+    message: customMessage ? (
       <>{customMessage}</>
     ) : (
       <>
         Analyzed <strong>{trackName}</strong>
       </>
     ),
-    { autoClose: 3000 }
-  )
+    timeout: 3000
+  })
 }
 
 export const failure = (trackName?: string, customMessage?: string) => {
-  toast.error(
-    customMessage ? (
+  Toaster.show({
+    intent: 'danger',
+    message: customMessage ? (
       <>{customMessage}</>
     ) : (
       <>
@@ -23,6 +25,17 @@ export const failure = (trackName?: string, customMessage?: string) => {
         <strong>{trackName || `the track`}</strong>
       </>
     ),
-    { autoClose: 4000 }
-  )
+    timeout: 4000
+  })
+}
+export const Events = {
+  on (event: string, callback: Function) {
+    window.addEventListener(event, (e: CustomEventInit) => callback(e.detail))
+  },
+  dispatch (event: string, data: any) {
+    window.dispatchEvent(new CustomEvent(event, { detail: data }))
+  },
+  remove (event: string, callback: any) {
+    window.removeEventListener(event, callback)
+  }
 }

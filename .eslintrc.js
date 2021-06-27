@@ -6,6 +6,7 @@ module.exports = {
   extends: [
     'eslint: recommended',
     'plugin:react/recommended',
+    'plugin:react-hooks/recommended',
     'plugin:jest-dom/recommended',
     'plugin:testing-library/recommended',
     'plugin:testing-library/react',
@@ -22,7 +23,13 @@ module.exports = {
     ecmaVersion: 12,
     sourceType: 'module'
   },
-  plugins: ['react', '@typescript-eslint', 'jest-dom', 'testing-library'],
+  plugins: [
+    'react',
+    '@typescript-eslint',
+    'jest-dom',
+    'testing-library',
+    '@blueprintjs'
+  ],
   rules: {
     'no-use-before-define': 'off',
     '@typescript-eslint/no-use-before-define': ['error'],

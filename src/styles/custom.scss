@@ -1,0 +1,63 @@
+@import '@blueprintjs/core/lib/scss/variables';
+
+/* dark mode */
+body.bp4-dark {
+  background-color: #30404d;
+}
+
+/* track table */
+.bp4-dialog {
+  background: #fff;
+}
+
+table tr td button.tr-hover {
+  opacity: 0;
+  float: right;
+}
+
+table tr:hover td button.tr-hover {
+  opacity: 1;
+}
+
+table tr td button .bp4-active {
+  opacity: 1 !important;
+}
+
+/* track view */
+.rc-slider-rail {
+  background-color: #cdd9e23b !important;
+}
+
+/* to fix dropzone */
+.drop {
+  pointer-events: none;
+}
+
+.dropzone {
+  color: $gray1;
+}
+
+.breadcrumb {
+  background-color: transparent !important;
+}
+
+/* changes for nav bar */
+.header-nav-text {
+  color: $gray2;
+}
+
+.bp4-tab-indicator-wrapper {
+  height: 56px !important;
+}
+
+.bp4-tab-indicator {
+  background-color: $blue3 !important;
+}
+
+.bp4-tab-list {
+  margin: 0 !important;
+}
+
+.navbar-shadow {
+  box-shadow: 0 0.125rem 0.25rem rgba(0, 0, 0, 0.075) !important;
+}

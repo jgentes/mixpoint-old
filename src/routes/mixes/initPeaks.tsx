@@ -1,6 +1,6 @@
 import Peaks, { PeaksOptions } from 'peaks.js'
-import { toast } from 'react-toastify'
-import { Track, updateTrackState } from '../../db'
+import { Track, db } from '../../db'
+import { getPermission } from '../../fileHandlers'
 import WaveformData from 'waveform-data'
 
 export const initPeaks = async ({
@@ -22,13 +22,13 @@ export const initPeaks = async ({
   setWaveform: Function
   setAnalyzing: Function
 }) => {
-  if (!track) throw new Error('No track to initialize')
+  if (!track) throw Error('No track to initialize')
   setAnalyzing(true)
 
   const track1 = trackKey % 2
 
-  file = file || (await track.fileHandle?.getFile())
-  if (!file) throw new Error('Problem reaching file')
+  file = file || (await getPermission(track))
+  if (!file) throw Error('Problem reaching file')
 
   // update the <audio> ref, this allows play/pause controls
   // note this must come before the mediaElement is queried in peakOptions
@@ -40,8 +40,20 @@ export const initPeaks = async ({
       overview: document.getElementById(`overview-container_${trackKey}`),
       zoomview: document.getElementById(`zoomview-container_${trackKey}`)
     },
-    mediaElement: document.getElementById(`audio_${trackKey}`) ?? undefined,
-    pointMarkerColor: 'rgba(30, 139, 195, 1)',
+    mediaElement: document.getElementById(`audio_${trackKey}`)!,
+    pointMarkerColor: '#1e8bc3',
+    overviewHighlightColor: '#1e8bc3',
+    overviewHighlightOffset: 5,
+    zoomWaveformColor: {
+      linearGradientStart: 45,
+      linearGradientEnd: 58,
+      linearGradientColorStops: ['#D8B945', '#DD9045']
+    },
+    overviewWaveformColor: {
+      linearGradientStart: 45,
+      linearGradientEnd: 58,
+      linearGradientColorStops: ['#E2E2E2', '#CCCCCC']
+    },
     zoomLevels: [64, 128, 256, 512],
     emitCueEvents: true // for mouse drag listener
   }
@@ -65,8 +77,9 @@ export const initPeaks = async ({
           // @ts-ignore
           waveformData = wave.toJSON()
 
-          updateTrackState({
-            ...track,
+          db.trackState.put({
+            trackKey,
+            trackId: track.id,
             file,
             waveformData
           })
@@ -76,15 +89,15 @@ export const initPeaks = async ({
     )
   }
 
-  if (!waveformData) throw new Error('Waveform data is missing')
+  if (!waveformData) throw Error('Waveform data is missing')
 
   // @ts-ignore
   peakOptions.waveformData = { json: waveformData }
 
   Peaks.init(peakOptions, async (err, waveform) => {
-    if (err) return toast.error(err.message)
+    if (err) throw Error(err.message)
     if (!waveform)
-      throw new Error('Unable to display waveform data for some reason..')
+      throw Error('Unable to display waveform data for some reason..')
 
     setWaveform(waveform)
 
@@ -92,13 +105,6 @@ export const initPeaks = async ({
 
     // destroy the overview so that it doesn't receive the beat markers
     waveform.views.destroyOverview()
-
-    zoomView?.setWaveformColor({
-      linearGradientStart: 45,
-      linearGradientEnd: 58,
-      linearGradientColorStops: ['#D8B945', '#DD9045']
-    })
-
     waveform.zoom.setZoom(3) // 512
     zoomView?.showPlayheadTime(true)
 
@@ -138,7 +144,7 @@ export const initPeaks = async ({
     )
 
     if (!peakOptions.containers.overview)
-      throw new Error('Overview container not found')
+      throw Error('Overview container not found')
 
     waveform.views.createOverview(peakOptions.containers.overview)
 
@@ -146,7 +152,7 @@ export const initPeaks = async ({
       new Date(secs * 1000).toISOString().substr(15, 6)
     const markFormatter = (point: number) =>
       track1 ? (
-        <div style={{ marginTop: '-45px' }}>{timeFormat(point)}</div>
+        <div style={{ marginTop: '-35px' }}>{timeFormat(point)}</div>
       ) : (
         timeFormat(point)
       )

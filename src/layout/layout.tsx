@@ -1,13 +1,25 @@
 import { Helmet } from 'react-helmet'
 import { TopNavbar } from './topnav/topnavbar'
-import { ToastContainer, toast } from 'react-toastify'
+import { Toaster } from './toaster'
+import { WarningSign } from '@blueprintjs/icons'
 
 import favIcon32 from 'url:../assets/soundwave-32px.jpg'
 import favIcon16 from 'url:../assets/soundwave-16px.jpg'
 
-window.onerror = msg => toast.error(`Whoops! ${msg}`)
+window.onerror = msg =>
+  Toaster.show({
+    message: `Whoops! ${msg}`,
+    intent: 'danger',
+    icon: <WarningSign />
+  })
 window.onunhandledrejection = (e: PromiseRejectionEvent) =>
-  toast.error(`Whoops! ${e.reason.message}`)
+  Toaster.show({
+    message: `Whoops! ${e.reason.message}`,
+    intent: 'danger',
+    icon: <WarningSign />
+  })
+
+const layoutStyle = { width: '90%', margin: '0 auto' }
 
 const favIcons = [
   {
@@ -28,7 +40,7 @@ const AppLayout: React.FunctionComponent = props => (
   <>
     <Helmet>
       <meta charSet='utf-8' />
-      <title>DJ Set Editor</title>
+      <title>MixPoint</title>
       <meta
         name='description'
         content={'Multi-track audio editor designed for mixing dj sets'}
@@ -38,17 +50,9 @@ const AppLayout: React.FunctionComponent = props => (
       ))}
     </Helmet>
 
-    <TopNavbar />
+    <TopNavbar layoutStyle={layoutStyle} />
 
-    {props.children}
-
-    <ToastContainer
-      position='bottom-center'
-      autoClose={10000}
-      draggable={false}
-      hideProgressBar={true}
-      bodyClassName='text-black'
-    />
+    <div style={{ ...layoutStyle, padding: '15px 10px' }}>{props.children}</div>
   </>
 )
 
