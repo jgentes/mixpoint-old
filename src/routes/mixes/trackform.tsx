@@ -4,10 +4,11 @@ import {
   ButtonGroup,
   Card,
   NumericInput,
+  InputGroup,
   Dialog,
   H5
 } from '@blueprintjs/core'
-import { Play, Pause, Eject } from '@blueprintjs/icons'
+import { Play, Pause, Undo, Eject, Time } from '@blueprintjs/icons'
 import Loader from '../../layout/loader'
 import Slider, { SliderProps } from 'rc-slider'
 import { initPeaks } from './initPeaks'
@@ -15,20 +16,15 @@ import { PeaksInstance } from 'peaks.js'
 import { Tracks } from '../tracks/tracks'
 import WaveformData from 'waveform-data'
 import { Track, db, TrackState, useLiveQuery } from '../../db'
+import { Events } from '../../utils'
 
-const TrackForm = ({
-  trackKey,
-  setPoint
-}: {
-  trackKey: number
-  setPoint: Function
-}) => {
+const TrackForm = ({ trackKey }: { trackKey: number }) => {
   interface SliderControlProps extends SliderProps {
     width: number
   }
 
-  const audioElement = useRef<HTMLAudioElement>(null)
   const [sliderControl, setSliderControl] = useState<SliderControlProps>()
+  const [playing, setPlaying] = useState(false)
   const [analyzing, setAnalyzing] = useState(false)
   const [waveform, setWaveform] = useState<PeaksInstance>()
   const [audioSrc, setAudioSrc] = useState('')
@@ -36,22 +32,58 @@ const TrackForm = ({
   const [track, setTrack] = useState<Track>()
   const [bpmTimer, setBpmTimer] = useState<number>()
 
+  const audioElement = useRef<HTMLAudioElement>(null)
+
   const track1 = trackKey == 0
   const zoomView = waveform?.views.getView('zoomview')
   const trackState: TrackState =
     useLiveQuery(() => db.trackState.get({ trackKey })) || {}
+  const { trackId, mixPoint } = trackState
+
+  const audioEffect = (detail: { tracks: number[]; effect: string }) => {
+    if (!detail.tracks.includes(trackState.trackId!)) return
+
+    setPlaying(detail.effect == 'play')
+
+    switch (detail.effect) {
+      case 'play':
+        zoomView?.enableAutoScroll(true)
+        audioElement.current?.play()
+        break
+      case 'pause':
+        audioElement.current?.pause()
+        zoomView?.enableAutoScroll(true)
+        break
+      case 'stop':
+        audioElement.current?.pause()
+        waveform?.player.seek(mixPoint || 0)
+        zoomView?.enableAutoScroll(true)
+    }
+  }
 
   useEffect(() => {
     let getTrack
     const getTrackData = async () => {
-      getTrack = await db.tracks.get(trackState.trackId!)
-      setTrack(getTrack)
+      if (!trackState.trackId) return
 
-      if (getTrack && trackState.waveformData)
-        getPeaks(getTrack, trackKey, trackState.file, trackState.waveformData)
+      if (trackState.trackId !== track?.id) {
+        getTrack = await db.tracks.get(trackState.trackId!)
+        setTrack(getTrack)
+
+        if (getTrack && trackState.waveformData && !waveform)
+          getPeaks(getTrack, trackKey, trackState.file, trackState.waveformData)
+      }
+
+      // add event listeners
+      Events.on('audio', audioEffect)
+
+      // listener cleanup
+      return function cleanup () {
+        Events.remove('audio', audioEffect)
+      }
     }
 
-    if (trackState.trackId) getTrackData()
+    getTrackData()
   }, [trackState])
 
   const updatePlaybackRate = (bpm: number) => {
@@ -66,7 +98,7 @@ const TrackForm = ({
 
     updatePlaybackRate(bpm)
 
-    // store custom bpm value in mixstate
+    // store custom bpm value in trackstate
     await db.trackState.update(
       { trackKey },
       {
@@ -94,11 +126,20 @@ const TrackForm = ({
   }
 
   const selectTime = async (time: number) => {
+    await db.trackState.update(
+      { trackKey },
+      {
+        mixPoint: time
+      }
+    )
+
     waveform?.player.seek(time)
     zoomView?.enableAutoScroll(false)
-    waveform?.player.play()
 
-    setPoint(trackKey, time)
+    Events.dispatch('audio', {
+      effect: 'play',
+      tracks: [trackId]
+    })
 
     /*
     waveform?.segments.add({
@@ -114,6 +155,9 @@ const TrackForm = ({
     //const id = await addMix(mixState.tracks.map(t => t.id))
     //await updateMixState({ ...mixState, mix: { id } })
   }
+
+  const timeFormat = (secs: number) =>
+    new Date(secs * 1000).toISOString().substr(15, 6)
 
   const adjustedBpm =
     trackState.adjustedBpm && Number(trackState.adjustedBpm).toFixed(1)
@@ -159,34 +203,43 @@ const TrackForm = ({
   )
 
   const playerControl = !track?.name ? null : (
-    <ButtonGroup
-      fill={true}
-      style={{
-        visibility: analyzing ? 'hidden' : 'visible'
-      }}
-    >
-      <Button
-        icon={<Pause />}
-        onClick={() => {
-          waveform?.player.pause()
-          zoomView?.enableAutoScroll(true)
+    <>
+      <ButtonGroup
+        fill={true}
+        style={{
+          visibility: analyzing ? 'hidden' : 'visible'
         }}
-        id={`pauseButton_${trackKey}`}
       >
-        Pause
-      </Button>
+        <Button
+          icon={<Undo />}
+          onClick={() => {
+            Events.dispatch('audio', { effect: 'stop', tracks: [trackId] })
+          }}
+          id={`stopButton_${trackKey}`}
+        >
+          Stop
+        </Button>
 
-      <Button
-        icon={<Play />}
-        onClick={() => {
-          zoomView?.enableAutoScroll(true)
-          waveform?.player.play()
-        }}
-        id={`playButton_${trackKey}`}
-      >
-        Play
-      </Button>
-    </ButtonGroup>
+        <Button
+          icon={playing ? <Pause /> : <Play />}
+          onClick={() => {
+            Events.dispatch('audio', {
+              effect: playing ? 'pause' : 'play',
+              tracks: [trackId]
+            })
+          }}
+          id={`playButton_${trackKey}`}
+        >
+          {playing ? 'Pause' : 'Play'}
+        </Button>
+      </ButtonGroup>
+      <InputGroup
+        large={true}
+        asyncControl={true}
+        leftIcon={<Time />}
+        value={timeFormat(mixPoint || 0)}
+      />
+    </>
   )
 
   const trackHeader = (

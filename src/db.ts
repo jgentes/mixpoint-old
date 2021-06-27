@@ -58,6 +58,7 @@ interface TrackState {
   adjustedBpm?: number
   file?: File | undefined
   waveformData?: WaveformData | undefined
+  mixPoint?: number
 }
 
 interface Mix {

@@ -41,7 +41,7 @@ export const initPeaks = async ({
       zoomview: document.getElementById(`zoomview-container_${trackKey}`)
     },
     mediaElement: document.getElementById(`audio_${trackKey}`)!,
-    pointMarkerColor: 'rgba(30, 139, 195, 1)',
+    pointMarkerColor: '#1e8bc3',
     overviewHighlightColor: '#1e8bc3',
     overviewHighlightOffset: 5,
     zoomWaveformColor: {

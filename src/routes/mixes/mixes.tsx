@@ -1,39 +1,20 @@
 import { useState } from 'react'
 import {
+  Button,
+  ButtonGroup,
   Breadcrumbs,
   Breadcrumb,
   BreadcrumbProps,
-  Card,
-  Switch
+  Card
 } from '@blueprintjs/core'
+import { Play, Pause, Stop, Random } from '@blueprintjs/icons'
 import TrackForm from './trackform'
-import { db } from '../../db'
-
-import { Colors } from '@blueprintjs/core'
-
+import { Events } from '../../utils'
+import { db, TrackState, useLiveQuery } from '../../db'
 export const Mixes = () => {
-  const [points, setPoints] = useState<number[]>([])
-
-  const darkMode = document.body.classList.contains('bp4-dark')
-
-  const setPoint = (trackKey: number, time: number) => {
-    const pCopy = [...points]
-    pCopy[trackKey] = time
-    setPoints(pCopy)
-  }
-
-  const darkSwitch = (
-    <div style={{ paddingTop: '10px', paddingRight: '5px' }}>
-      <Switch
-        checked={darkMode || false}
-        onChange={() => db.appState.put(!darkMode, 'darkMode')}
-        labelElement={<span style={{ color: Colors.GRAY2 }}>Dark Mode</span>}
-        innerLabel='OFF'
-        innerLabelChecked='ON'
-        alignIndicator='right'
-      />
-    </div>
-  )
+  const [track0, track1]: TrackState[] =
+    useLiveQuery(() => db.trackState.limit(2).toArray()) || []
+  const [playing, setPlaying] = useState(false)
 
   const crumbs = [
     { text: 'Mixes', href: '/mixes' },
@@ -46,6 +27,60 @@ export const Mixes = () => {
     </Breadcrumb>
   )
 
+  const timeFormat = (secs: number) =>
+    new Date(secs * 1000).toISOString().substr(15, 6)
+
+  const mixPointControl = (
+    <>
+      <ButtonGroup fill={true}>
+        <Button
+          icon={<Stop />}
+          onClick={() => {
+            setPlaying(false)
+            Events.dispatch('audio', {
+              effect: 'stop',
+              tracks: [track0.trackId, track1.trackId]
+            })
+          }}
+          id={`stopButton_mix`}
+        >
+          Stop
+        </Button>
+
+        <Button
+          icon={playing ? <Pause /> : <Play />}
+          onClick={() => {
+            playing ? setPlaying(false) : setPlaying(true)
+            Events.dispatch('audio', {
+              effect: playing ? 'pause' : 'play',
+              tracks: [track0.trackId, track1.trackId]
+            })
+          }}
+          id={`playButton_mix`}
+        >
+          {playing ? 'Pause' : 'Play'}
+        </Button>
+      </ButtonGroup>
+      <div
+        style={{
+          display: 'flex',
+          flexWrap: 'nowrap',
+          justifyContent: 'space-between',
+          fontSize: '24px',
+          margin: '20px 2px 0'
+        }}
+      >
+        <span style={{ flex: 'auto' }}>
+          {timeFormat(track0?.mixPoint || 0)}
+        </span>
+        <Random style={{ alignSelf: 'center', marginTop: '1px' }} size={23} />
+        <span style={{ flex: 'auto', textAlign: 'right' }}>
+          {timeFormat(track1?.mixPoint || 0)}
+        </span>
+      </div>
+    </>
+  )
+
   return (
     <>
       <div
@@ -56,13 +91,11 @@ export const Mixes = () => {
         }}
       >
         <Breadcrumbs breadcrumbRenderer={renderCrumb} items={crumbs} />
-
-        {darkSwitch}
       </div>
       <div className='mb-5'>
-        <TrackForm trackKey={0} setPoint={setPoint} />
+        <TrackForm trackKey={0} />
         <div style={{ display: 'flex', margin: '15px 0' }}>
-          <Card style={{ flex: '0 0 250px' }}>MixPoint Controls</Card>
+          <Card style={{ flex: '0 0 250px' }}>{mixPointControl}</Card>
           <Card
             style={{ flex: 'auto', marginLeft: '15px', overflow: 'hidden' }}
           >
@@ -71,7 +104,7 @@ export const Mixes = () => {
           </Card>
         </div>
 
-        <TrackForm trackKey={1} setPoint={setPoint} />
+        <TrackForm trackKey={1} />
       </div>
     </>
   )

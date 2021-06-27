@@ -1,4 +1,4 @@
-import { Track, putTrack } from './db'
+import { Track, TrackState, putTrack } from './db'
 import { failure } from './utils'
 import { getPermission } from './fileHandlers'
 import { guess } from 'web-audio-beat-detector'
@@ -17,6 +17,46 @@ const getAudioBuffer = async (file: File): Promise<AudioBuffer> => {
   const arrayBuffer = await file.arrayBuffer()
   const audioCtx = new window.AudioContext()
   return await audioCtx.decodeAudioData(arrayBuffer)
+}
+
+const createMix = async (trackStateArray: TrackState[]) => {
+  const [track0, track1] = trackStateArray
+  const track0Duration =
+    (track0.waveformData!.length / track0.waveformData!.sample_rate) *
+    track0.waveformData!.samples_per_pixel
+  const track1Duration =
+    (track1.waveformData!.length / track1.waveformData!.sample_rate) *
+      track1.waveformData!.samples_per_pixel -
+    track0.mixPoint! -
+    track1.mixPoint!
+  const totalDuration = track0Duration + track1Duration
+
+  const arrayOfAudioBuffers = []
+  for (let t of trackStateArray)
+    arrayOfAudioBuffers.push(await getAudioBuffer(t.file!))
+
+  var audioCtx = new AudioContext()
+
+  let finalMix = audioCtx.createBuffer(
+    2,
+    totalDuration * 48000,
+    arrayOfAudioBuffers[0].sampleRate
+  )
+
+  for (let i = 0; i < arrayOfAudioBuffers.length; i++) {
+    // second loop for each channel ie. left and right
+    for (let channel = 0; channel < 2; channel++) {
+      //here we get a reference to the final mix buffer data
+      let buffer = finalMix.getChannelData(channel)
+
+      //last is loop for updating/summing the track buffer with the final mix buffer
+      for (let j = 0; j < arrayOfAudioBuffers[i].length; j++) {
+        buffer[j] += arrayOfAudioBuffers[i].getChannelData(channel)[j]
+      }
+    }
+  }
+
+  return finalMix
 }
 
 const getBpm = async (
@@ -63,4 +103,4 @@ const processAudio = async (track: Track): Promise<Track | undefined> => {
   return updatedTrack
 }
 
-export { getAudioBuffer, processAudio, getBpm, initTrack }
+export { getAudioBuffer, processAudio, getBpm, initTrack, createMix }

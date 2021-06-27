@@ -1,11 +1,30 @@
 import { Link, NavLink, useLocation } from 'react-router-dom'
-import { Navbar, Tabs, Tab } from '@blueprintjs/core'
+import { Button, Navbar, Tabs, Tab } from '@blueprintjs/core'
+import { Lightbulb } from '@blueprintjs/icons'
+import { db } from '../../db'
 
+//@ts-ignore
+import light from 'url:../../assets/light.mp3'
 import logo from 'url:../../assets/soundwave-596x419.png'
+
 const navLinks = ['tracks', 'mixes', 'sets']
 
 export const TopNavbar = (props: { layoutStyle: object }) => {
   const location = useLocation()
+  const darkMode = document.body.classList.contains('bp4-dark')
+
+  const darkSwitch = (
+    <div style={{ paddingTop: '10px', paddingRight: '5px' }}>
+      <Button
+        minimal={true}
+        icon={<Lightbulb />}
+        onClick={() => {
+          new Audio(light).play()
+          db.appState.put(!darkMode, 'darkMode')
+        }}
+      />
+    </div>
+  )
 
   return (
     <Navbar
@@ -26,9 +45,6 @@ export const TopNavbar = (props: { layoutStyle: object }) => {
           <div className='initial-loader__row initial-loader'>
             <h1>MixPoint</h1>
           </div>
-        </Navbar.Group>
-
-        <Navbar.Group align='right'>
           <Tabs
             animate={true}
             id='navbar'
@@ -49,6 +65,8 @@ export const TopNavbar = (props: { layoutStyle: object }) => {
             ))}
           </Tabs>
         </Navbar.Group>
+
+        <Navbar.Group align='right'>{darkSwitch}</Navbar.Group>
       </div>
     </Navbar>
   )
