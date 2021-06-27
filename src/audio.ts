@@ -20,6 +20,8 @@ const getAudioBuffer = async (file: File): Promise<AudioBuffer> => {
 }
 
 const createMix = async (trackStateArray: TrackState[]) => {
+  // this is slow, also look at https://github.com/jackedgson/crunker and https://github.com/audiojs/audio-buffer-utils
+
   const [track0, track1] = trackStateArray
   const track0Duration =
     (track0.waveformData!.length / track0.waveformData!.sample_rate) *
