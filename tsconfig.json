@@ -2,10 +2,14 @@
   "extends": "@tsconfig/node12/tsconfig.json",
   "compilerOptions": {
     "lib": ["es5", "es6", "dom", "dom.iterable"],
-    "jsx": "react-jsx",
+    "jsx": "react",
+    "module": "CommonJS",
     "target": "ES6",
-    "outDir": "dist",
-    "sourceMap": true
+    "sourceMap": true,
+    "baseUrl": "./src",
+    "paths": {
+      "~*": ["./*"]
+    }
   },
   "strict": false,
   "include": ["./src/**/*"],
