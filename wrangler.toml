@@ -1,9 +1,8 @@
 name = "mixpoint"
-type = 'webpack'
+type = 'javascript'
 account_id = '7e1d0afce2e42ff7e7d7ea364664051c'
 route = ''
 zone_id = ''
 usage_model = ''
 workers_dev = true
-target_type = "webpack"
 site = {bucket = "./dist",entry-point = "workers-site"}
