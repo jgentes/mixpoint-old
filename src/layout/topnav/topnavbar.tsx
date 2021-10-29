@@ -1,11 +1,10 @@
 import { Link, NavLink, useLocation } from 'react-router-dom'
-import { Button, Navbar, Tabs, Tab } from '@blueprintjs/core'
-import { Lightbulb } from '@blueprintjs/icons'
+import { Button, Navbar, Tabs, Tab, Icon } from '@blueprintjs/core'
 import { db } from '../../db'
 
 //@ts-ignore
-import light from 'url:../../assets/light.mp3'
-import logo from 'url:../../assets/soundwave-596x419.png'
+const light = new URL('../../assets/light.mp3', import.meta.url)
+const logo = new URL('../../assets/soundwave-596x419.png', import.meta.url)
 
 const navLinks = ['tracks', 'mixes', 'sets']
 
@@ -17,7 +16,7 @@ export const TopNavbar = (props: { layoutStyle: object }) => {
     <div style={{ paddingTop: '10px', paddingRight: '5px' }}>
       <Button
         minimal={true}
-        icon={<Lightbulb />}
+        icon={<Icon icon='lightbulb' />}
         onClick={() => {
           new Audio(light).play()
           db.appState.put(!darkMode, 'darkMode')

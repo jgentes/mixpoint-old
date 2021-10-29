@@ -7,20 +7,13 @@ import { getPermission } from '../../fileHandlers'
 import {
   Button,
   Card,
+  Icon,
   InputGroup,
   HTMLTable,
-  Popover,
   Classes,
   H4
 } from '@blueprintjs/core'
-import {
-  Cross,
-  DoubleCaretVertical,
-  Search,
-  Issue,
-  Plus,
-  Insert
-} from '@blueprintjs/icons'
+import { Popover2 } from '@blueprintjs/popover2'
 
 export const Tracks = ({
   hideDropzone,
@@ -132,7 +125,7 @@ export const Tracks = ({
   const actions = (t: Track) => (
     <div style={{ textAlign: 'center' }}>
       <Button
-        icon={<Cross title='Remove Track' />}
+        icon={<Icon icon='cross' title='Remove Track' />}
         id='removeTrack'
         minimal={true}
         small={true}
@@ -192,7 +185,7 @@ export const Tracks = ({
               {hideDropzone ? (
                 <AddToMixButton track={t} />
               ) : (
-                <Popover
+                <Popover2
                   interactionKind='click'
                   popoverClassName={Classes.POPOVER_CONTENT_SIZING}
                   autoFocus={false}
@@ -222,7 +215,7 @@ export const Tracks = ({
                   }
                 >
                   <AddToMixButton track={t} />
-                </Popover>
+                </Popover2>
               )}
             </>
           )
@@ -289,7 +282,7 @@ export const Tracks = ({
       {c.name}
       {c.key == 'actions' ? null : (
         <Button
-          icon={<DoubleCaretVertical title='Sort' />}
+          icon={<Icon icon='double-caret-vertical' title='Sort' />}
           id={`${c.key}-sort`}
           minimal={true}
           small={true}
@@ -351,7 +344,8 @@ export const Tracks = ({
             onDragEnter={() => setIsOver(true)}
             onDragLeave={() => setIsOver(false)}
           >
-            <Insert
+            <Icon
+              icon='insert'
               size={26}
               className='drop'
               style={{ marginBottom: '10px' }}
@@ -379,14 +373,14 @@ export const Tracks = ({
             }}
           >
             <InputGroup
-              leftIcon={<Search />}
+              leftIcon={<Icon icon='search' />}
               onChange={e => setSearch(e.target.value)}
               placeholder='Search'
               value={searchVal}
             ></InputGroup>
             {!dirtyTracks.length ? null : (
               <div style={{ alignSelf: 'center' }}>
-                <Issue style={{ marginRight: '5px' }} />
+                <Icon icon='issue' style={{ marginRight: '5px' }} />
                 {`BPM needed for ${dirtyTracks.length} Track${
                   tracks?.length === 1 ? '' : 's'
                 }`}
@@ -397,7 +391,7 @@ export const Tracks = ({
                 intent='primary'
                 small={true}
                 onClick={browseFile}
-                icon={<Plus />}
+                icon={<Icon icon='plus' />}
               >
                 Add Track
               </Button>

@@ -1,12 +1,12 @@
 .dropzone {
-  border: 2px dashed $gray3;
+  border: 2px dashed #777;
   padding: 20px;
   text-align: center;
   cursor: pointer;
 
   &:hover,
   &--active {
-    border-color: $blue2;
-    background-color: rgba($blue2, 0.1);
+    border-color: #30b2e9;
+    background-color: rgba(#30b2e9, 0.1);
   }
 }

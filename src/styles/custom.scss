@@ -1,5 +1,3 @@
-@import '@blueprintjs/core/lib/scss/variables';
-
 /* dark mode */
 body.bp4-dark {
   background-color: #30404d;
@@ -34,7 +32,7 @@ table tr td button .bp4-active {
 }
 
 .dropzone {
-  color: $gray1;
+  color: #999;
 }
 
 .breadcrumb {
@@ -43,7 +41,7 @@ table tr td button .bp4-active {
 
 /* changes for nav bar */
 .header-nav-text {
-  color: $gray2;
+  color: #777;
 }
 
 .bp4-tab-indicator-wrapper {
@@ -51,7 +49,7 @@ table tr td button .bp4-active {
 }
 
 .bp4-tab-indicator {
-  background-color: $blue3 !important;
+  background-color: #004daa !important;
 }
 
 .bp4-tab-list {

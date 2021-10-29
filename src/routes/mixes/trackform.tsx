@@ -4,11 +4,11 @@ import {
   ButtonGroup,
   Card,
   NumericInput,
+  Icon,
   InputGroup,
   Dialog,
   H5
 } from '@blueprintjs/core'
-import { Play, Pause, Undo, Eject, Time } from '@blueprintjs/icons'
 import Loader from '../../layout/loader'
 import Slider, { SliderProps } from 'rc-slider'
 import { initPeaks } from './initPeaks'
@@ -188,17 +188,15 @@ const TrackForm = ({ trackKey }: { trackKey: number }) => {
         buttonPosition='none'
         fill={true}
         minorStepSize={0.1}
-        rightElement={
-          <Button
-            color='primary'
-            disabled={!bpmDiff}
-            onClick={() => adjustBpm(track?.bpm || 1)}
-            id={`bpmButton_${trackKey}`}
-          >
-            {bpmDiff ? 'Reset ' : ''}BPM
-          </Button>
-        }
       />
+      <Button
+        color='primary'
+        disabled={!bpmDiff}
+        onClick={() => adjustBpm(track?.bpm || 1)}
+        id={`bpmButton_${trackKey}`}
+      >
+        {bpmDiff ? 'Reset ' : ''}BPM
+      </Button>
     </div>
   )
 
@@ -211,7 +209,7 @@ const TrackForm = ({ trackKey }: { trackKey: number }) => {
         }}
       >
         <Button
-          icon={<Undo />}
+          icon={<Icon icon='undo' />}
           onClick={() => {
             Events.dispatch('audio', { effect: 'stop', tracks: [trackId] })
           }}
@@ -221,7 +219,7 @@ const TrackForm = ({ trackKey }: { trackKey: number }) => {
         </Button>
 
         <Button
-          icon={playing ? <Pause /> : <Play />}
+          icon={playing ? <Icon icon='pause' /> : <Icon icon='play' />}
           onClick={() => {
             Events.dispatch('audio', {
               effect: playing ? 'pause' : 'play',
@@ -236,7 +234,7 @@ const TrackForm = ({ trackKey }: { trackKey: number }) => {
       <InputGroup
         large={true}
         asyncControl={true}
-        leftIcon={<Time />}
+        leftIcon={<Icon icon='time' />}
         value={timeFormat(mixPoint || 0)}
       />
     </>
@@ -260,7 +258,7 @@ const TrackForm = ({ trackKey }: { trackKey: number }) => {
       >
         <Button
           small={true}
-          icon={<Eject title='Load Track' />}
+          icon={<Icon icon='eject' title='Load Track' />}
           onClick={() => openTable(true)}
           id={`loadButton_${trackKey}`}
           style={{ marginRight: '8px' }}

@@ -1,16 +1,16 @@
 import { Helmet } from 'react-helmet'
 import { TopNavbar } from './topnav/topnavbar'
 import { Toaster } from './toaster'
-import { WarningSign } from '@blueprintjs/icons'
+import { Icon } from '@blueprintjs/core'
 
-import favIcon32 from 'url:../assets/soundwave-32px.jpg'
-import favIcon16 from 'url:../assets/soundwave-16px.jpg'
+import favIcon32 from '../assets/soundwave-32px.jpg'
+import favIcon16 from '../assets/soundwave-16px.jpg'
 
 window.onerror = msg =>
   Toaster.show({
     message: `Whoops! ${msg}`,
     intent: 'danger',
-    icon: <WarningSign />
+    icon: <Icon icon='warning-sign' />
   })
 window.onunhandledrejection = (e: PromiseRejectionEvent) =>
   Toaster.show({

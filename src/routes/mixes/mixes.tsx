@@ -5,9 +5,9 @@ import {
   Breadcrumbs,
   Breadcrumb,
   BreadcrumbProps,
-  Card
+  Card,
+  Icon
 } from '@blueprintjs/core'
-import { Play, Pause, Stop, Random } from '@blueprintjs/icons'
 import TrackForm from './trackform'
 import { Events } from '../../utils'
 import { db, TrackState, useLiveQuery } from '../../db'
@@ -34,7 +34,7 @@ export const Mixes = () => {
     <>
       <ButtonGroup fill={true}>
         <Button
-          icon={<Stop />}
+          icon={<Icon icon='stop' />}
           onClick={() => {
             setPlaying(false)
             Events.dispatch('audio', {
@@ -48,7 +48,7 @@ export const Mixes = () => {
         </Button>
 
         <Button
-          icon={playing ? <Pause /> : <Play />}
+          icon={playing ? <Icon icon='pause' /> : <Icon icon='play' />}
           onClick={() => {
             playing ? setPlaying(false) : setPlaying(true)
             Events.dispatch('audio', {
@@ -73,7 +73,11 @@ export const Mixes = () => {
         <span style={{ flex: 'auto' }}>
           {timeFormat(track0?.mixPoint || 0)}
         </span>
-        <Random style={{ alignSelf: 'center', marginTop: '1px' }} size={23} />
+        <Icon
+          icon='random'
+          style={{ alignSelf: 'center', marginTop: '1px' }}
+          size={23}
+        />
         <span style={{ flex: 'auto', textAlign: 'right' }}>
           {timeFormat(track1?.mixPoint || 0)}
         </span>

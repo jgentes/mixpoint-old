@@ -1,32 +1,32 @@
-@import 'rc-slider/assets/index.css';
+@import '../../node_modules/rc-slider/assets/index.css';
 
 .rc-slider {
   .rc-slider-track {
-    background-color: $blue3;
+    background-color: #30b2e9;
   }
 
   .rc-slider-dot-active {
-    border-color: $blue3 !important;
+    border-color: #30b2e9 !important;
   }
 
   .rc-slider-handle {
-    border-color: $blue3;
+    border-color: #30b2e9;
 
     &:active {
-      border-color: darken($blue3, 10%);
-      box-shadow: 0 0 5px darken($blue3, 10%);
+      border-color: darken(#30b2e9, 10%);
+      box-shadow: 0 0 5px darken(#30b2e9, 10%);
     }
     &:hover {
-      border-color: darken($blue3, 5%);
+      border-color: darken(#30b2e9, 5%);
     }
   }
 
   .rc-slider-rail {
-    background-color: $gray5;
+    background-color: #888;
   }
   .rc-slider-dot {
-    background-color: $white;
-    border: 2px solid $gray3;
+    background-color: #fff;
+    border: 2px solid #555;
   }
 }
 
