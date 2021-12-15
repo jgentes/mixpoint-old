@@ -17,3 +17,4 @@ Thanks also the great [**BBC**](https://github.com/bbc) who created the [peaks.j
 Thanks to [**John Heiner**](https://codepen.io/johnheiner) for the cool progress indicator.
 
 It is because of these, and many other dependent, openly sourced and freely labored efforts that this work has been made possible.
+
