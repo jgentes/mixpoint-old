@@ -18,6 +18,8 @@ import WaveformData from 'waveform-data'
 import { Track, db, TrackState, useLiveQuery } from '../../db'
 import { Events } from '../../utils'
 
+import Box from '@mui/material/Box'
+
 const TrackForm = ({ trackKey }: { trackKey: number }) => {
   interface SliderControlProps extends SliderProps {
     width: number
@@ -342,13 +344,30 @@ const TrackForm = ({ trackKey }: { trackKey: number }) => {
   return (
     <>
       <div style={{ display: 'flex', margin: '15px 0' }}>
-        <Card style={{ flex: '0 0 250px' }}>{playerControl}</Card>
-        <Card
-          elevation={1}
-          style={{
-            flex: 'auto',
-            marginLeft: '15px',
-            overflow: 'hidden'
+        <Box style={{ flex: '0 0 250px' }}>{playerControl}</Box>
+        <Box
+          sx={{
+            borderBottomWidth: 2,
+            borderBottomStyle: 'solid',
+            borderColor:
+              palette.mode === 'dark' ? palette.background.default : '#E7EDF3',
+            backgroundColor:
+              palette.mode === 'dark' && palette.background.default,
+            transition: '0.4s, background-color 0s',
+            [breakpoints.up('sm')]: {
+              border: '2px solid',
+              borderColor:
+                palette.mode === 'dark'
+                  ? palette.background.default
+                  : '#E7EDF3',
+              borderRadius: 12,
+              '&:hover': {
+                borderColor: '#5B9FED'
+              }
+            },
+            [breakpoints.up('lg')]: {
+              borderRadius: 16
+            }
           }}
         >
           <div>
@@ -374,7 +393,7 @@ const TrackForm = ({ trackKey }: { trackKey: number }) => {
 
             <audio id={`audio_${trackKey}`} src={audioSrc} ref={audioElement} />
           </div>
-        </Card>
+        </Box>
       </div>
       <TracksDialog />
     </>
