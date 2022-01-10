@@ -2,7 +2,6 @@ import { useEffect, useRef, useState } from 'react'
 import {
   Button,
   ButtonGroup,
-  Card,
   NumericInput,
   Icon,
   InputGroup,
@@ -17,10 +16,12 @@ import { Tracks } from '../tracks/tracks'
 import WaveformData from 'waveform-data'
 import { Track, db, TrackState, useLiveQuery } from '../../db'
 import { Events } from '../../utils'
-
+import { useTheme } from '@mui/material/styles'
 import Box from '@mui/material/Box'
+import { SxProps } from '@mui/system'
 
 const TrackForm = ({ trackKey }: { trackKey: number }) => {
+  const theme = useTheme()
   interface SliderControlProps extends SliderProps {
     width: number
   }
@@ -341,35 +342,38 @@ const TrackForm = ({ trackKey }: { trackKey: number }) => {
     </Dialog>
   )
 
+  const boxStyle: SxProps = {
+    borderBottomWidth: 2,
+    p: 2,
+    borderBottomStyle: 'solid',
+    borderColor:
+      theme.palette.mode === 'dark'
+        ? theme.palette.background.default
+        : '#E7EDF3',
+    backgroundColor:
+      theme.palette.mode === 'dark' && theme.palette.background.default,
+    transition: '0.4s, background-color 0s',
+    [theme.breakpoints.up('sm')]: {
+      border: '2px solid',
+      borderColor:
+        theme.palette.mode === 'dark'
+          ? theme.palette.background.default
+          : '#E7EDF3',
+      borderRadius: 1,
+      '&:hover': {
+        borderColor: '#5B9FED'
+      }
+    },
+    [theme.breakpoints.up('lg')]: {
+      borderRadius: 1
+    }
+  }
+
   return (
     <>
       <div style={{ display: 'flex', margin: '15px 0' }}>
         <Box style={{ flex: '0 0 250px' }}>{playerControl}</Box>
-        <Box
-          sx={{
-            borderBottomWidth: 2,
-            borderBottomStyle: 'solid',
-            borderColor:
-              palette.mode === 'dark' ? palette.background.default : '#E7EDF3',
-            backgroundColor:
-              palette.mode === 'dark' && palette.background.default,
-            transition: '0.4s, background-color 0s',
-            [breakpoints.up('sm')]: {
-              border: '2px solid',
-              borderColor:
-                palette.mode === 'dark'
-                  ? palette.background.default
-                  : '#E7EDF3',
-              borderRadius: 12,
-              '&:hover': {
-                borderColor: '#5B9FED'
-              }
-            },
-            [breakpoints.up('lg')]: {
-              borderRadius: 16
-            }
-          }}
-        >
+        <Box sx={boxStyle}>
           <div>
             {track1 && trackHeader}
             <>{!track1 && track?.name && slider}</>
